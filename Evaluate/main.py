@@ -5,6 +5,8 @@ import os
 from Evaluate.models.evaluation_model import ScenarioData
 from enumerations import ScenarioType
 
+scenarios_category_list = ['AEB', 'ALC', 'ACC']
+
 
 def scenario_score(scenario_data_path, scenario_type):
     """
@@ -27,14 +29,16 @@ def scenario_score(scenario_data_path, scenario_type):
     # 创建ScenarioData类需要传入标准格式数据的dataframe
     scenario = ScenarioData(csv_df, scenario_type)
     scenario_id = scenario.get_scenario_id()
-    scripts_path = os.path.join(os.getcwd(), 'scripts')
-    for script_id in os.listdir(os.path.join(os.getcwd(), 'scripts')):
-        if script_id.split('.p')[0] == scenario_id:
-            function_name = 'get_report'
-            sys.path.append(scripts_path)
-            evaluate = __import__(scenario_id)
-            imp_function = getattr(evaluate, function_name)
-            return imp_function(scenario, scenario_id)
+    for scenario_category in scenarios_category_list:
+        if scenario_category in scenario_id:
+            scripts_path = os.path.join(os.path.join(os.getcwd(), 'scripts'), scenario_category)
+            for script_id in os.listdir(scripts_path):
+                if script_id.split('.p')[0] == scenario_id:
+                    function_name = 'get_report'
+                    sys.path.append(scripts_path)
+                    evaluate = __import__(scenario_id)
+                    imp_function = getattr(evaluate, function_name)
+                    return imp_function(scenario, scenario_id)
 
 
 if __name__ == '__main__':
