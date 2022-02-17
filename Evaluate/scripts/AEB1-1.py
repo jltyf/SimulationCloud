@@ -1,3 +1,7 @@
+# @Author  : 汤宇飞
+# @Time    : 2022/02/16
+# @Function: AEB1-1
+
 def get_report(scenario, script_id):
     collision_status_list = scenario.scenario_data['collision_status'].values.tolist()
     # 碰撞
