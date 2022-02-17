@@ -1,6 +1,7 @@
 import sys
 
 import pandas as pd
+import numpy as np
 import os
 from Evaluate.models.evaluation_model import ScenarioData
 from enumerations import ScenarioType
