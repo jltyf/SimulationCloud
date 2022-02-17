@@ -1,5 +1,5 @@
 # @Author  : 张璐
-# @Time    : 2022/02/16
+# @Time    : 2022/02/17
 # @Function: AEB2-2
 def get_report(scenario, script_id):
     collision_status_list = scenario.scenario_data['collision_status'].values.tolist()
