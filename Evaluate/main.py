@@ -9,8 +9,9 @@ from enumerations import ScenarioType
 def scenario_score(scenario_data_path, scenario_type):
     """
     :param scenario_data_path:vtd输出数据的csv文件
-    :param scenario_type: 场景的类型(自然驾驶，交通法规，车祸场景，泛化场景)
+    :param scenario_type: 场景的类型(自然驾驶，交通法规，事故场景，泛化场景)
     :return:
+            返回一个dict，包含生成报告需要的信息
             示例:
             {
             ‘unit_scene_ID':'AEB1-1_1',
