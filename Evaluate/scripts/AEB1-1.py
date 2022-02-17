@@ -1,5 +1,5 @@
-def get_report(scenario_df, script_id):
-    collision_status_list = scenario_df['collision_status'].values.tolist()
+def get_report(scenario, script_id):
+    collision_status_list = scenario.scenario_data['collision_status'].values.tolist()
     # 碰撞
     if 1 in collision_status_list:
         score = 0

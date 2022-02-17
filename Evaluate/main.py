@@ -21,7 +21,7 @@ def scenario_score(scenario_data_path, scenario_type):
                                  2).....'
             }
     """
-    csv_data = pd.read_csv(scenario_data_path)  # 防止弹出警告
+    csv_data = pd.read_csv(scenario_data_path)
     csv_df = pd.DataFrame(csv_data)
 
     # 创建ScenarioData类需要传入标准格式数据的dataframe
@@ -34,7 +34,7 @@ def scenario_score(scenario_data_path, scenario_type):
             sys.path.append(scripts_path)
             evaluate = __import__(scenario_id)
             imp_function = getattr(evaluate, function_name)
-            return imp_function(scenario.scenario_data, scenario_id)
+            return imp_function(scenario, scenario_id)
 
 
 if __name__ == '__main__':
