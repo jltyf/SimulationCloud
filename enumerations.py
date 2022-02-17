@@ -94,7 +94,7 @@ class ScenarioType(Enum):
     场景类型：
     自然驾驶    1
     交通法规    2
-    车祸场景    3
+    事故场景    3
     泛化场景    4
     """
     natural = auto()
