@@ -1,11 +1,12 @@
 import sys
+import logging
 
 import pandas as pd
 import os
 from Evaluate.models.evaluation_model import ScenarioData
 from enumerations import ScenarioType
 
-scenarios_category_list = ['AEB', 'ALC', 'ACC']
+scenarios_category_list = ['AEB', 'ALC', 'ACC', 'LKA']
 
 
 def scenario_score(scenario_data_path, scenario_type):
@@ -38,7 +39,10 @@ def scenario_score(scenario_data_path, scenario_type):
                     sys.path.append(scripts_path)
                     evaluate = __import__(scenario_id)
                     imp_function = getattr(evaluate, function_name)
-                    return imp_function(scenario, scenario_id)
+                    try:
+                        return imp_function(scenario, scenario_id)
+                    except Exception as e:
+                        logging.exception(e)
 
 
 if __name__ == '__main__':

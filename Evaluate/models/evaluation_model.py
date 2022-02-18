@@ -1,16 +1,12 @@
 import math
-
-import numpy as np
-from matplotlib import pyplot as plt
-
 from enumerations import ScenarioType
-from scipy.optimize import leastsq
 
 
 class ScenarioData(object):
     def __init__(self, scenarios_data, scenario_type):
         """
         :param scenarios_data: 数据为从vtd输出的csv数据文件读取的csv
+        :param scenario_type: 场景的类型 1自然驾驶 2交通法规 3事故场景 4泛化场景
         """
         self.scenario_data = scenarios_data.set_index(keys=['time'])
         self.scenario_type = scenario_type
