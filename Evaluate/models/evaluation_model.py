@@ -1,6 +1,10 @@
 import math
 
+import numpy as np
+from matplotlib import pyplot as plt
+
 from enumerations import ScenarioType
+from scipy.optimize import leastsq
 
 
 class ScenarioData(object):
@@ -28,13 +32,11 @@ class ScenarioData(object):
         if obj_id == 0:
             lateral_v = self.scenario_data.loc[time_stamp]['lateral_velocity']
             longitudinal_v = self.scenario_data.loc[time_stamp]['longitudinal_velocity']
-        # 目标车的速度
         else:
-            lateral_v = self.scenario_data.loc[time_stamp]['lateral_velocity'] + \
-                        self.scenario_data[self.scenario_data['object_ID'] == obj_id][time_stamp]['object_rel_vel_x']
-            longitudinal_v = self.scenario_data.loc[time_stamp]['longitudinal_velocity'] + \
-                             self.scenario_data[self.scenario_data['object_ID'] == obj_id][time_stamp][
-                                 'object_rel_vel_y']
+            lateral_v = self.scenario_data.loc[time_stamp]['lateral_velocity'] + (
+                self.scenario_data[self.scenario_data['object_ID'] == obj_id].loc[time_stamp]['object_rel_vel_y'])
+            longitudinal_v = self.scenario_data.loc[time_stamp]['longitudinal_velocity'] + (
+                self.scenario_data[self.scenario_data['object_ID'] == obj_id].loc[time_stamp]['object_rel_vel_x'])
         return math.sqrt(lateral_v ** 2 + longitudinal_v ** 2)
 
     def get_max_velocity(self, obj_id=0):
@@ -43,16 +45,16 @@ class ScenarioData(object):
         :param obj_id: 为0时为自车
         :return:max_velocity 最大速度
         """
+        self.scenario_data['velocity'] = (self.scenario_data['lateral_velocity'] ** 2 + self.scenario_data[
+            'longitudinal_velocity'] ** 2) ** 0.5
         # 自车
-        self.scenario_data['velocity'] = math.sqrt(
-            self.scenario_data['lateral_velocity'] ** 2 + self.scenario_data['longitudinal_velocity'] ** 2)
         if obj_id == 0:
             max_velocity = self.scenario_data['velocity'].max()
         # 目标车
         else:
-            self.scenario_data['object_velocity'] = math.sqrt(
-                (self.scenario_data['lateral_velocity'] + self.scenario_data['object_rel_vel_x']) ** 2 + (
-                        self.scenario_data['longitudinal_velocity'] + self.scenario_data['object_rel_vel_y']) ** 2)
+            self.scenario_data['object_velocity'] = ((self.scenario_data['lateral_velocity'] + self.scenario_data[
+                'object_rel_vel_y']) ** 2 + (self.scenario_data['longitudinal_velocity'] + self.scenario_data[
+                    'object_rel_vel_x']) ** 2) ** 0.5
             max_velocity = self.scenario_data[self.scenario_data['object_ID'] == obj_id]['object_velocity'].max()
         return max_velocity
 
@@ -62,16 +64,16 @@ class ScenarioData(object):
         :param obj_id: 为0时为自车
         :return:min_velocity 最小速度
         """
+        self.scenario_data['velocity'] = (self.scenario_data['lateral_velocity'] ** 2 + self.scenario_data[
+            'longitudinal_velocity'] ** 2) ** 0.5
         # 自车
-        self.scenario_data['velocity'] = math.sqrt(
-            self.scenario_data['lateral_velocity'] ** 2 + self.scenario_data['longitudinal_velocity'] ** 2)
         if obj_id == 0:
             min_velocity = self.scenario_data['velocity'].min()
         # 目标车
         else:
-            self.scenario_data['object_velocity'] = math.sqrt(
-                (self.scenario_data['lateral_velocity'] + self.scenario_data['object_rel_vel_x']) ** 2 + (
-                        self.scenario_data['longitudinal_velocity'] + self.scenario_data['object_rel_vel_y']) ** 2)
+            self.scenario_data['object_velocity'] = ((self.scenario_data['lateral_velocity'] + self.scenario_data[
+                'object_rel_vel_y']) ** 2 + (self.scenario_data['longitudinal_velocity'] + self.scenario_data[
+                    'object_rel_vel_x']) ** 2) ** 0.5
             min_velocity = self.scenario_data[self.scenario_data['object_ID'] == obj_id]['object_velocity'].min()
         return min_velocity
 
@@ -82,10 +84,38 @@ class ScenarioData(object):
         :param end_time: 结束时间戳
         :return: velocity_variation 速度变化量，返回的为速度差的绝对值
         """
-        self.scenario_data['velocity'] = math.sqrt(
-            self.scenario_data['lateral_velocity'] ** 2 + self.scenario_data['longitudinal_velocity'] ** 2)
+        self.scenario_data['velocity'] = (self.scenario_data['lateral_velocity'] ** 2 + self.scenario_data[
+            'longitudinal_velocity'] ** 2) ** 0.5
 
         velocity_variation = abs(
             self.scenario_data.loc[start_time]['velocity'] - self.scenario_data.loc[end_time]['velocity'])
 
         return velocity_variation
+
+    def get_lon_acc_roc(self, time_stamp):
+        """
+        获取纵向加速度变化率
+        :param time_stamp: 需要获取结果的时间戳
+        :return:lon_acc_roc 纵向加速度变化率
+        """
+        time_list = self.scenario_data.index.values.tolist()
+        now_lon_acc = self.scenario_data.loc[time_stamp]['longitudinal_acceleration']
+        index = time_list.index(time_stamp)
+        pre_time_stamp = time_list[index - 1]
+        pre_lon_acc = self.scenario_data.loc[pre_time_stamp]['longitudinal_acceleration']
+        lon_acc_roc = (now_lon_acc - pre_lon_acc) / pre_lon_acc
+        return lon_acc_roc
+
+    def get_lat_acc_roc(self, time_stamp):
+        """
+        获取横向加速度变化率
+        :param time_stamp: 需要获取结果的时间戳
+        :return:lat_acc_roc 横向加速度变化率
+        """
+        time_list = self.scenario_data.index.values.tolist()
+        now_lon_acc = self.scenario_data.loc[time_stamp]['lateral_acceleration']
+        index = time_list.index(time_stamp)
+        pre_time_stamp = time_list[index - 1]
+        pre_lat_acc = self.scenario_data.loc[pre_time_stamp]['lateral_acceleration']
+        lat_acc_roc = (now_lon_acc - pre_lat_acc) / pre_lat_acc
+        return lat_acc_roc

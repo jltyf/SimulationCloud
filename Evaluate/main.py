@@ -1,7 +1,6 @@
 import sys
 
 import pandas as pd
-import numpy as np
 import os
 from Evaluate.models.evaluation_model import ScenarioData
 from enumerations import ScenarioType
@@ -43,5 +42,5 @@ def scenario_score(scenario_data_path, scenario_type):
 
 
 if __name__ == '__main__':
-    result = scenario_score('D:/temp_22020216.csv', ScenarioType.generalization)
+    result = scenario_score('D:/test_data.csv', ScenarioType.generalization)
     print(result)

@@ -4,7 +4,7 @@
 
 def get_report(scenario, script_id):
     collision_status_list = scenario.scenario_data['collision_status'].values.tolist()
-    v = scenario.get_velocity(1628166180997)
+
     # 碰撞
     if 1 in collision_status_list:
         score = 0
