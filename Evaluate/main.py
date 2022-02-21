@@ -1,18 +1,20 @@
 import sys
-import logging
 
 import pandas as pd
 import os
+
+from Evaluate.log.log_set import Loggers
 from Evaluate.models.evaluation_model import ScenarioData
 from enumerations import ScenarioType
 
 scenarios_category_list = ['AEB', 'ALC', 'ACC', 'LKA']
 
 
-def scenario_score(scenario_data_path, scenario_type):
+def scenario_score(scenario_data_path, scenario_type, script_name=None):
     """
     :param scenario_data_path:vtd输出数据的csv文件
     :param scenario_type: 场景的类型(自然驾驶，交通法规，事故场景，泛化场景)
+    :param script_name: 默认脚本，如果没有设置就用csv数据中的场景ID查找
     :return:
             返回一个dict，包含生成报告需要的信息
             示例:
@@ -29,7 +31,7 @@ def scenario_score(scenario_data_path, scenario_type):
 
     # 创建ScenarioData类需要传入标准格式数据的dataframe
     scenario = ScenarioData(csv_df, scenario_type)
-    scenario_id = scenario.get_scenario_id()
+    scenario_id = (script_name if script_name else scenario.get_scenario_id())
     for scenario_category in scenarios_category_list:
         if scenario_category in scenario_id:
             scripts_path = os.path.join(os.path.join(os.getcwd(), 'scripts'), scenario_category)
@@ -42,7 +44,8 @@ def scenario_score(scenario_data_path, scenario_type):
                     try:
                         return imp_function(scenario, scenario_id)
                     except Exception as e:
-                        logging.exception(e)
+                        log = Loggers()
+                        log.logger.info(f'错误信息:{e},发生脚本:{scenario_id}')
 
 
 if __name__ == '__main__':

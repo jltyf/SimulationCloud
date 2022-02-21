@@ -3,7 +3,6 @@ import operator
 import copy
 import pandas as pd
 
-from TrajectoryAugmentation import concat_trails
 from enumerations import SpeedType, TrailMotionType
 from utils import spin_trans_form, Point, resample_by_time, get_merge_trails, get_lane_distance, get_finale_trail, \
     change_speed, multiple_uniform_trail
@@ -145,7 +144,8 @@ def get_variable_speed_trail(car_trails, trails_json_dict, period, speed_status_
                 merge_trail = trails_list[0]
                 # merge_trail = trails_list[0].iloc[:, :14]
                 for single_trail in trails_list[1:]:
-                    temp_trail = concat_trails(original_trail, single_trail)[1:].reset_index(drop=True)
+                    temp_trail = get_merge_trails(trails_count=2, trail=original_trail, trail_next=single_trail)[
+                                 1:].reset_index(drop=True)
                     original_trail = temp_trail
                     merge_trail = pd.concat([merge_trail, temp_trail], axis=0).reset_index(drop=True)
                     merge_trail = spin_trans_form(position_e='ego_e', position_n='ego_n', trail_new=merge_trail.copy(),

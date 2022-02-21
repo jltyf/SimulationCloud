@@ -14,10 +14,10 @@ from scenariogeneration import xodr
 from scenariogeneration import xosc
 from scenariogeneration import ScenarioGenerator
 
-from generalization.enumerations import TrailType
-from generalization.serialization.scenario_serialization import ADASScenario
-from generalization.trail import Trail
-from generalization.utils import dump_json, get_connect_trail, change_speed
+from enumerations import TrailType
+from Generalization.serialization.scenario_serialization import ADASScenario
+from Generalization.trail import Trail
+from Generalization.utils import dump_json, get_connect_trail, change_speed
 
 unchanged_line_label_list = []
 change_line_label_list = []
