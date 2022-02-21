@@ -8,14 +8,13 @@ def get_report(scenario, script_id):
     # 碰撞
     if 1 in collision_status_list:
         score = 0
+        evaluate_item = '前方车辆慢行时发生碰撞,得0分'
     # 没碰撞
     else:
         score = 100
-    score_description = '1) 未发生碰撞，得分 100；\n2) 发生碰撞，得分 0。'
-    if score == 100:
         evaluate_item = '前方车辆慢行时未发生碰撞,得100分'
-    else:
-        evaluate_item = '前方车辆慢行时发生碰撞,得0分'
+
+    score_description = '1) 未发生碰撞，得分 100；\n2) 发生碰撞，得分 0。'
 
     return {
         'unit_scene_ID': script_id,
