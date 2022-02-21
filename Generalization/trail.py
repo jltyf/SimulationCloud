@@ -1,7 +1,6 @@
-# from .enumerations import TrailMotionType, SpeedType, ObjectType, TrailType
 from Generalization.get_trails import get_uniform_speed_trail, get_variable_speed_trail, get_turn_round_trail, \
     get_change_lane_trail
-from enumerations import TrailType
+from enumerations import TrailMotionType, SpeedType, ObjectType, TrailType
 
 
 class Trail(object):
