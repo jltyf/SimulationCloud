@@ -17,7 +17,7 @@ from scenariogeneration import ScenarioGenerator
 from enumerations import TrailType
 from Generalization.serialization.scenario_serialization import ADASScenario
 from Generalization.trail import Trail
-from Generalization.utils import dump_json, get_connect_trail, change_speed
+from Generalization.utils import dump_json, get_connect_trail, change_speed, get_merge_trails
 
 unchanged_line_label_list = []
 change_line_label_list = []
@@ -754,7 +754,7 @@ def getAccelarateOrDecelarate(car_trails, IsAcc, trails_json_list, period, deg):
                 final_trail = acc_csv_list[0]
                 for single_trail in acc_csv_list:
                     # 格式化处理后过滤掉第一帧
-                    format_slice_trail = concatTrails(slice_trail, single_trail)[1:].reset_index(drop=True)
+                    format_slice_trail = get_merge_trails(slice_trail, single_trail)[1:].reset_index(drop=True)
                     slice_trail = format_slice_trail
                     final_trail = pd.concat([final_trail, format_slice_trail], axis=0).reset_index(drop=True)
                 final_trail = SpinTransform(final_trail, "ego_e", "ego_n", final_trail.copy(),
@@ -897,7 +897,7 @@ def getChangeLane(carTrails, jsonList, isLeft, changeCnt, period, deg):
             c = trail_new
             isAdd = False
             for tl in range(1, num):
-                b = concatTrails(a, trail_new)
+                b = get_merge_trails(a, trail_new)
                 b = b[1:]
                 b = b.reset_index(drop=True)
                 a = b
@@ -1000,7 +1000,7 @@ def getUniformSpeed(carTrails, jsonList, period, deg):
         n = math.ceil(period * 10 ** 3 / (float(jsoni[StopTime]) - float(jsoni[StartTime])))
         if n > 1:
             for j in range(n - 1):
-                b = concatTrails(trail_res, trail_new)
+                b = get_merge_trails(trail_res, trail_new)
                 b = b[1:]
                 trail_res = pd.concat([trail_res, b], axis=0)
                 trail_res = trail_res.reset_index(drop=True)
@@ -1683,7 +1683,7 @@ def getTurnTo(carTrails, jsonList, turnAround, deg):
         a = tCsvList[0]
         c = tCsvList[0]
         for k in range(1, len(tCsvList)):
-            b = concatTrails(a, tCsvList[k])
+            b = get_merge_trails(a, tCsvList[k])
             b = b[1:]
             b = b.reset_index(drop=True)
             a = b
