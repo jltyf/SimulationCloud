@@ -47,7 +47,7 @@ def dump_json(trails_label_json):
     return trails_label_json_dict
 
 
-def rotate(x_list, y_list, ox, oy, deg):
+def rotate(x_list, y_list, ox, oy, rad):
     """
     position_list (list): a list of tuples; (x, y, z, h, p, r)
     deg: clock-wise radius
@@ -57,8 +57,8 @@ def rotate(x_list, y_list, ox, oy, deg):
     x_res = []
     y_res = []
     for index in range(len(x_list)):
-        x = (x_list[index] - ox) * math.cos(deg) + (y_list[index] - oy) * math.sin(deg) + ox
-        y = - (x_list[index] - ox) * math.sin(deg) + (y_list[index] - oy) * math.cos(deg) + oy
+        x = (x_list[index] - ox) * math.cos(rad) + (y_list[index] - oy) * math.sin(rad) + ox
+        y = - (x_list[index] - ox) * math.sin(rad) + (y_list[index] - oy) * math.cos(rad) + oy
         x_res.append(x)
         y_res.append(y)
 
@@ -97,7 +97,7 @@ def spin_trans_form(position_e, position_n, trail_new, rad=0, trails_count=1, **
     trail_new[position_n] += n_offset
     deg = math.degrees(rad)
     new_position_e, new_position_n = rotate(trail_new[position_e], trail_new[position_n],
-                                            trail_new.iloc[0][position_e], trail_new.iloc[0][position_n], deg)
+                                            trail_new.iloc[0][position_e], trail_new.iloc[0][position_n], rad)
     trail_new[position_e] = new_position_e
     trail_new[position_n] = new_position_n
     trail_new['headinga'] += deg
