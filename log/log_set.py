@@ -30,8 +30,7 @@ class Loggers(object):
                  filename='{date}.log'.format(date=time.strftime("%Y-%m-%d_%H%M%S", time.localtime())),
                  log_dir='log_info', fmt='%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s'):
         self.logger = logging.getLogger(filename)
-
-        self.directory = os.path.join(os.getcwd(), log_dir)
+        self.directory = os.path.join(os.path.split(os.path.realpath(__file__))[0], log_dir)
         format_str = logging.Formatter(fmt)
         self.logger.setLevel(self.level_relations.get(level))
         stream_handler = logging.StreamHandler()
