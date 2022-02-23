@@ -40,6 +40,7 @@ def get_uniform_speed_trail(car_trails, trails_json_dict, start_speed, period, t
     end_time = final_trail['stop']
     single_trail = (trails[(trails['Time'].values <= end_time)
                            & (trails['Time'].values >= start_time)]).reset_index(drop=True)
+
     if len(single_trail) > 10:
 
         for _ in range(5):
@@ -111,6 +112,8 @@ def get_variable_speed_trail(car_trails, trails_json_dict, period, speed_status_
                             speed_status_num == str(SpeedType.Decelerate.value) and temp_list[index]['stopSpeed'] >
                             temp_list[index_temp]['startSpeed']):
                         json_index_list_temp.append(index_temp)
+                    # else:
+                    #     break
                 motion_json_index_list.append(json_index_list_temp)
             for index in range(len(temp_list)):
                 index_list = list()

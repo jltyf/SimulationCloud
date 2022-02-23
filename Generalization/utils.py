@@ -88,8 +88,6 @@ def spin_trans_form(position_e, position_n, trail_new, rad=0, trails_count=1, **
 
     """
     if trails_count == 1:
-        # e_offset = -trail['trail'].at[0, position_e]
-        # n_offset = -trail['trail'].at[0, position_n]
         e_offset = trail['trail'].iloc[-1][position_e] - trail['trail'].iloc[0][position_e]
         n_offset = trail['trail'].iloc[-1][position_n] - trail['trail'].iloc[0][position_n]
     else:
@@ -221,9 +219,6 @@ def get_connect_trail(position_trail_list, trajectory):
 
 
 def connect_trail(front_trail, behind_trail, trajectory, road_list):
-    # print(front_trail, behind_trail, trajectory)
-    # for b_single_trail in behind_trail:
-    #     b_single_trail.diff(periods=1, axis=0)
     for f_single_trail in front_trail:
         end_x = f_single_trail.iloc[-1]['ego_e']
         end_y = f_single_trail.iloc[-1]['ego_n']
