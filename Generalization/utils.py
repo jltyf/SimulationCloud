@@ -65,7 +65,7 @@ def rotate(x_list, y_list, ox, oy, deg):
     return x_res, y_res
 
 
-def spin_trans_form(position_e, position_n, trail_new, deg=180, trails_count=1, **trail):
+def spin_trans_form(position_e, position_n, trail_new, rad=0, trails_count=1, **trail):
     """
     根据trail对trail_new做旋转变换
 
@@ -97,9 +97,9 @@ def spin_trans_form(position_e, position_n, trail_new, deg=180, trails_count=1, 
         n_offset = trail['trail'].iloc[-1][position_n] - trail['trail_next'].iloc[0][position_n]
     trail_new[position_e] += e_offset
     trail_new[position_n] += n_offset
-    red = math.radians(deg)
+    deg = math.degrees(rad)
     new_position_e, new_position_n = rotate(trail_new[position_e], trail_new[position_n],
-                                            trail_new.iloc[-1][position_e], trail_new.iloc[-1][position_n], red)
+                                            trail_new.iloc[0][position_e], trail_new.iloc[0][position_n], deg)
     trail_new[position_e] = new_position_e
     trail_new[position_n] = new_position_n
     trail_new['headinga'] += deg
@@ -128,7 +128,7 @@ def resample_by_time(data, minutes, datetime, flag=True):
     return r.reset_index(drop=True)
 
 
-def get_merge_trails(trails_count, **trail):
+def get_adjust_trails(trails_count, **trail):
     """
     想要将trail2拼接到trail1之后，保证拼接部位平滑，需要对trail2做平移和旋转变换，返回处理后的trail2
 
@@ -155,7 +155,7 @@ def get_merge_trails(trails_count, **trail):
         deg = trail['trail'].iloc[-1]['headinga'] - trail_new.at[0, 'headinga']
 
     trail['trail'] = trail['trail'].reset_index(drop=True)
-    # deg = start_deg - trail_new.at[0, 'headinga']
+    # deg = -trail_new.at[0, 'headinga']
     rad = math.radians(deg)
     for col in (('ego_e', 'ego_n'), ('left_e', 'left_n'), ('right_e', 'right_n')):
         trail_new = spin_trans_form(*col, trail_new, rad, trails_count, **trail)
@@ -238,9 +238,9 @@ def connect_trail(front_trail, behind_trail, trajectory, road_list):
 
 def change_speed(scenario_speed):
     if not type(scenario_speed) == list:
-        changed_speed = scenario_speed / 3.6
+        changed_speed = scenario_speed * 3.6
     else:
-        changed_speed = [speed / 3.6 for speed in scenario_speed]
+        changed_speed = [speed * 3.6 for speed in scenario_speed]
     return changed_speed
 
 
@@ -248,4 +248,12 @@ def multiple_uniform_trail(trail, multiple, start_speed):
     trail['vel_filtered'] = start_speed
     trail.loc[1:, 'ego_e'] = trail.loc[1:, 'ego_e'] * multiple
     trail.loc[1:, 'ego_n'] = trail.loc[1:, 'ego_n'] * multiple
+    return trail
+
+
+def format_straight_trail(trail):
+    headinga_avg = trail['headinga'].mean()
+    trail['headinga'] = 0
+    trail['ego_e'] = 0
+    trail['ego_n'] = trail['ego_n'] / (math.cos(math.radians(headinga_avg)))
     return trail

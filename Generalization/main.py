@@ -17,7 +17,7 @@ from scenariogeneration import ScenarioGenerator
 from enumerations import TrailType
 from Generalization.serialization.scenario_serialization import ADASScenario
 from Generalization.trail import Trail
-from Generalization.utils import dump_json, get_connect_trail, change_speed, get_merge_trails
+from Generalization.utils import dump_json, get_connect_trail
 
 unchanged_line_label_list = []
 change_line_label_list = []
@@ -1293,11 +1293,11 @@ def parsingConfigurationFile(absPath, ADAS_module):
                 trail_type = TrailType.ego_trail
                 if ego_trail_section == 0:
                     start_speed = single_scenario['ego_start_velocity']
-                    heading_angle = int(single_scenario['ego_heading_angle'])
+                    heading_angle = float(single_scenario['ego_heading_angle'])
                 else:
                     start_speed = ego_position_list[-1].iloc[-1]['vel_filtered']
-                    heading_angle = int(ego_position_list[-1].iloc[-1]['headinga'])
-                start_speed = change_speed(start_speed)
+                    heading_angle = float(ego_position_list[-1].iloc[-1]['headinga'])
+                # start_speed = change_speed(start_speed)
                 ego_trail_slices = Trail(trail_type, car_trail_data, ped_trail_data, trails_json_dict, ego_speed_status,
                                          single_scenario, ego_trail_section, start_speed, heading_angle).position
                 '''需要增加未找到轨迹的报错判断'''
