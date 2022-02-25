@@ -47,8 +47,8 @@ def get_uniform_speed_trail(car_trails, trails_json_dict, start_speed, period, t
             single_trail = pd.concat([single_trail, temp_trail], axis=0).reset_index(drop=True)
         trail_res = single_trail[:period * 10 + 1]
         start_point = Point(trail_res.at[0, 'ego_e'], trail_res.at[0, 'ego_n'])
-        trail_res['ego_e'] -= start_point.x
-        trail_res['ego_n'] -= start_point.y
+        trail_res.loc[::, 'ego_e'] -= start_point.x
+        trail_res.loc[::, 'ego_n'] -= start_point.y
         trail_res = trail_res.reset_index(drop=True)
         time_min = trail_res.Time.values.min()
         for i in range(len(trail_res)):
