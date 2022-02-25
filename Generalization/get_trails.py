@@ -5,7 +5,7 @@ import pandas as pd
 
 from enumerations import SpeedType, TrailMotionType
 from utils import spin_trans_form, Point, resample_by_time, get_adjust_trails, get_lane_distance, get_finale_trail, \
-    change_speed, multiple_uniform_trail, format_straight_trail
+    multiple_uniform_trail, rotate_trail
 
 
 def get_uniform_speed_trail(car_trails, trails_json_dict, start_speed, period, turning_angle, heading_angle, scenario):
@@ -24,12 +24,12 @@ def get_uniform_speed_trail(car_trails, trails_json_dict, start_speed, period, t
                     if single_trail['startSpeed'] > 0 and single_trail['stopSpeed'] > 0 \
                             and math.fabs(single_trail['stopHeadinga'] - single_trail['startHeadinga'] < 0.5):
                         selected_trail_list.append(single_trail)
-                if selected_trail_list:
-                    uniform_json_dict[motion] = selected_trail_list
-    previous_speed_difference = 100
+                uniform_json_dict[motion] = selected_trail_list
+
     for trail_motion in uniform_json_dict:
         uniform_json_dict[trail_motion] = sorted(uniform_json_dict[trail_motion],
                                                  key=operator.itemgetter('startSpeed'), reverse=True)
+        previous_speed_difference = 100
         for single_json in uniform_json_dict[trail_motion]:
             speed_difference = abs(single_json['startSpeed'] - start_speed)
             if speed_difference < previous_speed_difference:
@@ -40,22 +40,24 @@ def get_uniform_speed_trail(car_trails, trails_json_dict, start_speed, period, t
     end_time = final_trail['stop']
     single_trail = (trails[(trails['Time'].values <= end_time)
                            & (trails['Time'].values >= start_time)]).reset_index(drop=True)
-    for _ in range(5):
-        temp_trail = get_adjust_trails(trails_count=1, trail=single_trail)[1:]
-        single_trail = pd.concat([single_trail, temp_trail], axis=0).reset_index(drop=True)
-    trail_res = single_trail[:period * 10]
-    start_point = Point(trail_res.at[0, 'ego_e'], trail_res.at[0, 'ego_n'])
-    trail_res['ego_e'] -= start_point.x
-    trail_res['ego_n'] -= start_point.y
-    trail_res = trail_res.reset_index(drop=True)
-    time_min = trail_res.Time.values.min()
-    for i in range(len(trail_res)):
-        trail_res.loc[i, 'Time'] = time_min + 100 * i
+    if len(single_trail) > 10:
+
+        for _ in range(5):
+            temp_trail = get_adjust_trails(trails_count=1, trail=single_trail)[1:]
+            single_trail = pd.concat([single_trail, temp_trail], axis=0).reset_index(drop=True)
+        trail_res = single_trail[:period * 10 + 1]
+        start_point = Point(trail_res.at[0, 'ego_e'], trail_res.at[0, 'ego_n'])
+        trail_res['ego_e'] -= start_point.x
+        trail_res['ego_n'] -= start_point.y
+        trail_res = trail_res.reset_index(drop=True)
+        time_min = trail_res.Time.values.min()
+        for i in range(len(trail_res)):
+            trail_res.loc[i, 'Time'] = time_min + 100 * i
     if previous_speed_difference < 0.5:
         return trail_res, turning_angle
     else:
         multiple = start_speed / trail_res.loc[0, 'vel_filtered']
-        trail_res = format_straight_trail(trail_res)
+        trail_res = rotate_trail(trail_res)
         trail_res = multiple_uniform_trail(trail_res, multiple, start_speed)
         return trail_res, turning_angle
 

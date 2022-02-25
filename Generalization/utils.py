@@ -47,7 +47,7 @@ def dump_json(trails_label_json):
     return trails_label_json_dict
 
 
-def rotate(x_list, y_list, ox, oy, rad):
+def rotate(x_list, y_list, ox, oy, deg):
     """
     position_list (list): a list of tuples; (x, y, z, h, p, r)
     deg: clock-wise radius
@@ -57,8 +57,8 @@ def rotate(x_list, y_list, ox, oy, rad):
     x_res = []
     y_res = []
     for index in range(len(x_list)):
-        x = (x_list[index] - ox) * math.cos(rad) + (y_list[index] - oy) * math.sin(rad) + ox
-        y = - (x_list[index] - ox) * math.sin(rad) + (y_list[index] - oy) * math.cos(rad) + oy
+        x = (x_list[index] - ox) * math.cos(deg) + (y_list[index] - oy) * math.sin(deg) + ox
+        y = - (x_list[index] - ox) * math.sin(deg) + (y_list[index] - oy) * math.cos(deg) + oy
         x_res.append(x)
         y_res.append(y)
 
@@ -88,6 +88,8 @@ def spin_trans_form(position_e, position_n, trail_new, rad=0, trails_count=1, **
 
     """
     if trails_count == 1:
+        # e_offset = -trail['trail'].at[0, position_e]
+        # n_offset = -trail['trail'].at[0, position_n]
         e_offset = trail['trail'].iloc[-1][position_e] - trail['trail'].iloc[0][position_e]
         n_offset = trail['trail'].iloc[-1][position_n] - trail['trail'].iloc[0][position_n]
     else:
@@ -97,11 +99,25 @@ def spin_trans_form(position_e, position_n, trail_new, rad=0, trails_count=1, **
     trail_new[position_n] += n_offset
     deg = math.degrees(rad)
     new_position_e, new_position_n = rotate(trail_new[position_e], trail_new[position_n],
-                                            trail_new.iloc[0][position_e], trail_new.iloc[0][position_n], rad)
+                                            trail_new.iloc[0][position_e], trail_new.iloc[0][position_n], deg)
     trail_new[position_e] = new_position_e
     trail_new[position_n] = new_position_n
     trail_new['headinga'] += deg
     return trail_new
+
+
+def rotate_trail(trail):
+    init_data = [trail.iloc[0]['headinga'], trail.iloc[0]['Time']]
+    temp_trail = deepcopy(trail)
+    trail['ego_e'] = temp_trail[['ego_n', 'ego_e', 'headinga']].apply(
+        lambda x: x['ego_e'] * math.cos(math.radians(x['headinga'])) + x['ego_n'] * math.sin(
+            math.radians(x['headinga'])), axis=1)
+    trail['ego_n'] = temp_trail[['ego_n', 'ego_e', 'headinga']].apply(
+        lambda x: -x['ego_e'] * math.sin(math.radians(x['headinga'])) + x['ego_n'] * math.cos(
+            math.radians(x['headinga'])), axis=1)
+    trail['headinga'] = trail['headinga'] - init_data[0]
+    trail['Time'] = (trail['Time'] - init_data[1]) / 1000
+    return trail
 
 
 def resample_by_time(data, minutes, datetime, flag=True):
@@ -219,6 +235,9 @@ def get_connect_trail(position_trail_list, trajectory):
 
 
 def connect_trail(front_trail, behind_trail, trajectory, road_list):
+    # print(front_trail, behind_trail, trajectory)
+    # for b_single_trail in behind_trail:
+    #     b_single_trail.diff(periods=1, axis=0)
     for f_single_trail in front_trail:
         end_x = f_single_trail.iloc[-1]['ego_e']
         end_y = f_single_trail.iloc[-1]['ego_n']
@@ -231,24 +250,8 @@ def connect_trail(front_trail, behind_trail, trajectory, road_list):
         return front_trail, behind_trail, road_list
 
 
-def change_speed(scenario_speed):
-    if not type(scenario_speed) == list:
-        changed_speed = scenario_speed * 3.6
-    else:
-        changed_speed = [speed * 3.6 for speed in scenario_speed]
-    return changed_speed
-
-
 def multiple_uniform_trail(trail, multiple, start_speed):
     trail['vel_filtered'] = start_speed
     trail.loc[1:, 'ego_e'] = trail.loc[1:, 'ego_e'] * multiple
     trail.loc[1:, 'ego_n'] = trail.loc[1:, 'ego_n'] * multiple
-    return trail
-
-
-def format_straight_trail(trail):
-    headinga_avg = trail['headinga'].mean()
-    trail['headinga'] = 0
-    trail['ego_e'] = 0
-    trail['ego_n'] = trail['ego_n'] / (math.cos(math.radians(headinga_avg)))
     return trail
