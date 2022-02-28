@@ -14,10 +14,10 @@ from scenariogeneration import xodr
 from scenariogeneration import xosc
 from scenariogeneration import ScenarioGenerator
 
-from enumerations import TrailType
 from Generalization.serialization.scenario_serialization import ScenarioData
 from Generalization.trail import Trail
-from Generalization.utils import dump_json, get_connect_trail
+from Generalization.utils import dump_json, get_connect_trail, get_adjust_trails
+from enumerations import TrailType
 
 unchanged_line_label_list = []
 change_line_label_list = []
@@ -754,7 +754,7 @@ def getAccelarateOrDecelarate(car_trails, IsAcc, trails_json_list, period, deg):
                 final_trail = acc_csv_list[0]
                 for single_trail in acc_csv_list:
                     # 格式化处理后过滤掉第一帧
-                    format_slice_trail = get_merge_trails(slice_trail, single_trail)[1:].reset_index(drop=True)
+                    format_slice_trail = get_adjust_trails(slice_trail, single_trail)[1:].reset_index(drop=True)
                     slice_trail = format_slice_trail
                     final_trail = pd.concat([final_trail, format_slice_trail], axis=0).reset_index(drop=True)
                 final_trail = SpinTransform(final_trail, "ego_e", "ego_n", final_trail.copy(),
@@ -897,7 +897,7 @@ def getChangeLane(carTrails, jsonList, isLeft, changeCnt, period, deg):
             c = trail_new
             isAdd = False
             for tl in range(1, num):
-                b = get_merge_trails(a, trail_new)
+                b = get_adjust_trails(a, trail_new)
                 b = b[1:]
                 b = b.reset_index(drop=True)
                 a = b
@@ -1000,7 +1000,7 @@ def getUniformSpeed(carTrails, jsonList, period, deg):
         n = math.ceil(period * 10 ** 3 / (float(jsoni[StopTime]) - float(jsoni[StartTime])))
         if n > 1:
             for j in range(n - 1):
-                b = get_merge_trails(trail_res, trail_new)
+                b = get_adjust_trails(trail_res, trail_new)
                 b = b[1:]
                 trail_res = pd.concat([trail_res, b], axis=0)
                 trail_res = trail_res.reset_index(drop=True)
@@ -1281,7 +1281,7 @@ def parsingConfigurationFile(absPath, ADAS_module):
     scenario_df = [parm_data[scenario_list] for scenario_list in ADAS_list][0]
     for index, scenario_series in scenario_df.iterrows():
         print(scenario_series['场景编号'], 'Start')
-        scenario = ScenarioData(scenario_series,)
+        scenario = ScenarioData(scenario_series)
         scenario_list = scenario.get_scenario_model()
         for single_scenario in scenario_list:
             ego_position_list = list()
@@ -1683,7 +1683,7 @@ def getTurnTo(carTrails, jsonList, turnAround, deg):
         a = tCsvList[0]
         c = tCsvList[0]
         for k in range(1, len(tCsvList)):
-            b = get_merge_trails(a, tCsvList[k])
+            b = get_adjust_trails(a, tCsvList[k])
             b = b[1:]
             b = b.reset_index(drop=True)
             a = b

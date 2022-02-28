@@ -1,6 +1,6 @@
 from Generalization.get_trails import get_uniform_speed_trail, get_variable_speed_trail, get_turn_round_trail, \
     get_change_lane_trail
-from enumerations import TrailMotionType, SpeedType, ObjectType, TrailType
+from enumerations import TrailType, TrailMotionType, SpeedType
 
 
 class Trail(object):
@@ -41,7 +41,7 @@ class Trail(object):
             if speed_status in str(SpeedType.uniform.value):
                 return get_uniform_speed_trail(car_trails=self.car_trail, trails_json_dict=self.json_trail,
                                                start_speed=self.start_speed, period=period,
-                                               heading_angle=self.heading_angle,
+                                               heading_angle=self.heading_angle, trail_section=self.trail_section,
                                                turning_angle=self.turning_angle, scenario=self.scenario)
 
             # 变速

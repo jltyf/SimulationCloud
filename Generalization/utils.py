@@ -109,7 +109,7 @@ def spin_trans_form(position_e, position_n, trail_new, rad=0, trails_count=1, **
 def rotate_trail(trail, headinga, *args):
     """
     轨迹要求：1.已经经过平移(自车在原点，目标车经过平移)2时间戳经过重新采样长度符合分段轨迹持续时间
-    函数功能：1args的参数全部按照轨迹的headinga旋转至
+    函数功能：1args的参数全部按照headinga旋转至
             以自车起点为原点
             以自车起点朝向角为y轴的坐标系
             2按照轨迹分段持续时间重新为轨迹时间赋值
@@ -121,14 +121,16 @@ def rotate_trail(trail, headinga, *args):
     """
     ego_init_rad = math.radians(headinga)
     start_time = trail.iloc[0]['Time']
-    init_data = [trail.iloc[0]['headinga'], trail.iloc[0]['Time']]
+    init_data = [ego_init_rad, trail.iloc[0]['Time']]
     temp_trail = deepcopy(trail)
-    trail['ego_e'] = temp_trail[['ego_n', 'ego_e', 'headinga']].apply(
-        lambda x: x['ego_e'] * math.cos(ego_init_rad) + x['ego_n'] * math.sin(ego_init_rad), axis=1)
-    trail['ego_n'] = temp_trail[['ego_n', 'ego_e', 'headinga']].apply(
-        lambda x: -x['ego_e'] * math.sin(ego_init_rad) + x['ego_n'] * math.cos(ego_init_rad), axis=1)
-    trail['headinga'] = trail['headinga'] - init_data[0]
     trail['Time'] = (trail['Time'] - start_time) / 1000
+    trail['headinga'] = trail['headinga'] - init_data[0]
+    for rotate_tuple in args[0]:
+        trail[rotate_tuple[0]] = temp_trail[[rotate_tuple[0], rotate_tuple[1]]].apply(
+            lambda x: x[rotate_tuple[0]] * math.cos(ego_init_rad) + x[rotate_tuple[1]] * math.sin(ego_init_rad), axis=1)
+        trail[rotate_tuple[1]] = temp_trail[[rotate_tuple[0], rotate_tuple[1]]].apply(
+            lambda x: -x[rotate_tuple[0]] * math.sin(ego_init_rad) + x[rotate_tuple[1]] * math.cos(ego_init_rad),
+            axis=1)
     return trail
 
 

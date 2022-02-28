@@ -8,7 +8,8 @@ from utils import spin_trans_form, Point, resample_by_time, get_adjust_trails, g
     multiple_uniform_trail, rotate_trail
 
 
-def get_uniform_speed_trail(car_trails, trails_json_dict, start_speed, period, turning_angle, heading_angle, scenario):
+def get_uniform_speed_trail(car_trails, trails_json_dict, start_speed, period, turning_angle, trail_section,
+                            heading_angle, scenario):
     """
     return:直线轨迹
     从匀速的轨迹库中 分类别取出轨迹
@@ -53,13 +54,12 @@ def get_uniform_speed_trail(car_trails, trails_json_dict, start_speed, period, t
         time_min = trail_res.Time.values.min()
         for i in range(len(trail_res)):
             trail_res.loc[i, 'Time'] = time_min + 100 * i
-    if previous_speed_difference < 0.5:
-        return trail_res, turning_angle
-    else:
-        multiple = start_speed / trail_res.loc[0, 'vel_filtered']
-        trail_res = rotate_trail(trail_res)
-        trail_res = multiple_uniform_trail(trail_res, multiple, start_speed)
-        return trail_res, turning_angle
+    multiple = start_speed / trail_res.loc[0, 'vel_filtered']
+    coord_heading_angle = trail_res.loc[0, 'headinga']
+    rotate_tuple = ('ego_e', 'ego_n'), ('left_e', 'left_n'), ('right_e', 'right_n')
+    trail_res = rotate_trail(trail_res, coord_heading_angle, rotate_tuple)
+    trail_res = multiple_uniform_trail(trail_res, multiple, start_speed)
+    return trail_res, turning_angle
 
 
 def get_variable_speed_trail(car_trails, trails_json_dict, period, speed_status_num, turning_angle, heading_angle,
