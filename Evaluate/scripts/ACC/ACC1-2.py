@@ -32,13 +32,13 @@ def get_dec_roc_interpolation(ego_v):
 def conditions(scenario, index):
     # 实际值
     ego_v = scenario.get_velocity(index)
-    acceleration = scenario.loc[index]['longitudinal_acceleration']
-    max_lon_acc_roc = scenario.get_lon_acc_roc()
+    acceleration = scenario.scenario_data.loc[index]['longitudinal_acceleration']
+    max_lon_acc_roc = scenario.get_lon_acc_roc(index)
     if 18 < ego_v < 72:
         # 标准值
         max_acc = get_acc_interpolation(ego_v)
         max_dec = get_dec_interpolation(ego_v)
-        max_dec_roc = get_dec_roc_interpolation()
+        max_dec_roc = get_dec_roc_interpolation(index)
 
         if (max_dec <= acceleration <= max_acc) and (max_lon_acc_roc <= max_dec_roc):
             return True
@@ -58,19 +58,19 @@ def conditions(scenario, index):
 
 def get_report(scenario, script_id):
     condition_flag = True
-    index_list = scenario.scenario_data.index.values().tolist
+    index_list = scenario.scenario_data.index.values.tolist()
     for index in index_list:
         condition_flag = conditions(scenario, index)
         if not condition_flag:
             break
-        acceleration = scenario.conditions.acceleration
-        max_lon_acc_roc = scenario.conditions.max_lon_acc_roc
+        # acceleration = scenario.conditions.acceleration
+        # max_lon_acc_roc = scenario.conditions.max_lon_acc_roc
 
-    scenario.scenario_data = scenario.scenario_data.tail(50)
+    scenario.scenario_data = scenario.scenario_data.tail(3000)
     v_max = scenario.get_max_velocity()
     v_min = scenario.get_min_velocity()
     velocity_diff = abs(v_max - v_min)
-    distance = scenario.scenario_data['object_pos_x'] / scenario.get_velocity()
+    distance = scenario.scenario_data['object_closest_dist'] / scenario.get_velocity(scenario.scenario_data.index[0])
 
     standard_1 = '自车行驶速度≤18km/h时，最大加速度值≤4m/s²、最大减速度值≤5m/s2、最大减速度变化率≤5m/s³；自车行驶速度≧72km/h时，' \
                  '最大加速度值≤2m/s²、最大减速度值≤3.5m/s2、最大减速度变化率≤2.5m/s³；自车行驶速度在18km/h至72km/h区间时，' \
