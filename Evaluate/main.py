@@ -41,12 +41,14 @@ def scenario_score(scenario_data_path, scenario_type, script_name=None):
                     sys.path.append(scripts_path)
                     evaluate = __import__(scenario_id)
                     imp_function = getattr(evaluate, function_name)
-                    try:
-                        return imp_function(scenario, scenario_id)
-                    except Exception as e:
-                        error_txt = e.args[0]
-                        log = Loggers()
-                        log.logger.info(f'错误信息:{error_txt},发生脚本:{scenario_id}')
+                    return imp_function(scenario, scenario_id)
+                    # try:
+                    #     return imp_function(scenario, scenario_id)
+                    #     return imp_function(scenario, scenario_id)
+                    # except Exception as e:
+                    #     error_txt = e.args[0]
+                    #     log = Loggers()
+                    #     log.logger.info(f'错误信息:{error_txt},发生脚本:{scenario_id}')
 
 
 if __name__ == '__main__':
