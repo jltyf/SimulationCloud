@@ -15,7 +15,7 @@ from scenariogeneration import xosc
 from scenariogeneration import ScenarioGenerator
 
 from enumerations import TrailType
-from Generalization.serialization.scenario_serialization import ADASScenario
+from Generalization.serialization.scenario_serialization import ScenarioData
 from Generalization.trail import Trail
 from Generalization.utils import dump_json, get_connect_trail
 
@@ -1281,7 +1281,7 @@ def parsingConfigurationFile(absPath, ADAS_module):
     scenario_df = [parm_data[scenario_list] for scenario_list in ADAS_list][0]
     for index, scenario_series in scenario_df.iterrows():
         print(scenario_series['场景编号'], 'Start')
-        scenario = ADASScenario(scenario_series)
+        scenario = ScenarioData(scenario_series,)
         scenario_list = scenario.get_scenario_model()
         for single_scenario in scenario_list:
             ego_position_list = list()

@@ -42,7 +42,6 @@ def scenario_score(scenario_data_path, scenario_type, script_name=None):
                     evaluate = __import__(scenario_id)
                     imp_function = getattr(evaluate, function_name)
                     try:
-                        print(script_id.split('.p')[99])
                         return imp_function(scenario, scenario_id)
                     except Exception as e:
                         error_txt = e.args[0]
