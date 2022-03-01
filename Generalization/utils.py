@@ -121,7 +121,7 @@ def rotate_trail(trail, headinga, *args):
     """
     ego_init_rad = math.radians(headinga)
     start_time = trail.iloc[0]['Time']
-    init_data = [ego_init_rad, trail.iloc[0]['Time']]
+    init_data = [headinga, trail.iloc[0]['Time']]
     temp_trail = deepcopy(trail)
     trail['Time'] = (trail['Time'] - start_time) / 1000
     trail['headinga'] = trail['headinga'] - init_data[0]
