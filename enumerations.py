@@ -101,3 +101,13 @@ class ScenarioType(Enum):
     office = auto()
     accident = auto()
     generalization = auto()
+
+
+class CollisionStatus(Enum):
+    """
+    场景类型：
+    碰撞    1
+    未碰撞   0
+    """
+    no_collision = 0
+    collision = auto()
