@@ -132,7 +132,7 @@ class ScenarioData(object):
         lon_acc_roc_max = self.scenario_data['longitudinal_accelerate_roc'].max()
         return lon_acc_roc_max
 
-    def get_lat_acc_roc_max(self, start_time, end_time):
+    def get_lat_acc_roc_max(self, start_time=None, end_time=None):
         """
         获取一段时间内的轨迹的最大横向加速度变化率
         如果起始时间传参为空，默认使用轨迹起始时间
