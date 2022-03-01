@@ -52,5 +52,5 @@ def scenario_score(scenario_data_path, scenario_type, script_name=None):
 
 
 if __name__ == '__main__':
-    result = scenario_score('D:/ReportSample_testdata/ACC/Ego.csv', ScenarioType.generalization)
+    result = scenario_score('D:/ReportSample/ACC/Ego.csv', ScenarioType.generalization)
     print(result)
