@@ -2,10 +2,13 @@
 # @Time    : 2022/02/17
 # @Function: AEB2-1
 
+from enumerations import CollisionStatus
+
+
 def get_report(scenario, script_id):
     collision_status_list = scenario.scenario_data['collision_status'].values.tolist()
     # 碰撞
-    if 1 in collision_status_list:
+    if CollisionStatus.collision.value in collision_status_list:
         score = 0
         evaluate_item = '自行车向左横穿时发生碰撞,得0分'
     # 没碰撞
