@@ -5,17 +5,15 @@
 from enumerations import CollisionStatus
 
 def get_report(scenario, script_id):
-    # obj_rel_v = scenario.scenario_data['object_rel_vel_x']
-
-    timestamp_list = scenario.scenarios_data.index.tolist()
+    timestamp_list = scenario.scenario_data.index.tolist()
     stop_timestamp_list = []
     for timestamp in timestamp_list:
         if scenario.get_velocity(timestamp) < 0.5:
             stop_timestamp_list.append(timestamp)
-    stop_timestamp = stop_timestamp_list.min()
-    start_timestamp = stop_timestamp_list.max()
-    first_stage = scenario.scenarios_data.iloc[0:stop_timestamp]
-    third_stage = scenario.scenarios_data.iloc[start_timestamp:]
+    stop_timestamp = int(min(stop_timestamp_list))
+    start_timestamp = int(max(stop_timestamp_list))
+    first_stage = scenario.scenario_data.iloc[0:stop_timestamp]
+    third_stage = scenario.scenario_data.iloc[start_timestamp:]
     max_acc = first_stage['longitudinal_acceleration'].max()
     max_dec = third_stage['longitudinal_acceleration'].min()
 
