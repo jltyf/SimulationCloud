@@ -105,9 +105,10 @@ def spin_trans_form(position_e, position_n, trail_new, rad=0, trails_count=1, **
     trail_new['headinga'] += deg
     return trail_new
 
+
 def corTransform(trail1, trail2, e, n, rad, trail_new):
-    e_offset = trail1.at[len(trail1)-1, e] - trail2.at[0, e]
-    n_offset = trail1.at[len(trail1)-1, n] - trail2.at[0, n]
+    e_offset = trail1.at[len(trail1) - 1, e] - trail2.at[0, e]
+    n_offset = trail1.at[len(trail1) - 1, n] - trail2.at[0, n]
     trail_new[e] += e_offset
     trail_new[n] += n_offset
     a, b = rotate(trail_new[e], trail_new[n], trail_new.at[0, e], trail_new.at[0, n], rad)
@@ -115,12 +116,13 @@ def corTransform(trail1, trail2, e, n, rad, trail_new):
     trail_new[n] = b
     return trail_new
 
+
 def corTransform_init(trail, e, n, h, *args):
     e_offset = -trail.at[0, e]
     n_offset = -trail.at[0, n]
     deg = trail.at[0, h]
     rad = math.radians(deg)
-    
+
     for rotate_tuple in args[0]:
         trail[rotate_tuple[0]] += e_offset
         trail[rotate_tuple[1]] += n_offset
@@ -129,16 +131,18 @@ def corTransform_init(trail, e, n, h, *args):
         trail[rotate_tuple[1]] = b
     trail[h] -= deg
     return trail
-    
+
+
 def concatTrails(trail1, trail2, *args):
     trail_new = trail2.copy()
-    deg = trail1.at[len(trail1)-1,'headinga'] - trail_new.at[0,'headinga']
+    deg = trail1.at[len(trail1) - 1, 'headinga'] - trail_new.at[0, 'headinga']
     rad = math.radians(-deg)
     for rotate_tuple in args[0]:
         trail_new = corTransform(trail1, trail2, rotate_tuple[0], rotate_tuple[1], rad, trail_new)
 
     trail_new['headinga'] += deg
     return trail_new
+
 
 def rotate_trail(trail, headinga, *args):
     """
@@ -182,22 +186,23 @@ def resample_by_time(data, minnum, dt, flag=True):
     if minnum == 0:
         minnum = 1
     if flag:
-        if isinstance(minnum,int):
+        if isinstance(minnum, int):
             scale = str(minnum) + 'T'
             r = data.resample(scale).first()
             return r
-        elif isinstance(minnum,float):
-            
-            scale = str(3) + 'S'   # 3s 为基准
+        elif isinstance(minnum, float):
+
+            scale = str(3) + 'S'  # 3s 为基准
             r = data.resample(scale).interpolate()
-            scale = str(round(60*minnum)) + 'S'   # 速度扩大minnum倍
+            scale = str(round(60 * minnum)) + 'S'  # 速度扩大minnum倍
             r = r.resample(scale).interpolate()
             return r
     else:
         scale = str(minnum) + 'S'
         r = data.resample(scale).interpolate()
         return r
-    
+
+
 def get_adjust_trails(trails_count, **trail):
     """
     想要将trail2拼接到trail1之后，保证拼接部位平滑，需要对trail2做平移和旋转变换，返回处理后的trail2

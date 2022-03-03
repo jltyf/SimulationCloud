@@ -1267,15 +1267,15 @@ def trailBatchRun(self, absPath):
 
 def parsingConfigurationFile(absPath, ADAS_module):
     car_trail = os.path.join(absPath + '/trails/', 'CarTrails_Merge.csv')
-    ped_trail = os.path.join(absPath + '/trails/', 'PedTrails_Merge.csv')
-    json_trail = os.path.join(absPath + '/trails/', 'Trails_Merge.json')
+    ped_trail = os.path.join(absPath + '/trails/', 'pedTrails.csv')
+    json_trail = os.path.join(absPath + '/json/', 'Trails_Merge.json')
     with open(json_trail) as f:
         trails_json_dict = json.load(f)
     trails_json_dict = dump_json(trails_json_dict)
     fileCnt = 0
     car_trail_data = pd.read_csv(car_trail)
     ped_trail_data = pd.read_csv(ped_trail)
-    parm_data = pd.read_excel(os.path.join(absPath + '/trails/', "配置参数表样例0210.xlsx"),
+    parm_data = pd.read_excel(os.path.join(absPath, "配置参数表样例0210.xlsx"),
                               sheet_name=ADAS_module, keep_default_na=False, engine='openpyxl')
     ADAS_list = [ADAS for ADAS in ADAS_module]
     scenario_df = [parm_data[scenario_list] for scenario_list in ADAS_list][0]
@@ -1839,4 +1839,4 @@ def zhuanDataFram(dataList):
 
 
 if __name__ == "__main__":
-    parsingConfigurationFile("/home/lxj/Documents/pyworkspace/data", ['AEB'])
+    parsingConfigurationFile("D:/泛化", ['AEB'])
