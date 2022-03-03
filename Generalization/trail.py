@@ -47,7 +47,8 @@ class Trail(object):
             # 变速
             elif speed_status == SpeedType.Decelerate.value or speed_status == SpeedType.Accelerate.value:
                 return get_variable_speed_trail(car_trails=self.car_trail, trails_json_dict=self.json_trail,
-                                                start_speed=self.start_speed, period=period, speed_status_num=speed_status,
+                                                start_speed=self.start_speed, period=period,
+                                                speed_status_num=speed_status,
                                                 heading_angle=self.heading_angle,
                                                 turning_angle=self.turning_angle, scenario=self.scenario)
 
