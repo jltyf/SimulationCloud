@@ -62,7 +62,8 @@ def get_uniform_speed_trail(car_trails, trails_json_dict, start_speed, period, t
     return trail_res, turning_angle
 
 
-def get_variable_speed_trail(car_trails, trails_json_dict, start_speed, period, speed_status_num, turning_angle, heading_angle,
+def get_variable_speed_trail(car_trails, trails_json_dict, start_speed, period, speed_status_num, turning_angle,
+                             heading_angle,
                              scenario):
     """
     Parameters
@@ -108,13 +109,12 @@ def get_variable_speed_trail(car_trails, trails_json_dict, start_speed, period, 
                 json_index_list_temp = [index]
                 last_index = len(json_index_list_temp) - 1
                 for index_temp in range(index + 1, len(trail_value)):
-                    if (speed_status_num == str(SpeedType.Accelerate.value) and
-                        temp_list[last_index]['stopSpeed'] <= temp_list[index_temp]['startSpeed'] and
-                        temp_list[last_index]['stopSpeed'] + 1 >= temp_list[index_temp]['startSpeed']) or (
-                        speed_status_num == str(SpeedType.Decelerate.value) and
-                        temp_list[last_index]['stopSpeed'] >= temp_list[index_temp]['startSpeed'] and
-                        temp_list[last_index]['stopSpeed'] - 1 <= temp_list[index_temp]['startSpeed']):
-
+                    if (speed_status_num == str(SpeedType.Accelerate.value) and temp_list[last_index]['stopSpeed'] <=
+                        temp_list[index_temp]['startSpeed'] and temp_list[last_index]['stopSpeed'] + 1 >=
+                        temp_list[index_temp]['startSpeed']) or (
+                            speed_status_num == str(SpeedType.Decelerate.value) and temp_list[last_index][
+                        'stopSpeed'] >= temp_list[index_temp]['startSpeed'] and temp_list[last_index][
+                                'stopSpeed'] - 1 <= temp_list[index_temp]['startSpeed']):
                         json_index_list_temp.append(index_temp)
                 motion_json_index_list.append(json_index_list_temp)
 
@@ -133,7 +133,7 @@ def get_variable_speed_trail(car_trails, trails_json_dict, start_speed, period, 
         start_time = temp_list[section]['start']
         end_time = temp_list[section]['stop']
         section_trail = (trails[(trails['Time'].values <= end_time)
-                             & (trails['Time'].values >= start_time)]).reset_index(drop=True)
+                                & (trails['Time'].values >= start_time)]).reset_index(drop=True)
 
         # 根据前段轨迹调整本轨迹的位置和方向
         rotate_tuple = ('ego_e', 'ego_n'), ('left_e', 'left_n'), ('right_e', 'right_n')
@@ -146,7 +146,7 @@ def get_variable_speed_trail(car_trails, trails_json_dict, start_speed, period, 
 
     # 将所有的轨迹数据合并为一条轨迹，根据初始设定速度微调坐标
     uniondata = lambda x, y: pd.concat([x, y])
-    merge_trail = reduce(uniondata,trails_list)
+    merge_trail = reduce(uniondata, trails_list)
     merge_trail = merge_trail.reset_index(drop=True)
     multiple = start_speed / merge_trail.loc[0, 'vel_filtered']
     merge_trail = multiple_uniform_trail(merge_trail, multiple, start_speed)
