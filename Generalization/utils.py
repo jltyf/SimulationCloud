@@ -311,8 +311,9 @@ def connect_trail(front_trail, behind_trail, trajectory, road_list):
         return front_trail, behind_trail, road_list
 
 
-def multiple_uniform_trail(trail, multiple, start_speed):
-    trail['vel_filtered'] = start_speed
-    trail.loc[1:, 'ego_e'] = trail.loc[1:, 'ego_e'] * multiple
-    trail.loc[1:, 'ego_n'] = trail.loc[1:, 'ego_n'] * multiple
+def multiple_uniform_trail(trail, multiple, *args):
+    for rotate_tuple in args[0]:
+        trail.loc[1:, rotate_tuple[0]] = trail.loc[1:, rotate_tuple[0]] * multiple
+        trail.loc[1:, rotate_tuple[1]] = trail.loc[1:, rotate_tuple[1]] * multiple
+    trail['vel_filtered'] = trail['vel_filtered'] * multiple
     return trail
