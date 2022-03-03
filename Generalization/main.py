@@ -1267,15 +1267,15 @@ def trailBatchRun(self, absPath):
 
 def parsingConfigurationFile(absPath, ADAS_module):
     car_trail = os.path.join(absPath + '/trails/', 'CarTrails_Merge.csv')
-    ped_trail = os.path.join(absPath + '/trails/', 'PedTrails_Merge.csv')
-    json_trail = os.path.join(absPath + '/trails/', 'Trails_Merge.json')
+    ped_trail = os.path.join(absPath + '/trails/', 'pedTrails.csv')
+    json_trail = os.path.join(absPath + '/json/', 'Trails_Merge.json')
     with open(json_trail) as f:
         trails_json_dict = json.load(f)
     trails_json_dict = dump_json(trails_json_dict)
     fileCnt = 0
     car_trail_data = pd.read_csv(car_trail)
     ped_trail_data = pd.read_csv(ped_trail)
-    parm_data = pd.read_excel(os.path.join(absPath + '/trails/', "配置参数表样例0210.xlsx"),
+    parm_data = pd.read_excel(os.path.join(absPath, "配置参数表样例0210.xlsx"),
                               sheet_name=ADAS_module, keep_default_na=False, engine='openpyxl')
     ADAS_list = [ADAS for ADAS in ADAS_module]
     scenario_df = [parm_data[scenario_list] for scenario_list in ADAS_list][0]
@@ -1284,7 +1284,7 @@ def parsingConfigurationFile(absPath, ADAS_module):
         scenario = ScenarioData(scenario_series)
         scenario_list = scenario.get_scenario_model()
         for single_scenario in scenario_list:
-            ego_trail_list = list()
+            ego_position_list = list()
             ego_road_point_list = list()
             obs_road_point_list = list()
             # 根据场景速度情况选择轨迹
@@ -1295,22 +1295,22 @@ def parsingConfigurationFile(absPath, ADAS_module):
                     start_speed = single_scenario['ego_start_velocity']
                     heading_angle = float(single_scenario['ego_heading_angle'])
                 else:
-                    start_speed = ego_trail_list[-1].iloc[-1]['vel_filtered']
-                    heading_angle = float(ego_trail_list[-1].iloc[-1]['headinga'])
+                    start_speed = ego_position_list[-1].iloc[-1]['vel_filtered']
+                    heading_angle = float(ego_position_list[-1].iloc[-1]['headinga'])
                 # start_speed = change_speed(start_speed)
                 ego_trail_slices = Trail(trail_type, car_trail_data, ped_trail_data, trails_json_dict, ego_speed_status,
                                          single_scenario, ego_trail_section, start_speed, heading_angle).position
                 '''需要增加未找到轨迹的报错判断'''
                 if not ego_trail_slices.empty:
-                    ego_trail_list.append(ego_trail_slices)
+                    ego_position_list.append(ego_trail_slices)
                 ego_trail_section += 1
 
-            if ego_trail_list:
-                if len(ego_trail_list) == 1:
+            if ego_position_list:
+                if len(ego_position_list) == 1:
                     print(single_scenario['scene_id'], "ego不需要拼接")
-                    ego_trail = ego_trail_list[0]
-                elif len(ego_trail_list) > 1:
-                    ego_trail, ego_road = get_connect_trail(ego_trail_list, scenario.scenario_dict['ego_trajectory'])
+                    ego_trail = ego_position_list[0]
+                elif len(ego_position_list) > 1:
+                    ego_trail, ego_road = get_connect_trail(ego_position_list, scenario.scenario_dict['ego_trajectory'])
                 else:
                     raise ValueError('请检查传参问题')
 
@@ -1839,4 +1839,4 @@ def zhuanDataFram(dataList):
 
 
 if __name__ == "__main__":
-    parsingConfigurationFile("/home/lxj/Documents/pyworkspace/data", ['AEB'])
+    parsingConfigurationFile("D:/泛化", ['AEB'])
