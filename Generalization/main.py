@@ -1839,4 +1839,4 @@ def zhuanDataFram(dataList):
 
 
 if __name__ == "__main__":
-    parsingConfigurationFile("/home/lxj/Documents/pyworkspace/data", ['AEB'])
+    parsingConfigurationFile("D:/泛化", ['AEB'])
