@@ -14,6 +14,8 @@ def get_uniform_speed_trail(car_trails, trails_json_dict, start_speed, period, t
     return:直线轨迹
     从匀速的轨迹库中 分类别取出轨迹
     """
+
+    # 从轨迹库中分离出匀速的轨迹
     uniform_json_dict = dict()
     trails = copy.deepcopy(car_trails)
     for motion in trails_json_dict.keys():
@@ -27,6 +29,7 @@ def get_uniform_speed_trail(car_trails, trails_json_dict, start_speed, period, t
                         selected_trail_list.append(single_trail)
                 uniform_json_dict[motion] = selected_trail_list
 
+    # 从挑选的轨迹中找到速度差异最小的轨迹
     for trail_motion in uniform_json_dict:
         uniform_json_dict[trail_motion] = sorted(uniform_json_dict[trail_motion],
                                                  key=operator.itemgetter('startSpeed'), reverse=True)
@@ -37,6 +40,7 @@ def get_uniform_speed_trail(car_trails, trails_json_dict, start_speed, period, t
                 final_trail = single_json
                 previous_speed_difference = speed_difference
 
+    # 从轨迹数据中获得此轨迹并将其转换为符合场景要求的轨迹
     start_time = final_trail['start']
     end_time = final_trail['stop']
     single_trail = (trails[(trails['Time'].values <= end_time)
@@ -55,7 +59,7 @@ def get_uniform_speed_trail(car_trails, trails_json_dict, start_speed, period, t
         for i in range(len(trail_res)):
             trail_res.loc[i, 'Time'] = time_min + 100 * i
     multiple = start_speed / trail_res.loc[0, 'vel_filtered']
-    coord_heading_angle = trail_res.loc[0, 'headinga'] + heading_angle
+    coord_heading_angle = trail_res.loc[0, 'headinga'] - heading_angle
     rotate_tuple = ('ego_e', 'ego_n'), ('left_e', 'left_n'), ('right_e', 'right_n')
     trail_res = rotate_trail(trail_res, coord_heading_angle, rotate_tuple)
     trail_res = multiple_uniform_trail(trail_res, multiple, rotate_tuple)
@@ -111,7 +115,7 @@ def get_variable_speed_trail(car_trails, trails_json_dict, start_speed, period, 
                     if (speed_status_num == str(SpeedType.Accelerate.value) and temp_list[last_index]['stopSpeed'] <=
                         temp_list[index_temp]['startSpeed'] <= temp_list[last_index]['stopSpeed'] + 1) or (
                             speed_status_num == str(SpeedType.Decelerate.value) and temp_list[last_index][
-                            'stopSpeed'] >= temp_list[index_temp]['startSpeed'] >= temp_list[last_index][
+                        'stopSpeed'] >= temp_list[index_temp]['startSpeed'] >= temp_list[last_index][
                                 'stopSpeed'] - 1):
                         json_index_list_temp.append(index_temp)
 
@@ -174,10 +178,8 @@ def get_change_lane_trail(car_trails, trails_json_dict, lane_width, start_speed,
     Returns 轨迹
     -------
     """
-    # change_lane_json_dict = dict()
-    # for motion in trails_json_dict:
-    #     if (left_flag and 'Left change lane' in motion) or (not left_flag and 'Right change lane' in motion):
-    #         change_lane_json_dict[motion] = trails_json_dict[motion]
+
+    # 判断需要生成的轨迹的变道类型
     change_lane_json_dict = dict()
     if motion_status == TrailMotionType.lane_change_left.value:
         min_lateral_offset = 2.5
@@ -199,6 +201,8 @@ def get_change_lane_trail(car_trails, trails_json_dict, lane_width, start_speed,
             change_lane_json_dict[motion] = list()
             for speed_status in trails_json_dict[motion]:
                 change_lane_json_dict[motion] += trails_json_dict[motion][speed_status]
+
+    # 筛选出移动距离达到变道要求切转向角度小于3度的轨迹
     optional_trails_list = list()
     for motion in change_lane_json_dict:
         change_lane_json_dict[motion] = sorted(change_lane_json_dict[motion], key=operator.itemgetter('startSpeed'),
@@ -208,6 +212,8 @@ def get_change_lane_trail(car_trails, trails_json_dict, lane_width, start_speed,
                     trail['startHeadinga'] - trail['stopHeadinga']) < 3 and (
                     min_lateral_offset < abs(trail['lateralOffset']) < 2 * min_lateral_offset):
                 optional_trails_list.append(trail)
+
+    # 筛选出初始速度最接近的轨迹
     previous_speed_difference = 100
     for trail in optional_trails_list:
         speed_difference = abs(trail['startSpeed'] - start_speed)
@@ -216,62 +222,30 @@ def get_change_lane_trail(car_trails, trails_json_dict, lane_width, start_speed,
             previous_speed_difference = speed_difference
     trail_res = trails_data[(trails_data['Time'] <= select_trail_json['stop']) & (
             trails_data['Time'] >= select_trail_json['start'])].reset_index(drop=True)
+
+    # 将确定的轨迹平移到轨迹原点并旋转
     init_e, init_n = trail_res.iloc[0]['ego_e'], trail_res.iloc[0]['ego_n']
     trail_res['ego_e'] -= init_e
     trail_res['ego_n'] -= init_n
     coord_heading_angle = trail_res.loc[0, 'headinga'] + heading_angle
     rotate_tuple = ('ego_e', 'ego_n'), ('left_e', 'left_n'), ('right_e', 'right_n')
-    avg_v = trail_res['vel_filtered'].mean()
     trail_res = rotate_trail(trail_res, coord_heading_angle, rotate_tuple)
-    print(123)
-    return 123
-    #     if trails_list and speed_status == json_speed_status:
-    #         trails_list = sorted(trails_list, key=operator.itemgetter('startSpeed'), reverse=True)
-    #         for single_json_trail in trails_list:
-    #             trail_select = trails[(trails['Time'] <= single_json_trail['stop']) & (
-    #                     trails['Time'] >= single_json_trail['start'])].reset_index(drop=True)
-    #             trail_select = get_adjust_trails(trails_count=1, trail=trail_select)
-    #             required_change_distance = change_lane_count * (lane_width / 2)
-    #             com_lane = get_lane_distance(trail_select, trail_select.iloc[-1], required_change_distance)
-    #             if com_lane > 0:
-    #                 for trail_frame_index in range(1, len(trail_select)):
-    #                     if get_lane_distance(trail_select, trail_select.iloc[trail_frame_index],
-    #                                          required_change_distance) > \
-    #                             get_lane_distance(trail_select, trail_select.iloc[trail_frame_index - 1],
-    #                                               required_change_distance):
-    #                         merge_trail = trail_select[:trail_frame_index]
-    #                     else:
-    #                         try:
-    #                             merge_trail = trail_select[:trail_frame_index + 1]
-    #                         except:
-    #                             merge_trail = trail_select[:trail_frame_index]
-    #                     if not merge_trail.empty:
-    #                         merge_trail = get_finale_trail(merge_trail, period, turning_angle)
-    #                         position_list.append(merge_trail)
-    #                         break
-    #             else:
-    #                 origin_trail = trail_select
-    #                 merge_trail = trail_select
-    #                 for change_time in range(1, int(math.fabs(required_change_distance // com_lane))):
-    #                     temp_trail = get_adjust_trails(trails_count=2, trail=origin_trail, trail_next=trail_select)[
-    #                                  1:].reset_index(drop=True)
-    #                     origin_trail = temp_trail
-    #                     merge_trail = (pd.concat([merge_trail, temp_trail], axis=0)).reset_index(drop=True)
-    #                     trail_select = merge_trail
-    #                     for trail_frame_index in trail_select:
-    #                         merge_trail = trail_select[:trail_frame_index]
-    #                         if not merge_trail.empty:
-    #                             merge_trail = get_finale_trail(merge_trail, period, turning_angle)
-    #                             position_list.append(merge_trail)
-    #                             break
-    # # if len(position_list) <= max_trails / 10:
-    # #     return position_list, turning_angle
-    # # spacing = int(len(position_list) / (max_trails / 10))
-    # # if spacing == 1:
-    # #     return position_list[:int(max_trails / 10)], turning_angle
-    # # else:
-    # #     return position_list[0:len(position_list):spacing], turning_angle
-    # return position_list[0:len(position_list)], turning_angle
+
+    # 重新采样获得长度需要的轨迹
+    frame = len(trail_res) / (period * 10)
+    rng = pd.date_range("2020-05-10 00:00:00", periods=len(trail_res), freq="T")
+    if frame >= 1:
+        trail_res = trail_res[:period * 10]
+    else:
+        trail_res = resample_by_time(trail_res, period, rng, flag=False)[:period * 10 + 1]
+        trail_res['vel_filtered'] = trail_res['vel_filtered'] * frame
+        trail_res = trail_res.reset_index(drop=True)
+        time_min = trail_res.Time.values.min()
+        for i in range(len(trail_res)):
+            trail_res.loc[i, 'Time'] = time_min + 0.1 * i
+
+    # 变道场景未转角
+    return trail_res, 0
 
 
 # 目前之前的业务逻辑有明显漏洞，如有需求再完成
