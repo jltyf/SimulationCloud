@@ -56,33 +56,15 @@ class Trail(object):
             return get_change_lane_trail(car_trails=self.car_trail, trails_json_dict=self.json_trail,
                                          lane_width=self.lane_width, start_speed=self.start_speed,
                                          heading_angle=self.heading_angle, period=period, motion_status=motion_status)
-
-        # # 右偏
-        # elif motion_status in str(TrailMotionType.lane_change_right.value):
-        #     return get_change_lane_trail(car_trails=self.car_trail, trails_json_dict=self.json_trail,
-        #                                  speed_status_num=speed_status, lane_width=self.lane_width, left_flag=False,
-        #                                  start_speed=self.start_speed, heading_angle=self.heading_angle,
-        #                                  change_lane_count=1, period=period, turning_angle=self.turning_angle)
-        # # 左变道两次
-        # elif motion_status in str(TrailMotionType.lane_change_left_twice.value):
-        #     return get_change_lane_trail(car_trails=self.car_trail, trails_json_dict=self.json_trail,
-        #                                  speed_status_num=speed_status, lane_width=self.lane_width, left_flag=True,
-        #                                  change_lane_count=2, period=period,
-        #                                  turning_angle=self.turning_angle)
-        # # 右偏两次
-        # elif motion_status in str(TrailMotionType.lane_change_right_twice.value):
-        #     return get_change_lane_trail(car_trails=self.car_trail, trails_json_dict=self.json_trail,
-        #                                  speed_status_num=speed_status, lane_width=self.lane_width, left_flag=False,
-        #                                  change_lane_count=2, period=period,
-        #                                  turning_angle=self.turning_angle)
-        # 左转
-        elif motion_status in str(TrailMotionType.turn_left.value):
+        # 左转 or 右转 or 左掉头 or 右掉头
+        elif motion_status in [str(TrailMotionType.turn_left.value), str(TrailMotionType.turn_right.value),
+                               str(TrailMotionType.turn_around_left.value),
+                               str(TrailMotionType.turn_around_right.value)]:
             return get_turn_round_trail(car_trails=self.car_trail, trails_json_dict=self.json_trail,
-                                        speed_status_num=speed_status, turn_round_flag=motion_status,
+                                        start_speed=self.start_speed, speed_status_num=speed_status,
+                                        turn_round_flag=motion_status,
                                         period=period, turning_angle=self.turning_angle)
-        # 右转
-        elif motion_status in str(TrailMotionType.turn_right.value):
-            pass
+
         # 静止
         elif motion_status in str(TrailMotionType.static.value):
             pass

@@ -117,10 +117,10 @@ def corTransform(trail1, trail2, e, n, rad, trail_new):
     return trail_new
 
 
-def corTransform_init(trail, e, n, h, *args):
-    e_offset = -trail.at[0, e]
-    n_offset = -trail.at[0, n]
-    deg = trail.at[0, h]
+def corTransform_init(trail, e, n, h, init_e=0, init_n=0, init_h=0, *args):
+    e_offset = init_e - trail.at[0, e]
+    n_offset = init_n - trail.at[0, n]
+    deg = trail.at[0, h] - init_h
     rad = math.radians(deg)
 
     for rotate_tuple in args[0]:
@@ -275,30 +275,28 @@ def get_finale_trail(merge_trail, period, turning_angle):
     return merge_trail
 
 
-def get_connect_trail(position_trail_list, trajectory):
+def get_connect_trail(trails_list, trajectory):
     """
     用于物体不同形态轨迹之间连接
-    @param position_trail_list: 二维数组，第一维以轨迹形态划分，第二位以单个轨迹划分
+    @param trails_list: 多段轨迹形成的列表
     @param trajectory: 物体运动轨迹形态的标志位
     @return
     position_trail_list:已经连接好的传物体轨迹形态列表
-    road_list:根据轨迹生成的road_list
     """
-    road_list = list()
-    behind_motion_trail_list = position_trail_list[1]
-    position_trail_list[0], position_trail_list[1], road_list = connect_trail(
-        position_trail_list[0], behind_motion_trail_list, trajectory, road_list)
-    if len(position_trail_list) > 2:
-        get_connect_trail(position_trail_list[1:], trajectory)
+    trails_list[0], trails_list[1] = connect_trail(trails_list[0], trails_list[1], trajectory)
+    if len(trails_list) > 2:
+        get_connect_trail(trails_list[1:], trajectory)
     else:
-        return position_trail_list
-    return position_trail_list, road_list
+        return trails_list
+    return trails_list
 
 
-def connect_trail(front_trail, behind_trail, trajectory, road_list):
+def connect_trail(front_trail, behind_trail, trajectory):
     # print(front_trail, behind_trail, trajectory)
     # for b_single_trail in behind_trail:
     #     b_single_trail.diff(periods=1, axis=0)
+    reset_tuple = ((1, 2), (2, 3), (3, 4))
+
     for f_single_trail in front_trail:
         end_x = f_single_trail.iloc[-1]['ego_e']
         end_y = f_single_trail.iloc[-1]['ego_n']
@@ -306,9 +304,8 @@ def connect_trail(front_trail, behind_trail, trajectory, road_list):
         end_speed = f_single_trail.iloc[-1]['vel_filtered']
 
         end_point = Point(end_x, end_y)
-        road_list.append(end_point)
 
-        return front_trail, behind_trail, road_list
+    return front_trail, behind_trail
 
 
 def multiple_uniform_trail(trail, multiple, *args):

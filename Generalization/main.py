@@ -1284,7 +1284,7 @@ def parsingConfigurationFile(absPath, ADAS_module):
         scenario = ScenarioData(scenario_series)
         scenario_list = scenario.get_scenario_model()
         for single_scenario in scenario_list:
-            ego_position_list = list()
+            ego_trails_list = list()
             ego_road_point_list = list()
             obs_road_point_list = list()
             # 根据场景速度情况选择轨迹
@@ -1295,22 +1295,22 @@ def parsingConfigurationFile(absPath, ADAS_module):
                     start_speed = single_scenario['ego_start_velocity']
                     heading_angle = float(single_scenario['ego_heading_angle'])
                 else:
-                    start_speed = ego_position_list[-1].iloc[-1]['vel_filtered']
-                    heading_angle = float(ego_position_list[-1].iloc[-1]['headinga'])
+                    start_speed = ego_trails_list[-1].iloc[-1]['vel_filtered']
+                    heading_angle = float(ego_trails_list[-1].iloc[-1]['headinga'])
                 # start_speed = change_speed(start_speed)
                 ego_trail_slices = Trail(trail_type, car_trail_data, ped_trail_data, trails_json_dict, ego_speed_status,
                                          single_scenario, ego_trail_section, start_speed, heading_angle).position
                 '''需要增加未找到轨迹的报错判断'''
                 if not ego_trail_slices.empty:
-                    ego_position_list.append(ego_trail_slices)
+                    ego_trails_list.append(ego_trail_slices)
                 ego_trail_section += 1
 
-            if ego_position_list:
-                if len(ego_position_list) == 1:
+            if ego_trails_list:
+                if len(ego_trails_list) == 1:
                     print(single_scenario['scene_id'], "ego不需要拼接")
-                    ego_trail = ego_position_list[0]
-                elif len(ego_position_list) > 1:
-                    ego_trail, ego_road = get_connect_trail(ego_position_list, scenario.scenario_dict['ego_trajectory'])
+                    ego_trail = ego_trails_list[0]
+                elif len(ego_trails_list) > 1:
+                    ego_trail = get_connect_trail(ego_trails_list, scenario.scenario_dict['ego_trajectory'])
                 else:
                     raise ValueError('请检查传参问题')
 
