@@ -5,7 +5,7 @@ import pandas as pd
 from functools import reduce
 from enumerations import SpeedType, TrailMotionType
 from utils import spin_trans_form, Point, resample_by_time, get_adjust_trails, get_lane_distance, get_finale_trail, \
-    multiple_uniform_trail, rotate_trail, concatTrails, corTransform_init, resample_by_time
+    multiple_trail, rotate_trail, concatTrails, corTransform_init, resample_by_time
 
 
 def get_uniform_speed_trail(car_trails, trails_json_dict, start_speed, period, turning_angle, trail_section,
@@ -56,14 +56,15 @@ def get_uniform_speed_trail(car_trails, trails_json_dict, start_speed, period, t
         trail_res.loc[::, 'ego_e'] -= start_point.x
         trail_res.loc[::, 'ego_n'] -= start_point.y
         trail_res = trail_res.reset_index(drop=True)
-        time_min = trail_res.Time.values.min()
-        for i in range(len(trail_res)):
-            trail_res.loc[i, 'Time'] = time_min + 100 * i
+        # 在轨迹拼接后统一处理
+        # time_min = trail_res.Time.values.min()
+        # for i in range(len(trail_res)):
+        #     trail_res.loc[i, 'Time'] = time_min + 100 * i
     multiple = start_speed / trail_res.loc[0, 'vel_filtered']
     coord_heading_angle = trail_res.loc[0, 'headinga'] - heading_angle
     rotate_tuple = ('ego_e', 'ego_n'), ('left_e', 'left_n'), ('right_e', 'right_n')
     trail_res = rotate_trail(trail_res, coord_heading_angle, rotate_tuple)
-    trail_res = multiple_uniform_trail(trail_res, multiple, rotate_tuple)
+    trail_res = multiple_trail(trail_res, multiple, rotate_tuple)
     return trail_res, turning_angle
 
 
@@ -160,7 +161,7 @@ def get_variable_speed_trail(car_trails, trails_json_dict, start_speed, period, 
 
     # 根据初始设定速度微调坐标
     multiple = start_speed / final_trail.loc[0, 'vel_filtered']
-    final_trail = multiple_uniform_trail(final_trail, multiple, rotate_tuple)
+    final_trail = multiple_trail(final_trail, multiple, rotate_tuple)
 
     return final_trail, turning_angle
 
@@ -180,15 +181,18 @@ def get_change_lane_trail(car_trails, trails_json_dict, lane_width, start_speed,
     -------
     """
 
+    previous_speed_difference = 100
+    trail_res = None
+
     # 判断需要生成的轨迹的变道类型
     change_lane_json_dict = dict()
     if motion_status == TrailMotionType.lane_change_left.value:
         min_lateral_offset = 2.5
         left_flag = True
-    elif motion_status == TrailMotionType.lane_change_left_twice.value:
+    elif motion_status == TrailMotionType.lane_change_right.value:
         min_lateral_offset = 2.5
         left_flag = False
-    elif motion_status == TrailMotionType.lane_change_right_twice.value:
+    elif motion_status == TrailMotionType.lane_change_left_twice.value:
         min_lateral_offset = 2.5 + lane_width
         left_flag = True
     else:
@@ -208,43 +212,38 @@ def get_change_lane_trail(car_trails, trails_json_dict, lane_width, start_speed,
     for motion in change_lane_json_dict:
         change_lane_json_dict[motion] = sorted(change_lane_json_dict[motion], key=operator.itemgetter('startSpeed'),
                                                reverse=True)
-        for trail in change_lane_json_dict[motion]:
-            if (trail['stop'] - trail['start']) / 1000 < period and abs(
-                    trail['startHeadinga'] - trail['stopHeadinga']) < 3 and (
-                    min_lateral_offset < abs(trail['lateralOffset']) < 2 * min_lateral_offset):
+        for trail_json in change_lane_json_dict[motion]:
+            if (trail_json['stop'] - trail_json['start']) / 1000 < period and abs(
+                    trail_json['startHeadinga'] - trail_json['stopHeadinga']) < 3 and (
+                    min_lateral_offset < abs(trail_json['lateralOffset']) < 2 * min_lateral_offset):
+
+                trail = trails_data[(trails_data['Time'] <= trail_json['stop']) & (
+                        trails_data['Time'] >= trail_json['start'])].reset_index(drop=True)
+
+                # 重新采样获得长度需要的轨迹
+                frame = len(trail) / (period * 10)
+                rng = pd.date_range("2020-05-10 00:00:00", periods=len(trail), freq="T")
+                if frame >= 1:
+                    trail = trail[:period * 10]
+                else:
+                    trail = resample_by_time(trail, period, rng, flag=False)[:period * 10 + 1]
+                    trail['vel_filtered'] = trail['vel_filtered'] * frame
+                    trail = trail.reset_index(drop=True)
+
                 optional_trails_list.append(trail)
 
     # 筛选出初始速度最接近的轨迹
-    previous_speed_difference = 100
     for trail in optional_trails_list:
-        speed_difference = abs(trail['startSpeed'] - start_speed)
+        speed_difference = abs(trail.loc[0, 'vel_filtered'] - start_speed)
         if speed_difference < previous_speed_difference:
-            select_trail_json = trail
+            trail_res = trail
             previous_speed_difference = speed_difference
-    trail_res = trails_data[(trails_data['Time'] <= select_trail_json['stop']) & (
-            trails_data['Time'] >= select_trail_json['start'])].reset_index(drop=True)
 
-    # 将确定的轨迹平移到轨迹原点并旋转
-    init_e, init_n = trail_res.iloc[0]['ego_e'], trail_res.iloc[0]['ego_n']
-    trail_res['ego_e'] -= init_e
-    trail_res['ego_n'] -= init_n
-    coord_heading_angle = trail_res.loc[0, 'headinga'] + heading_angle
     rotate_tuple = ('ego_e', 'ego_n'), ('left_e', 'left_n'), ('right_e', 'right_n')
-    trail_res = rotate_trail(trail_res, coord_heading_angle, rotate_tuple)
 
-    # 重新采样获得长度需要的轨迹
-    frame = len(trail_res) / (period * 10)
-    rng = pd.date_range("2020-05-10 00:00:00", periods=len(trail_res), freq="T")
-    if frame >= 1:
-        trail_res = trail_res[:period * 10]
-    else:
-        trail_res = resample_by_time(trail_res, period, rng, flag=False)[:period * 10 + 1]
-        trail_res['vel_filtered'] = trail_res['vel_filtered'] * frame
-        trail_res = trail_res.reset_index(drop=True)
-        # 在轨迹拼接后统一处理
-        # time_min = trail_res.Time.values.min()
-        # for i in range(len(trail_res)):
-        #     trail_res.loc[i, 'Time'] = time_min + 0.1 * i
+    # 根据初始设定速度微调坐标
+    multiple = start_speed / trail_res.loc[0, 'vel_filtered']
+    trail_res = multiple_trail(trail_res, multiple, rotate_tuple)
 
     # 变道场景未转角
     turning_angle = 0
@@ -311,21 +310,9 @@ def get_turn_round_trail(car_trails, trails_json_dict, start_speed, speed_status
                             if math.fabs(single_trail['stopHeadinga'] - single_trail['startHeadinga'] - 270) \
                                     < angle_threshold:
                                 selected_trail_list.append(single_trail)
-                    elif 'uturn_left' in turn_round_status:
-                        # 找到所有角度符合左掉头180度的轨迹
+                    elif 'uturn_left' in turn_round_status or 'uturn_right' in turn_round_status:
+                        # 找到所有角度符合左掉头180度的轨迹,下同
                         if single_trail['startHeadinga'] + 180 <= 360:
-                            if math.fabs(single_trail['stopHeadinga'] - single_trail['startHeadinga'] - 180) \
-                                    < angle_threshold:
-                                selected_trail_list.append(single_trail)
-                        else:
-                            if math.fabs(single_trail['stopHeadinga'] - single_trail['startHeadinga'] + 180) \
-                                    < angle_threshold:
-                                selected_trail_list.append(single_trail)
-                    elif 'uturn_right' in turn_round_status:
-
-                        # 找到所有角度符合右掉头180度的轨迹
-                        if single_trail['startHeadinga'] + 180 <= 360:
-
                             if math.fabs(single_trail['stopHeadinga'] - single_trail['startHeadinga'] - 180) \
                                     < angle_threshold:
                                 selected_trail_list.append(single_trail)
@@ -361,6 +348,6 @@ def get_turn_round_trail(car_trails, trails_json_dict, start_speed, speed_status
     # 根据初始设定速度微调坐标
     rotate_tuple = ('ego_e', 'ego_n'), ('left_e', 'left_n'), ('right_e', 'right_n')
     multiple = start_speed / final_trail.loc[0, 'vel_filtered']
-    final_trail = multiple_uniform_trail(final_trail, multiple, rotate_tuple)
+    final_trail = multiple_trail(final_trail, multiple, rotate_tuple)
 
     return final_trail, turning_angle

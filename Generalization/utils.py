@@ -308,7 +308,7 @@ def connect_trail(front_trail, behind_trail, trajectory):
     return front_trail, behind_trail
 
 
-def multiple_uniform_trail(trail, multiple, *args):
+def multiple_trail(trail, multiple, *args):
     for rotate_tuple in args[0]:
         trail.loc[1:, rotate_tuple[0]] = trail.loc[1:, rotate_tuple[0]] * multiple
         trail.loc[1:, rotate_tuple[1]] = trail.loc[1:, rotate_tuple[1]] * multiple
