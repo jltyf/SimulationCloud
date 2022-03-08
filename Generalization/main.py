@@ -1294,12 +1294,16 @@ def parsingConfigurationFile(absPath, ADAS_module):
                 if ego_trail_section == 0:
                     start_speed = single_scenario['ego_start_velocity']
                     heading_angle = float(single_scenario['ego_heading_angle'])
+                    # 轨迹起始点自车设为(0,0)
+                    start_point = Point(0, 0)
                 else:
                     start_speed = ego_trails_list[-1].iloc[-1]['vel_filtered']
                     heading_angle = float(ego_trails_list[-1].iloc[-1]['headinga'])
+                    start_point = Point(ego_trails_list[-1].iloc[-1]['ego_e'], ego_trails_list[-1].iloc[-1]['ego_n'])
                 # start_speed = change_speed(start_speed)
                 ego_trail_slices = Trail(trail_type, car_trail_data, ped_trail_data, trails_json_dict, ego_speed_status,
-                                         single_scenario, ego_trail_section, start_speed, heading_angle).position
+                                         single_scenario, ego_trail_section, start_speed, heading_angle,
+                                         start_point).position
                 '''需要增加未找到轨迹的报错判断'''
                 if not ego_trail_slices.empty:
                     ego_trails_list.append(ego_trail_slices)

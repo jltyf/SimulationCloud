@@ -24,15 +24,15 @@ class ScenarioData(object):
         # self.scenario_dict['scene_description'] = str(scenario_series['scene_description'])
         # self.scenario_dict['test_procedure'] = str(scenario_series['test_procedure'])
         # self.scenario_dict['expect_test_result'] = str(scenario_series['expect_test_result'])
-        self.scenario_dict['obs_start_x'] = str(scenario_series['目标初始x坐标']).split(',')
-        self.scenario_dict['obs_start_y'] = eval(scenario_series['目标初始y坐标'])
-        self.scenario_dict['obs_start_velocity'] = eval(scenario_series['目标初始速度V1(km/h)'])
-        self.scenario_dict['obs_velocity_status'] = str(scenario_series['目标行驶速度状态']).split(',')
+        self.scenario_dict['obs_start_x'] = str(scenario_series['目标初始x坐标'])
+        self.scenario_dict['obs_start_y'] = str(scenario_series['目标初始y坐标'])
+        self.scenario_dict['obs_start_velocity'] = str(scenario_series['目标初始速度V1(km/h)'])
+        self.scenario_dict['obs_velocity_status'] = str(scenario_series['目标行驶速度状态'])
         self.scenario_dict['obs_trajectory'] = str(scenario_series['目标轨迹形态']).split(',')
-        self.scenario_dict['obs_duration_time'] = str(scenario_series['目标轨迹持续时间(s)']).split(',')
-        self.scenario_dict['obs_trail_time'] = str(scenario_series['目标轨迹形态分段持续时间(s)']).split(',')
-        self.scenario_dict['obs_heading_angle_rel'] = str(scenario_series['目标物相对自车航向角']).split(',')
-        self.scenario_dict['obs_velocity_time'] = str(scenario_series['目标速度分段持续时间(s)']).split(',')
+        self.scenario_dict['obs_duration_time'] = str(scenario_series['目标轨迹持续时间(s)'])
+        self.scenario_dict['obs_trail_time'] = str(scenario_series['目标轨迹形态分段持续时间(s)'])
+        self.scenario_dict['obs_heading_angle_rel'] = str(scenario_series['目标物相对自车航向角'])
+        self.scenario_dict['obs_velocity_time'] = str(scenario_series['目标速度分段持续时间(s)'])
         # self.scenario_dict['direction'] = str(scenario_series['目标正反向标志']).split(',')[-1]
         self.scenario_dict['generalization_type'] = eval(scenario_series['泛化标志位'])
         if self.scenario_dict['scenario_name'] in 'PCW':
@@ -47,12 +47,18 @@ class ScenarioData(object):
     def get_scenario_model(self):
         characteristic_list = list()
         keys_list = list()
+        other_obj_dict = dict()
         for key, values in self.scenario_dict['generalization_type'].items():
             values_list = list()
             if values == DataType.generalizable.value:
-                min_value = self.scenario_dict[key][0]
-                max_value = self.scenario_dict[key][1]
-                step = self.scenario_dict[key][2]
+                if ';' in self.scenario_dict[key]:
+                    other_obj_dict[key] = (self.scenario_dict[key].split(';'))[1:]
+                    generalization_list = eval(self.scenario_dict[key].split(';')[0])
+                else:
+                    generalization_list = self.scenario_dict[key]
+                min_value = generalization_list[0]
+                max_value = generalization_list[1]
+                step = generalization_list[2]
                 float_flag = False
                 if min_value < 1 or step < 1:
                     min_value = int(min_value * 100)
@@ -68,8 +74,10 @@ class ScenarioData(object):
         characteristic_list = list(itertools.product(*characteristic_list))
         for characteristic in characteristic_list:
             for key in keys_list:
-                self.scenario_dict[key] = characteristic[keys_list.index(key)]
-            self.scenario_generalization_list.append(self.scenario_dict)
+                if ';' in self.scenario_dict[key]:
+                    self.scenario_dict[key] = [characteristic[keys_list.index(key)], *other_obj_dict[key]]
+                else:
+                    self.scenario_generalization_list.append(self.scenario_dict)
         for key, values in self.scenario_dict['generalization_type'].items():
             if values == DataType.calculative.value:
                 formula = eval(self.scenario_dict[key])

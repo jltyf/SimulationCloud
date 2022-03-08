@@ -1,6 +1,8 @@
 import math
 import operator
 import copy
+
+import numpy as np
 import pandas as pd
 from functools import reduce
 from enumerations import SpeedType, TrailMotionType
@@ -226,7 +228,7 @@ def get_change_lane_trail(car_trails, trails_json_dict, lane_width, start_speed,
                 if frame >= 1:
                     trail = trail[:period * 10]
                 else:
-                    trail = resample_by_time(trail, period, rng, flag=False)[:period * 10 + 1]
+                    trail = resample_by_time(trail, math.floor(frame * 60), rng, flag=False)[:period * 10 + 1]
                     trail['vel_filtered'] = trail['vel_filtered'] * frame
                     trail = trail.reset_index(drop=True)
 
@@ -268,13 +270,13 @@ def get_turn_round_trail(car_trails, trails_json_dict, start_speed, speed_status
 
     """
     trails = copy.deepcopy(car_trails)
-    if turn_round_flag == str(TrailMotionType.turn_left.value):
+    if turn_round_flag == TrailMotionType.turn_left.value:
         turn_round_status = 'crossing turn_left normal'
-    elif turn_round_flag == str(TrailMotionType.turn_right.value):
+    elif turn_round_flag == TrailMotionType.turn_right.value:
         turn_round_status = 'crossing turn_right normal'
-    elif turn_round_flag == str(TrailMotionType.turn_around_left.value):
+    elif turn_round_flag == TrailMotionType.turn_around_left.value:
         turn_round_status = 'uturn_left'
-    elif turn_round_flag == str(TrailMotionType.turn_around_right.value):
+    elif turn_round_flag == TrailMotionType.turn_around_right.value:
         turn_round_status = 'uturn_right'
     else:
         raise TypeError('运动轨迹参数错误')
@@ -351,3 +353,32 @@ def get_turn_round_trail(car_trails, trails_json_dict, start_speed, speed_status
     final_trail = multiple_trail(final_trail, multiple, rotate_tuple)
 
     return final_trail, turning_angle
+
+
+def get_static_trail(period, start_point, heading_angle, lane_width):
+    """
+    返回一条静止的轨迹
+    :param period: 轨迹的持续时间
+    :param start_point: 轨迹起始点
+    :param heading_angle: 这条贵及中自车的headinga
+    :param lane_width: 车道线宽度
+    :return: 轨迹
+    """
+    columns = ['Time', 'headinga', 'left_pos', 'right_pos', 'ego_e', 'ego_n', 'left_e', 'left_n', 'right_e', 'right_n',
+               'vel_filtered', 'Acceleration', 'flag']
+    times = np.array(range(0, period * 10 + 1)) / 10
+    trail_res = pd.DataFrame(columns=columns)
+    trail_res['Time'] = times
+    trail_res['headinga'] = heading_angle
+    trail_res['ego_e'] = start_point.x
+    trail_res['ego_n'] = start_point.y
+    trail_res['vel_filtered'] = trail_res['Acceleration'] = 0
+    lane_offset_e = (lane_width / 2) * math.cos(math.radians(heading_angle))
+    lane_offset_n = (lane_width / 2) * math.sin(math.radians(heading_angle))
+
+    trail_res['left_e'] = start_point.x + lane_offset_e
+    trail_res['left_n'] = start_point.y - lane_offset_n
+    trail_res['right_e'] = start_point.x - lane_offset_e
+    trail_res['right_n'] = start_point.y + lane_offset_n
+
+    return trail_res, heading_angle

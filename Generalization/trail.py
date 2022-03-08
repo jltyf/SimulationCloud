@@ -1,12 +1,12 @@
 from Generalization.get_trails import get_uniform_speed_trail, get_variable_speed_trail, get_turn_round_trail, \
-    get_change_lane_trail
+    get_change_lane_trail, get_static_trail
 from enumerations import TrailType, TrailMotionType, SpeedType
 
 
 class Trail(object):
 
     def __init__(self, trail_type, car_trail, ped_trail, json_trail, speed_status, scenario, trail_section, start_speed,
-                 heading_angle, object_index=0):
+                 heading_angle, start_point, object_index=0):
         self.scenario = scenario
         self.speed_status = speed_status
         self.json_trail = json_trail
@@ -14,6 +14,7 @@ class Trail(object):
         self.car_trail = car_trail
         self.trail_type = trail_type
         self.trail_section = trail_section
+        self.start_point = start_point
         self.lane_width = 3.5  # 车道线宽宽度
         self.turning_angle = 0
         # 判断是自车轨迹还是目标物轨迹，忽略行人判断，归到目标物，待确认
@@ -47,7 +48,8 @@ class Trail(object):
             # 变速
             elif speed_status == SpeedType.Decelerate.value or speed_status == SpeedType.Accelerate.value:
                 return get_variable_speed_trail(car_trails=self.car_trail, trails_json_dict=self.json_trail,
-                                                start_speed=self.start_speed, period=period, speed_status_num=speed_status,
+                                                start_speed=self.start_speed, period=period,
+                                                speed_status_num=speed_status,
                                                 heading_angle=self.heading_angle,
                                                 turning_angle=self.turning_angle, scenario=self.scenario)
 
@@ -57,14 +59,13 @@ class Trail(object):
                                          lane_width=self.lane_width, start_speed=self.start_speed,
                                          heading_angle=self.heading_angle, period=period, motion_status=motion_status)
         # 左转 or 右转 or 左掉头 or 右掉头
-        elif motion_status in [str(TrailMotionType.turn_left.value), str(TrailMotionType.turn_right.value),
-                               str(TrailMotionType.turn_around_left.value),
-                               str(TrailMotionType.turn_around_right.value)]:
+        elif TrailMotionType.turn_left.value <= motion_status <= TrailMotionType.turn_around_right.value:
             return get_turn_round_trail(car_trails=self.car_trail, trails_json_dict=self.json_trail,
                                         start_speed=self.start_speed, speed_status_num=speed_status,
                                         turn_round_flag=motion_status,
                                         period=period, turning_angle=self.turning_angle)
 
         # 静止
-        elif motion_status in str(TrailMotionType.static.value):
-            pass
+        elif motion_status == TrailMotionType.static.value:
+            return get_static_trail(period=period, start_point=self.start_point, heading_angle=self.heading_angle,
+                                    lane_width=self.lane_width)
