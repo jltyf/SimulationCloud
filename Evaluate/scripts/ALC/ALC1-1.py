@@ -5,8 +5,8 @@
 def get_report(scenario, script_id):
     lat_acc_max=(scenario.scenario_data['lateral_acceleration'].abs()).max()
     lon_acc_max=(scenario.scenario_data['longitudinal_acceleration'].abs()).max()
-    lat_acc_roc_max=(scenario.scenario_data['lateral_accelarate_roc'].abs()).max()
-    time_change_lane=scenario.scenario_date['pass']
+    lat_acc_roc_max=scenario.get_lat_acc_roc()
+    time_change_lane=scenario.scenario_date['pass']#缺少的变量
 
     # 定义车辆变道成功
 
