@@ -10,6 +10,8 @@ class ScenarioData(object):
         """
         self.scenario_data = scenarios_data.set_index(keys=['time'])
         self.scenario_type = scenario_type
+        # 车道宽度暂定3.75
+        self.lane_width = 3.75
 
     def get_scenario_id(self):
         if not self.scenario_type == ScenarioType.generalization:
@@ -147,3 +149,20 @@ class ScenarioData(object):
         self.scenario_data = self.scenario_data.loc[start_time:end_time]
         lat_acc_roc_max = self.scenario_data['lateral_accelerate_roc'].max()
         return lat_acc_roc_max
+
+    def get_change_lane_time(self):
+        """
+        通过两个条件判断自车开始变道
+        1航向角大于3度
+        2车道中心偏移距离大于半个车道
+        :return: 变道轨迹的持续时间
+        """
+        lane_offset = self.lane_width / 2
+        # 筛选出航向角小于3度且距离车道中心小于一半的数据
+        change_lane_trail = self.scenario_data.query(
+            '(3<=heading_angle<=357)and(lane_center_offset<-@lane_offset or lane_center_offset>@lane_offset)')
+        timestamp_list = change_lane_trail.index.values.tolist()
+        start_time = timestamp_list[0]
+        end_time = timestamp_list[-1]
+        period = (end_time - start_time) / 1000
+        return period
