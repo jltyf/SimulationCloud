@@ -3,7 +3,7 @@ import itertools
 from enumerations import DataType
 
 
-class ADASScenario(object):
+class ScenarioData(object):
     def __init__(self, scenario_series):
         self.scenario_generalization_list = list()
         self.scenario_dict = dict()

@@ -50,7 +50,7 @@ class ScenarioData(object):
         else:
             self.scenario_data['object_velocity'] = ((self.scenario_data['lateral_velocity'] + self.scenario_data[
                 'object_rel_vel_y']) ** 2 + (self.scenario_data['longitudinal_velocity'] + self.scenario_data[
-                    'object_rel_vel_x']) ** 2) ** 0.5
+                'object_rel_vel_x']) ** 2) ** 0.5
             max_velocity = self.scenario_data[self.scenario_data['object_ID'] == obj_id]['object_velocity'].max()
         return max_velocity
 
@@ -69,7 +69,7 @@ class ScenarioData(object):
         else:
             self.scenario_data['object_velocity'] = ((self.scenario_data['lateral_velocity'] + self.scenario_data[
                 'object_rel_vel_y']) ** 2 + (self.scenario_data['longitudinal_velocity'] + self.scenario_data[
-                    'object_rel_vel_x']) ** 2) ** 0.5
+                'object_rel_vel_x']) ** 2) ** 0.5
             min_velocity = self.scenario_data[self.scenario_data['object_ID'] == obj_id]['object_velocity'].min()
         return min_velocity
 
@@ -115,3 +115,35 @@ class ScenarioData(object):
         pre_lat_acc = self.scenario_data.loc[pre_time_stamp]['lateral_acceleration']
         lat_acc_roc = (now_lon_acc - pre_lat_acc) / pre_lat_acc
         return lat_acc_roc
+
+    def get_lon_acc_roc_max(self, start_time=None, end_time=None):
+        """
+        获取一段时间内的轨迹的最大纵向加速度变化率
+        如果起始时间传参为空，默认使用轨迹起始时间
+        如果结束时间传参为空，默认使用轨迹结束时间
+        :param start_time: 计算加速度变化率的起始时间
+        :param end_time: 计算加速度变化率的结束时间
+        :return: 这段时间内最大纵向加速度变化率
+        """
+        index_list = self.scenario_data.index.tolist()
+        start_time = index_list[0] if not start_time else start_time
+        end_time = index_list[-1] if not end_time else end_time
+        self.scenario_data = self.scenario_data.loc[start_time:end_time]
+        lon_acc_roc_max = self.scenario_data['longitudinal_accelerate_roc'].max()
+        return lon_acc_roc_max
+
+    def get_lat_acc_roc_max(self, start_time=None, end_time=None):
+        """
+        获取一段时间内的轨迹的最大横向加速度变化率
+        如果起始时间传参为空，默认使用轨迹起始时间
+        如果结束时间传参为空，默认使用轨迹结束时间
+        :param start_time: 计算加速度变化率的起始时间
+        :param end_time: 计算加速度变化率的结束时间
+        :return: 这段时间内最大横向加速度变化率
+        """
+        index_list = self.scenario_data.index.tolist()
+        start_time = index_list[0] if not start_time else start_time
+        end_time = index_list[-1] if not end_time else end_time
+        self.scenario_data = self.scenario_data.loc[start_time:end_time]
+        lat_acc_roc_max = self.scenario_data['lateral_accelerate_roc'].max()
+        return lat_acc_roc_max

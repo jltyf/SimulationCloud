@@ -47,7 +47,7 @@ def dump_json(trails_label_json):
     return trails_label_json_dict
 
 
-def rotate(x_list, y_list, ox, oy, deg):
+def rotate(x_list, y_list, ox, oy, rad):
     """
     position_list (list): a list of tuples; (x, y, z, h, p, r)
     deg: clock-wise radius
@@ -57,8 +57,8 @@ def rotate(x_list, y_list, ox, oy, deg):
     x_res = []
     y_res = []
     for index in range(len(x_list)):
-        x = (x_list[index] - ox) * math.cos(deg) + (y_list[index] - oy) * math.sin(deg) + ox
-        y = - (x_list[index] - ox) * math.sin(deg) + (y_list[index] - oy) * math.cos(deg) + oy
+        x = (x_list[index] - ox) * math.cos(rad) + (y_list[index] - oy) * math.sin(rad) + ox
+        y = - (x_list[index] - ox) * math.sin(rad) + (y_list[index] - oy) * math.cos(rad) + oy
         x_res.append(x)
         y_res.append(y)
 
@@ -106,40 +106,101 @@ def spin_trans_form(position_e, position_n, trail_new, rad=0, trails_count=1, **
     return trail_new
 
 
-def rotate_trail(trail):
-    init_data = [trail.iloc[0]['headinga'], trail.iloc[0]['Time']]
-    temp_trail = deepcopy(trail)
-    trail['ego_e'] = temp_trail[['ego_n', 'ego_e', 'headinga']].apply(
-        lambda x: x['ego_e'] * math.cos(math.radians(x['headinga'])) + x['ego_n'] * math.sin(
-            math.radians(x['headinga'])), axis=1)
-    trail['ego_n'] = temp_trail[['ego_n', 'ego_e', 'headinga']].apply(
-        lambda x: -x['ego_e'] * math.sin(math.radians(x['headinga'])) + x['ego_n'] * math.cos(
-            math.radians(x['headinga'])), axis=1)
-    trail['headinga'] = trail['headinga'] - init_data[0]
-    trail['Time'] = (trail['Time'] - init_data[1]) / 1000
+def corTransform(trail1, trail2, e, n, rad, trail_new):
+    e_offset = trail1.at[len(trail1) - 1, e] - trail2.at[0, e]
+    n_offset = trail1.at[len(trail1) - 1, n] - trail2.at[0, n]
+    trail_new[e] += e_offset
+    trail_new[n] += n_offset
+    a, b = rotate(trail_new[e], trail_new[n], trail_new.at[0, e], trail_new.at[0, n], rad)
+    trail_new[e] = a
+    trail_new[n] = b
+    return trail_new
+
+
+def corTransform_init(trail, e, n, h, init_e=0, init_n=0, init_h=0, *args):
+    e_offset = init_e - trail.at[0, e]
+    n_offset = init_n - trail.at[0, n]
+    deg = trail.at[0, h] - init_h
+    rad = math.radians(deg)
+
+    for rotate_tuple in args[0]:
+        trail[rotate_tuple[0]] += e_offset
+        trail[rotate_tuple[1]] += n_offset
+        a, b = rotate(trail[rotate_tuple[0]], trail[rotate_tuple[1]], 0, 0, rad)
+        trail[rotate_tuple[0]] = a
+        trail[rotate_tuple[1]] = b
+    trail[h] -= deg
     return trail
 
 
-def resample_by_time(data, minutes, datetime, flag=True):
+def concatTrails(trail1, trail2, *args):
+    trail_new = trail2.copy()
+    deg = trail1.at[len(trail1) - 1, 'headinga'] - trail_new.at[0, 'headinga']
+    rad = math.radians(-deg)
+    for rotate_tuple in args[0]:
+        trail_new = corTransform(trail1, trail2, rotate_tuple[0], rotate_tuple[1], rad, trail_new)
+
+    trail_new['headinga'] += deg
+    return trail_new
+
+
+def rotate_trail(trail, headinga, *args):
+    """
+    轨迹要求：1.已经经过平移(自车在原点，目标车经过平移)2时间戳经过重新采样长度符合分段轨迹持续时间
+    函数功能：1args的参数全部按照headinga旋转至
+            以自车起点为原点
+            以自车起点朝向角为y轴的坐标系
+            2按照轨迹分段持续时间重新为轨迹时间赋值
+            3将轨迹朝向角度调整为自车起始位置的朝向角
+    :param trail:需要旋转的轨迹
+    :param headinga:此轨迹中自车第一帧的朝向角度
+    :param args:需要旋转的列名(如ego_e,ego_n,left_e,left_n)
+    :return:旋转过后的轨迹
+    """
+    ego_init_rad = math.radians(headinga)
+    start_time = trail.iloc[0]['Time']
+    init_data = [headinga, trail.iloc[0]['Time']]
+    temp_trail = deepcopy(trail)
+    trail['Time'] = (trail['Time'] - start_time) / 1000
+    trail['headinga'] = trail['headinga'] - init_data[0]
+    for rotate_tuple in args[0]:
+        trail[rotate_tuple[0]] = temp_trail[[rotate_tuple[0], rotate_tuple[1]]].apply(
+            lambda x: x[rotate_tuple[0]] * math.cos(ego_init_rad) + x[rotate_tuple[1]] * math.sin(ego_init_rad), axis=1)
+        trail[rotate_tuple[1]] = temp_trail[[rotate_tuple[0], rotate_tuple[1]]].apply(
+            lambda x: -x[rotate_tuple[0]] * math.sin(ego_init_rad) + x[rotate_tuple[1]] * math.cos(ego_init_rad),
+            axis=1)
+    return trail
+
+
+def resample_by_time(data, minnum, dt, flag=True):
     """
     resample by time window
     return first value of resampled data
     :param data: 输入数据，dataframe
-    :param minutes: 按几分钟resample，float
-    :param datetime: 日期时间变量名，str
+    :param minnum: 按几分钟resample，float
+    :param dt: 日期时间变量名，str
     :param flag: True 向下采样; False 向上采样
     :return: 输出结果，dataframe
     """
-    data.index = datetime
-    if minutes == 0:
-        minutes = 1
+    data.index = dt
+    if minnum == 0:
+        minnum = 1
     if flag:
-        scale = str(minutes) + 'T'
-        r = data.resample(scale).first()
+        if isinstance(minnum, int):
+            scale = str(minnum) + 'T'
+            r = data.resample(scale).first()
+            return r
+        elif isinstance(minnum, float):
+
+            scale = str(3) + 'S'  # 3s 为基准
+            r = data.resample(scale).interpolate()
+            scale = str(round(60 * minnum)) + 'S'  # 速度扩大minnum倍
+            r = r.resample(scale).interpolate()
+            return r
     else:
-        scale = str(minutes) + 'S'
+        scale = str(minnum) + 'S'
         r = data.resample(scale).interpolate()
-    return r.reset_index(drop=True)
+        return r
 
 
 def get_adjust_trails(trails_count, **trail):
@@ -214,30 +275,28 @@ def get_finale_trail(merge_trail, period, turning_angle):
     return merge_trail
 
 
-def get_connect_trail(position_trail_list, trajectory):
+def get_connect_trail(trails_list, trajectory):
     """
     用于物体不同形态轨迹之间连接
-    @param position_trail_list: 二维数组，第一维以轨迹形态划分，第二位以单个轨迹划分
+    @param trails_list: 多段轨迹形成的列表
     @param trajectory: 物体运动轨迹形态的标志位
     @return
     position_trail_list:已经连接好的传物体轨迹形态列表
-    road_list:根据轨迹生成的road_list
     """
-    road_list = list()
-    behind_motion_trail_list = position_trail_list[1]
-    position_trail_list[0], position_trail_list[1], road_list = connect_trail(
-        position_trail_list[0], behind_motion_trail_list, trajectory, road_list)
-    if len(position_trail_list) > 2:
-        get_connect_trail(position_trail_list[1:], trajectory)
+    trails_list[0], trails_list[1] = connect_trail(trails_list[0], trails_list[1], trajectory)
+    if len(trails_list) > 2:
+        get_connect_trail(trails_list[1:], trajectory)
     else:
-        return position_trail_list
-    return position_trail_list, road_list
+        return trails_list
+    return trails_list
 
 
-def connect_trail(front_trail, behind_trail, trajectory, road_list):
+def connect_trail(front_trail, behind_trail, trajectory):
     # print(front_trail, behind_trail, trajectory)
     # for b_single_trail in behind_trail:
     #     b_single_trail.diff(periods=1, axis=0)
+    reset_tuple = ((1, 2), (2, 3), (3, 4))
+
     for f_single_trail in front_trail:
         end_x = f_single_trail.iloc[-1]['ego_e']
         end_y = f_single_trail.iloc[-1]['ego_n']
@@ -245,13 +304,13 @@ def connect_trail(front_trail, behind_trail, trajectory, road_list):
         end_speed = f_single_trail.iloc[-1]['vel_filtered']
 
         end_point = Point(end_x, end_y)
-        road_list.append(end_point)
 
-        return front_trail, behind_trail, road_list
+    return front_trail, behind_trail
 
 
-def multiple_uniform_trail(trail, multiple, start_speed):
-    trail['vel_filtered'] = start_speed
-    trail.loc[1:, 'ego_e'] = trail.loc[1:, 'ego_e'] * multiple
-    trail.loc[1:, 'ego_n'] = trail.loc[1:, 'ego_n'] * multiple
+def multiple_trail(trail, multiple, *args):
+    for rotate_tuple in args[0]:
+        trail.loc[1:, rotate_tuple[0]] = trail.loc[1:, rotate_tuple[0]] * multiple
+        trail.loc[1:, rotate_tuple[1]] = trail.loc[1:, rotate_tuple[1]] * multiple
+    trail['vel_filtered'] = trail['vel_filtered'] * multiple
     return trail
