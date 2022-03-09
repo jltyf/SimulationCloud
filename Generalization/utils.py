@@ -1,9 +1,9 @@
 import copy
-import itertools
 import math
 from copy import deepcopy
-
+from functools import reduce
 import pandas as pd
+from scenariogeneration import xosc
 
 
 class Point:
@@ -117,7 +117,7 @@ def corTransform(trail1, trail2, e, n, rad, trail_new):
     return trail_new
 
 
-def corTransform_init(trail, e, n, h, init_e=0, init_n=0, init_h=0, *args):
+def corTransform_init(trail, e, n, h, *args, init_e=0, init_n=0, init_h=0):
     e_offset = init_e - trail.at[0, e]
     n_offset = init_n - trail.at[0, n]
     deg = trail.at[0, h] - init_h
@@ -142,6 +142,39 @@ def concatTrails(trail1, trail2, *args):
 
     trail_new['headinga'] += deg
     return trail_new
+
+
+def generateFinalTrail(name, lista, e, n, h, *args, init_e=0, init_n=0, init_h=0):
+    '将一个轨迹list里的多个元素拼接为一条轨迹'
+    if lista:
+        ego_trail = []
+        # 初始轨迹坐标为原点，headingAngle为0
+        ego_trail.append(corTransform_init(lista[0], 'ego_e', 'ego_n', 'headinga', args[0], 0, 0, 0))
+        if len(lista) == 1:
+            print(name, "不需要拼接")
+        elif len(lista) > 1:
+            for index in range(1, len(lista)):
+                ego_trail.append(concatTrails(ego_trail[-1], lista[index], args[0]))
+        # 将所有的轨迹数据合并为一条轨迹
+        uniondata = lambda x, y: pd.concat([x, y])
+        ego_merge_trail = reduce(uniondata, ego_trail)
+        ego_merge_trail = ego_merge_trail.reset_index(drop=True)
+        return ego_merge_trail
+    else:
+        return lista
+
+
+def getEgoPosition(egodata, t, e, n, h):
+    position = []
+    time = []
+    egodata = egodata[[t, e, n, h]]
+    egodata = egodata.reset_index(drop=True)
+    egodata[t] = egodata.index / 10
+
+    for row in egodata.iterrows():
+        position.append(xosc.WorldPosition(x=float(row[1][e]), y=float(row[1][n]), h=math.radians(float(row[1][h]))))
+        time.append(float(row[1]['Time']))
+    return position, time
 
 
 def rotate_trail(trail, headinga, *args):
@@ -308,7 +341,7 @@ def connect_trail(front_trail, behind_trail, trajectory):
     return front_trail, behind_trail
 
 
-def multiple_trail(trail, multiple, *args):
+def multiple_uniform_trail(trail, multiple, *args):
     for rotate_tuple in args[0]:
         trail.loc[1:, rotate_tuple[0]] = trail.loc[1:, rotate_tuple[0]] * multiple
         trail.loc[1:, rotate_tuple[1]] = trail.loc[1:, rotate_tuple[1]] * multiple
