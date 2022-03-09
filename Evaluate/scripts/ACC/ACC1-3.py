@@ -4,6 +4,7 @@
 
 from enumerations import CollisionStatus
 
+
 def get_report(scenario, script_id):
     timestamp_list = scenario.scenario_data.index.tolist()
     stop_timestamp_list = []
