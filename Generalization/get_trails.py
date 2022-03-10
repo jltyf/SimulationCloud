@@ -1,17 +1,16 @@
 import math
 import operator
 import copy
-
-import numpy as np
 import pandas as pd
+import numpy as np
 from functools import reduce
 from enumerations import SpeedType, TrailMotionType
 from utils import spin_trans_form, Point, resample_by_time, get_adjust_trails, get_lane_distance, get_finale_trail, \
-    multiple_trail, rotate_trail, concatTrails, corTransform_init, resample_by_time
+    multiple_uniform_trail, rotate_trail, concatTrails, corTransform_init
 
 
 def get_uniform_speed_trail(car_trails, trails_json_dict, start_speed, period, turning_angle, trail_section,
-                            heading_angle, scenario):
+                            heading_angle, scenario, rotate_tuple):
     """
     return:直线轨迹
     从匀速的轨迹库中 分类别取出轨迹
@@ -64,14 +63,13 @@ def get_uniform_speed_trail(car_trails, trails_json_dict, start_speed, period, t
         #     trail_res.loc[i, 'Time'] = time_min + 100 * i
     multiple = start_speed / trail_res.loc[0, 'vel_filtered']
     coord_heading_angle = trail_res.loc[0, 'headinga'] - heading_angle
-    rotate_tuple = ('ego_e', 'ego_n'), ('left_e', 'left_n'), ('right_e', 'right_n')
     trail_res = rotate_trail(trail_res, coord_heading_angle, rotate_tuple)
-    trail_res = multiple_trail(trail_res, multiple, rotate_tuple)
+    trail_res = multiple_uniform_trail(trail_res, multiple, rotate_tuple)
     return trail_res, turning_angle
 
 
 def get_variable_speed_trail(car_trails, trails_json_dict, start_speed, period, speed_status_num, turning_angle,
-                             heading_angle, scenario):
+                             heading_angle, scenario, rotate_tuple):
     """
     Parameters
     ----------
@@ -132,11 +130,10 @@ def get_variable_speed_trail(car_trails, trails_json_dict, start_speed, period, 
                                             & (trails['Time'].values >= start_time)]).reset_index(drop=True)
 
                     # 根据前段轨迹调整本轨迹的位置和方向
-                    rotate_tuple = ('ego_e', 'ego_n'), ('left_e', 'left_n'), ('right_e', 'right_n')
                     if trails_list:
                         section_trail = concatTrails(trails_list[-1], section_trail, rotate_tuple)
                     else:
-                        section_trail = corTransform_init(section_trail, 'ego_e', 'ego_n', 'headinga', rotate_tuple)
+                        section_trail = corTransform_init(section_trail, 'ego_e', 'ego_n', 'headinga', rotate_tuple, 0, 0, 0)
 
                     trails_list.append(section_trail)
 
@@ -151,7 +148,7 @@ def get_variable_speed_trail(car_trails, trails_json_dict, start_speed, period, 
                 if frame >= 1:
                     merge_trail = merge_trail[:period * 10]
                 else:
-                    merge_trail = resample_by_time(merge_trail, math.ceil(frame * 60), rng, flag=False)[:period * 10]
+                    merge_trail = resample_by_time(merge_trail, math.floor(frame * 60), rng, flag=False)[:period * 10]
                     merge_trail['vel_filtered'] = merge_trail['vel_filtered'] * frame
                     merge_trail = merge_trail.reset_index(drop=True)
 
@@ -163,12 +160,12 @@ def get_variable_speed_trail(car_trails, trails_json_dict, start_speed, period, 
 
     # 根据初始设定速度微调坐标
     multiple = start_speed / final_trail.loc[0, 'vel_filtered']
-    final_trail = multiple_trail(final_trail, multiple, rotate_tuple)
+    final_trail = multiple_uniform_trail(final_trail, multiple, rotate_tuple)
 
     return final_trail, turning_angle
 
 
-def get_change_lane_trail(car_trails, trails_json_dict, lane_width, start_speed, heading_angle, period, motion_status):
+def get_change_lane_trail(car_trails, trails_json_dict, lane_width, start_speed, heading_angle, period, motion_status, rotate_tuple):
     """
     Parameters
     ----------
@@ -197,7 +194,7 @@ def get_change_lane_trail(car_trails, trails_json_dict, lane_width, start_speed,
     elif motion_status == TrailMotionType.lane_change_left_twice.value:
         min_lateral_offset = 2.5 + lane_width
         left_flag = True
-    else:
+    elif motion_status == TrailMotionType.lane_change_right_twice.value:
         min_lateral_offset = 2.5 + lane_width
         left_flag = False
     trails_data = copy.deepcopy(car_trails)
@@ -209,7 +206,7 @@ def get_change_lane_trail(car_trails, trails_json_dict, lane_width, start_speed,
             for speed_status in trails_json_dict[motion]:
                 change_lane_json_dict[motion] += trails_json_dict[motion][speed_status]
 
-    # 筛选出移动距离达到变道要求切转向角度小于3度的轨迹
+    # 筛选出移动距离达到变道要求且转向角度小于3度的轨迹
     optional_trails_list = list()
     for motion in change_lane_json_dict:
         change_lane_json_dict[motion] = sorted(change_lane_json_dict[motion], key=operator.itemgetter('startSpeed'),
@@ -241,11 +238,9 @@ def get_change_lane_trail(car_trails, trails_json_dict, lane_width, start_speed,
             trail_res = trail
             previous_speed_difference = speed_difference
 
-    rotate_tuple = ('ego_e', 'ego_n'), ('left_e', 'left_n'), ('right_e', 'right_n')
-
     # 根据初始设定速度微调坐标
     multiple = start_speed / trail_res.loc[0, 'vel_filtered']
-    trail_res = multiple_trail(trail_res, multiple, rotate_tuple)
+    trail_res = multiple_uniform_trail(trail_res, multiple, rotate_tuple)
 
     # 变道场景未转角
     turning_angle = 0
@@ -253,8 +248,7 @@ def get_change_lane_trail(car_trails, trails_json_dict, lane_width, start_speed,
 
 
 def get_turn_round_trail(car_trails, trails_json_dict, start_speed, speed_status_num, turn_round_flag, max_trails,
-                         period,
-                         turning_angle):
+                         period, turning_angle, rotate_tuple):
     """
 
     Parameters
@@ -313,7 +307,7 @@ def get_turn_round_trail(car_trails, trails_json_dict, start_speed, speed_status
                                     < angle_threshold:
                                 selected_trail_list.append(single_trail)
                     elif 'uturn_left' in turn_round_status or 'uturn_right' in turn_round_status:
-                        # 找到所有角度符合左掉头180度的轨迹,下同
+                        # 找到所有角度符合左掉头or右掉头180度的轨迹
                         if single_trail['startHeadinga'] + 180 <= 360:
                             if math.fabs(single_trail['stopHeadinga'] - single_trail['startHeadinga'] - 180) \
                                     < angle_threshold:
@@ -337,7 +331,7 @@ def get_turn_round_trail(car_trails, trails_json_dict, start_speed, speed_status
             if frame >= 1:
                 trail_new = resample_by_time(trail_new, frame, rng, flag=True)
             else:
-                trail_new = resample_by_time(trail_new, math.ceil(frame * 60), rng, flag=False)
+                trail_new = resample_by_time(trail_new, math.floor(frame * 60), rng, flag=False)
             trail_new['vel_filtered'] = trail_new['vel_filtered'] * frame
             trail_new = trail_new.reset_index(drop=True)
 
@@ -348,9 +342,8 @@ def get_turn_round_trail(car_trails, trails_json_dict, start_speed, speed_status
                 previous_speed_difference = speed_difference
 
     # 根据初始设定速度微调坐标
-    rotate_tuple = ('ego_e', 'ego_n'), ('left_e', 'left_n'), ('right_e', 'right_n')
     multiple = start_speed / final_trail.loc[0, 'vel_filtered']
-    final_trail = multiple_trail(final_trail, multiple, rotate_tuple)
+    final_trail = multiple_uniform_trail(final_trail, multiple, rotate_tuple)
 
     return final_trail, turning_angle
 
@@ -360,7 +353,7 @@ def get_static_trail(period, start_point, heading_angle, lane_width):
     返回一条静止的轨迹
     :param period: 轨迹的持续时间
     :param start_point: 轨迹起始点
-    :param heading_angle: 这条贵及中自车的headinga
+    :param heading_angle: 这条轨迹中自车的headinga
     :param lane_width: 车道线宽度
     :return: 轨迹
     """

@@ -14,10 +14,11 @@ class ScenarioData(object):
         self.lane_width = 3.75
 
     def get_scenario_id(self):
-        if not self.scenario_type == ScenarioType.generalization:
+        if not self.scenario_type == ScenarioType.generalization.value:
             return self.scenario_data.iloc[1]['unit_scene_ID']
         else:
-            return self.scenario_data.iloc[1]['unit_scene_ID'].split('_')[0]
+            name_list = self.scenario_data.iloc[1]['unit_scene_ID'].split('_')
+            return name_list[0] + '_' + name_list[1]
 
     def get_velocity(self, time_stamp, obj_id=0):
         """
