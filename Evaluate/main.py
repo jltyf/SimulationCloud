@@ -1,3 +1,4 @@
+# coding=UTF-8
 import sys
 
 import pandas as pd
@@ -52,5 +53,5 @@ def scenario_score(scenario_data_path, scenario_type, script_name=None):
 
 
 if __name__ == '__main__':
-    result = scenario_score('D:/test_data_ACC1-4_Ego.csv', ScenarioType.generalization)
+    result = scenario_score('D:/test_data_ACC1-4_Ego.csv', ScenarioType.generalization.value)
     print(result)
