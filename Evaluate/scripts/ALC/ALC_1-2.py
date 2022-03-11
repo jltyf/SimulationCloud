@@ -5,7 +5,7 @@
 def get_report(scenario, script_id):
     last_stage = scenario.scenario_data.iloc[-5:-1]
     lane_center_offset = (last_stage['lane_center_offset'].abs()).max()
-    change_line_flag = scenario.scenario_data['frame_ID'].max() - scenario.scenario_data['frame_ID'].min()
+    change_line_flag = scenario.scenario_data['lane_id'].max() - scenario.scenario_data['lane_id'].min()
     if change_line_flag == 0 and lane_center_offset < 1:
         score = 100
         evaluate_item = '得分 100，在相邻车道有干扰车辆时选择继续在自车道行驶。'
