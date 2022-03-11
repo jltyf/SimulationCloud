@@ -161,7 +161,10 @@ class ScenarioData(object):
         change_lane_trail = self.scenario_data.query(
             '(lane_center_offset<-@lane_offset) or (lane_center_offset>@lane_offset)')
         timestamp_list = change_lane_trail.index.values.tolist()
-        start_time = timestamp_list[0]
-        end_time = timestamp_list[-1]
-        period = (end_time - start_time) / 1000
-        return period
+        try:
+            start_time = timestamp_list[0]
+            end_time = timestamp_list[-1]
+            period = (end_time - start_time) / 1000
+            return period
+        except:
+            return 0

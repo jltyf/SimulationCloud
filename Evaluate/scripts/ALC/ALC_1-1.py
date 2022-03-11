@@ -5,11 +5,12 @@
 def get_report(scenario, script_id):
     lat_acc_max = (scenario.scenario_data['lateral_acceleration'].abs()).max()
     lon_acc_max = (scenario.scenario_data['longitudinal_acceleration'].abs()).max()
-    lat_acc_roc_max = scenario.get_lat_acc_roc()
+    lat_acc_roc_max = (scenario.scenario_data['lateral_accelarate_roc'].abs()).max()
     change_lane_time = scenario.get_change_lane_time()
+    change_line_flag = scenario.scenario_data['lane_id'].max() - scenario.scenario_data['lane_id'].min()
 
     # 得分说明
-    if change_lane_time <= 6:
+    if change_lane_time <= 6 and change_line_flag:
         if lon_acc_max <= 2 and lat_acc_max <= 3 and lat_acc_roc_max <= 5:
             score = 100
             evaluate_item = '得分 100，该算法中 ALC 功能正常，且变道过程中具备良好的舒适性'
