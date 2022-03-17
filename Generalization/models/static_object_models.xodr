@@ -1,0 +1,12 @@
+<?xml version="1.0" ?>
+<objects>
+    <object type="tree" name="VegTreeFir01v13m.flt" id="0" s="25" t="-15" zOffset="-1.1530000000000005e+00" validLength="0.0000000000000000e+00" orientation="none" length="6.1250000000000000e+00" width="6.3540000000000001e+00" height="1.3986000000000001e+01" hdg="0.0000000000000000e+00" pitch="0.0000000000000000e+00" roll="0.0000000000000000e+00">
+    </object>
+    <object type="vegetation" name="VegBush08v3m.flt" id="1" s="16" t="13" zOffset="-3.3699999999999997e-01" validLength="0.0000000000000000e+00" orientation="none" length="3.0739999999999998e+00" width="3.0979999999999999e+00" height="3.1699999999999999e+00" hdg="3.1415926535897931e+00" pitch="0.0000000000000000e+00" roll="0.0000000000000000e+00">
+    </object>
+    <object type="building" name="BldBarn09.flt" id="2" s="51" t="-17" zOffset="-9.2774923775425344e-01" validLength="0.0000000000000000e+00" orientation="none" length="1.6867999999999999e+01" width="8.2729999999999997e+00" height="6.9969999999999999e+00" hdg="3.1556610777178613e+00" pitch="0.0000000000000000e+00" roll="0.0000000000000000e+00">
+    </object>
+    <object type="railing" name="RAILING_SGL_STD_UP" id="3" s="0.0000000000000000e+00" t="-10" zOffset="6.0000002384185791e-01" validLength="5.0000000000000000e+03" orientation="none" length="0.0000000000000000e+00" width="3.5000000894069672e-01" height="2.9999995231628418e-01" hdg="0.0000000000000000e+00" pitch="0.0000000000000000e+00" roll="0.0000000000000000e+00">
+        <repeat s="0.0000000000000000e+00" length="5.0000000000000000e+03" distance="0.0000000000000000e+00" tStart="-1.3104999993741512e+01" tEnd="-1.3104999993741512e+01" widthStart="3.5000000894069672e-01" widthEnd="3.5000000894069672e-01" heightStart="2.9999995231628418e-01" heightEnd="2.9999995231628418e-01" zOffsetStart="6.0000002384185791e-01" zOffsetEnd="6.0000002384185791e-01" />
+    </object>
+</objects>

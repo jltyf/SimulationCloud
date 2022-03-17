@@ -33,10 +33,16 @@ class SpeedType(Enum):
     匀速      1
     匀加      2
     匀减      3
+    起步      4
+    刹停      5
+    静止      0
     """
+    static = 0
     uniform = auto()
     Accelerate = auto()
     Decelerate = auto()
+    Start = auto()
+    Stop = auto()
 
 
 class ObjectType(Enum):
@@ -44,7 +50,7 @@ class ObjectType(Enum):
     物体的类型：
     自车       1
     目标车     2
-    行人      3
+    行人       3
     """
     ego = auto()
     vehicle = auto()

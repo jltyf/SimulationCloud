@@ -5,17 +5,14 @@ import pandas as pd
 import numpy as np
 from functools import reduce
 from enumerations import SpeedType, TrailMotionType
-from utils import spin_trans_form, Point, resample_by_time, get_adjust_trails, get_lane_distance, get_finale_trail, \
-    multiple_uniform_trail, rotate_trail, concatTrails, corTransform_init
+from utils import resample_by_time, multiple_uniform_trail, concatTrails, corTransform_init
 
 
-def get_uniform_speed_trail(car_trails, trails_json_dict, start_speed, period, turning_angle, trail_section,
-                            heading_angle, scenario, rotate_tuple):
+def get_uniform_speed_trail(car_trails, trails_json_dict, start_speed, period, rotate_tuple):
     """
     return:直线轨迹
     从匀速的轨迹库中 分类别取出轨迹
     """
-
     # 从轨迹库中分离出匀速的轨迹
     uniform_json_dict = dict()
     trails = copy.deepcopy(car_trails)
@@ -25,8 +22,8 @@ def get_uniform_speed_trail(car_trails, trails_json_dict, start_speed, period, t
                 selected_trail_list = []
                 for single_trail in trail_value:
                     # 排除数据中初始速度和结束速度小于0的和结束heading angle减去开始heading angle大于0.5度的轨迹
-                    if single_trail['startSpeed'] > 0 and single_trail['stopSpeed'] > 0 \
-                            and math.fabs(single_trail['stopHeadinga'] - single_trail['startHeadinga'] < 0.5):
+                    if single_trail['startSpeed'] > 1 and single_trail['stopSpeed'] > 1 \
+                            and math.fabs(single_trail['stopHeadinga'] - single_trail['startHeadinga']) < 0.5:
                         selected_trail_list.append(single_trail)
                 uniform_json_dict[motion] = selected_trail_list
 
@@ -42,34 +39,39 @@ def get_uniform_speed_trail(car_trails, trails_json_dict, start_speed, period, t
                 final_trail = single_json
                 previous_speed_difference = speed_difference
 
-    # 从轨迹数据中获得此轨迹并将其转换为符合场景要求的轨迹
+    # 提取轨迹数据
     start_time = final_trail['start']
     end_time = final_trail['stop']
     single_trail = (trails[(trails['Time'].values <= end_time)
                            & (trails['Time'].values >= start_time)]).reset_index(drop=True)
-    if len(single_trail) > 10:
 
-        for _ in range(5):
-            temp_trail = get_adjust_trails(trails_count=1, trail=single_trail)[1:]
-            single_trail = pd.concat([single_trail, temp_trail], axis=0).reset_index(drop=True)
-        trail_res = single_trail[:period * 10 + 1]
-        start_point = Point(trail_res.at[0, 'ego_e'], trail_res.at[0, 'ego_n'])
-        trail_res.loc[::, 'ego_e'] -= start_point.x
-        trail_res.loc[::, 'ego_n'] -= start_point.y
-        trail_res = trail_res.reset_index(drop=True)
-        # 在轨迹拼接后统一处理
-        # time_min = trail_res.Time.values.min()
-        # for i in range(len(trail_res)):
-        #     trail_res.loc[i, 'Time'] = time_min + 100 * i
+    # 单条匀速轨迹太短通过自身多次拼接延长
+    trails_list = []
+    num = math.floor(period * 10 / len(single_trail))
+    for _ in range(num + 1):
+        # 根据前段轨迹调整本轨迹的位置和方向
+        if trails_list:
+            section_trail = concatTrails(trails_list[-1], single_trail, rotate_tuple)
+        else:
+            section_trail = single_trail
+
+        trails_list.append(section_trail)
+
+    # 将所有的轨迹数据合并为一条轨迹
+    def uniondata(x, y):
+        return pd.concat([x, y])
+
+    merge_trail = reduce(uniondata, trails_list)
+    merge_trail = merge_trail.reset_index(drop=True)
+    trail_res = merge_trail[:period * 10 + 1]
+
+    # 根据初始设定速度微调坐标
     multiple = start_speed / trail_res.loc[0, 'vel_filtered']
-    coord_heading_angle = trail_res.loc[0, 'headinga'] - heading_angle
-    trail_res = rotate_trail(trail_res, coord_heading_angle, rotate_tuple)
     trail_res = multiple_uniform_trail(trail_res, multiple, rotate_tuple)
-    return trail_res, turning_angle
+    return trail_res
 
 
-def get_variable_speed_trail(car_trails, trails_json_dict, start_speed, period, speed_status_num, turning_angle,
-                             heading_angle, scenario, rotate_tuple):
+def get_variable_speed_trail(car_trails, trails_json_dict, start_speed, period, speed_status_num, rotate_tuple):
     """
     Parameters
     ----------
@@ -77,13 +79,10 @@ def get_variable_speed_trail(car_trails, trails_json_dict, start_speed, period, 
     trails_json_dict:标记所有轨迹类型的json数据
     period: 持续时间
     speed_status_num: 当前需要处理的轨迹属于哪种加速状态
-    turning_angle: 跟在有转向的运动后需要转向的角度
-    heading_angle: 此轨迹的朝向角，取值范围[0,360]，以真北为基准，顺时针递减
-    scenario: 场景参数
     Return 返回多条变速轨迹，如果所能生成的轨迹数量大于max_trails，返回轨迹条数是max_trails
     -------
     """
-    if speed_status_num == str(SpeedType.Accelerate.value):
+    if speed_status_num == int(SpeedType.Accelerate.value):
         speed_status = 'Accelerate'
     else:
         speed_status = 'Decelerate'
@@ -105,7 +104,7 @@ def get_variable_speed_trail(car_trails, trails_json_dict, start_speed, period, 
     # 拼接加减速轨迹生成合适的变速轨迹
     for trail_motion in variable_json_dict:
         for trail_value in variable_json_dict[trail_motion].values():
-            reverse_flag = ('startSpeed', False) if speed_status == str(SpeedType.Decelerate.value) else (
+            reverse_flag = ('startSpeed', False) if speed_status == str(SpeedType.Accelerate.value) else (
                 'stopSpeed', True)
             temp_list = sorted(trail_value, key=operator.itemgetter(reverse_flag[0]), reverse=reverse_flag[1])
 
@@ -117,8 +116,7 @@ def get_variable_speed_trail(car_trails, trails_json_dict, start_speed, period, 
                     if (speed_status_num == str(SpeedType.Accelerate.value) and temp_list[last_index]['stopSpeed'] <=
                         temp_list[index_temp]['startSpeed'] <= temp_list[last_index]['stopSpeed'] + 1) or (
                             speed_status_num == str(SpeedType.Decelerate.value) and temp_list[last_index][
-                        'stopSpeed'] >= temp_list[index_temp]['startSpeed'] >= temp_list[last_index][
-                                'stopSpeed'] - 1):
+                        'stopSpeed'] >= temp_list[index_temp]['startSpeed'] >= temp_list[last_index]['stopSpeed'] - 1):
                         json_index_list_temp.append(index_temp)
 
                 # 提取轨迹数据
@@ -133,12 +131,15 @@ def get_variable_speed_trail(car_trails, trails_json_dict, start_speed, period, 
                     if trails_list:
                         section_trail = concatTrails(trails_list[-1], section_trail, rotate_tuple)
                     else:
-                        section_trail = corTransform_init(section_trail, 'ego_e', 'ego_n', 'headinga', rotate_tuple, 0, 0, 0)
+                        section_trail = corTransform_init(section_trail, 'ego_e', 'ego_n', 'headinga', rotate_tuple, 0,
+                                                          0, 0)
 
                     trails_list.append(section_trail)
 
                 # 将所有的轨迹数据合并为一条轨迹
-                uniondata = lambda x, y: pd.concat([x, y])
+                def uniondata(x, y):
+                    return pd.concat([x, y])
+
                 merge_trail = reduce(uniondata, trails_list)
                 merge_trail = merge_trail.reset_index(drop=True)
 
@@ -146,9 +147,10 @@ def get_variable_speed_trail(car_trails, trails_json_dict, start_speed, period, 
                 frame = len(merge_trail) / (period * 10)
                 rng = pd.date_range("2020-05-10 00:00:00", periods=len(merge_trail), freq="T")
                 if frame >= 1:
-                    merge_trail = merge_trail[:period * 10]
+                    merge_trail = merge_trail[:period * 10 + 1]
                 else:
-                    merge_trail = resample_by_time(merge_trail, math.floor(frame * 60), rng, flag=False)[:period * 10]
+                    merge_trail = resample_by_time(merge_trail, math.floor(frame * 60), rng, flag=False)[
+                                  :period * 10 + 1]
                     merge_trail['vel_filtered'] = merge_trail['vel_filtered'] * frame
                     merge_trail = merge_trail.reset_index(drop=True)
 
@@ -162,10 +164,65 @@ def get_variable_speed_trail(car_trails, trails_json_dict, start_speed, period, 
     multiple = start_speed / final_trail.loc[0, 'vel_filtered']
     final_trail = multiple_uniform_trail(final_trail, multiple, rotate_tuple)
 
-    return final_trail, turning_angle
+    return final_trail
 
 
-def get_change_lane_trail(car_trails, trails_json_dict, lane_width, start_speed, heading_angle, period, motion_status, rotate_tuple):
+def get_start_stop_trail(car_trails, trails_json_dict, start_speed, period, speed_status_num, rotate_tuple):
+    if speed_status_num == int(SpeedType.Start.value):
+        speed_status = 'Start'
+    else:
+        speed_status = 'Stop'
+    trails = copy.deepcopy(car_trails)
+    previous_speed_difference = 100
+    previous_trail_length = 0
+
+    # 找到所有比较直的轨迹
+    for trail_motion in trails_json_dict.keys():
+        if trail_motion == 'No change lane':
+            for trail_speed, trail_value in trails_json_dict[trail_motion].items():
+                if trail_speed in speed_status:
+                    selected_trail_list = []
+                    for single_trail in trail_value:
+                        if math.fabs(single_trail['stopHeadinga'] - single_trail['startHeadinga']) < 0.5:
+                            selected_trail_list.append(single_trail)
+    if selected_trail_list:
+        for single_json in selected_trail_list:
+            # 提取轨迹数据
+            start_time = single_json['start']
+            end_time = single_json['stop']
+            trail_new = (trails[(trails['Time'].values <= end_time)
+                                & (trails['Time'].values >= start_time)]).reset_index(drop=True)
+
+            # 根据轨迹时间长度做重采样
+            frame = len(trail_new) / (period * 10)
+            rng = pd.date_range("2020-05-10 00:00:00", periods=len(trail_new), freq="T")
+            if frame >= 1:
+                trail_new = resample_by_time(trail_new, frame, rng, flag=True)
+            else:
+                trail_new = resample_by_time(trail_new, math.floor(frame * 60), rng, flag=False)
+            trail_new['vel_filtered'] = trail_new['vel_filtered'] * frame
+            trail_new = trail_new.reset_index(drop=True)
+
+            if speed_status == 'Start':
+                # 起步选取长度最长的轨迹
+                if single_json['longituteOffset'] > previous_trail_length:
+                    previous_trail_length = single_json['longituteOffset']
+                    final_trail = trail_new
+            else:
+                # 刹停选取最接近初始速度的轨迹
+                speed_difference = abs(trail_new.at[0, 'vel_filtered'] - start_speed)
+                if speed_difference < previous_speed_difference:
+                    final_trail = trail_new
+                    previous_speed_difference = speed_difference
+
+                # 根据初始设定速度微调坐标
+                multiple = start_speed / final_trail.loc[0, 'vel_filtered']
+                final_trail = multiple_uniform_trail(final_trail, multiple, rotate_tuple)
+
+    return final_trail
+
+
+def get_change_lane_trail(car_trails, trails_json_dict, lane_width, start_speed, period, motion_status, rotate_tuple):
     """
     Parameters
     ----------
@@ -173,7 +230,6 @@ def get_change_lane_trail(car_trails, trails_json_dict, lane_width, start_speed,
     trails_json_dict:标记所有轨迹类型的json数据
     lane_width: 车道宽度
     start_speed:需要生成的轨迹的起始速度
-    heading_angle:需要旋转的到的角度
     period:持续时间
     motion_status:轨迹运动形态
     Returns 轨迹
@@ -213,7 +269,7 @@ def get_change_lane_trail(car_trails, trails_json_dict, lane_width, start_speed,
                                                reverse=True)
         for trail_json in change_lane_json_dict[motion]:
             if (trail_json['stop'] - trail_json['start']) / 1000 < period and abs(
-                    trail_json['startHeadinga'] - trail_json['stopHeadinga']) < 3 and (
+                    trail_json['startHeadinga'] - trail_json['stopHeadinga']) < 2 and (
                     min_lateral_offset < abs(trail_json['lateralOffset']) < 2 * min_lateral_offset):
 
                 trail = trails_data[(trails_data['Time'] <= trail_json['stop']) & (
@@ -223,7 +279,7 @@ def get_change_lane_trail(car_trails, trails_json_dict, lane_width, start_speed,
                 frame = len(trail) / (period * 10)
                 rng = pd.date_range("2020-05-10 00:00:00", periods=len(trail), freq="T")
                 if frame >= 1:
-                    trail = trail[:period * 10]
+                    trail = trail[:period * 10 + 1]
                 else:
                     trail = resample_by_time(trail, math.floor(frame * 60), rng, flag=False)[:period * 10 + 1]
                     trail['vel_filtered'] = trail['vel_filtered'] * frame
@@ -242,13 +298,10 @@ def get_change_lane_trail(car_trails, trails_json_dict, lane_width, start_speed,
     multiple = start_speed / trail_res.loc[0, 'vel_filtered']
     trail_res = multiple_uniform_trail(trail_res, multiple, rotate_tuple)
 
-    # 变道场景未转角
-    turning_angle = 0
-    return trail_res, turning_angle
+    return trail_res
 
 
-def get_turn_round_trail(car_trails, trails_json_dict, start_speed, speed_status_num, turn_round_flag, max_trails,
-                         period, turning_angle, rotate_tuple):
+def get_turn_round_trail(car_trails, trails_json_dict, start_speed, turn_round_flag, period, rotate_tuple):
     """
 
     Parameters
@@ -288,33 +341,33 @@ def get_turn_round_trail(car_trails, trails_json_dict, start_speed, speed_status
                         # 找到所有角度符合左转向90度的轨迹
                         if single_trail['startHeadinga'] + 90 <= 360:
 
-                            if math.fabs(single_trail['stopHeadinga'] - single_trail['startHeadinga'] - 90) \
-                                    < angle_threshold:
+                            if math.fabs(single_trail['stopHeadinga'] - single_trail[
+                                'startHeadinga'] - 90) < angle_threshold:
                                 selected_trail_list.append(single_trail)
                         else:
-                            if math.fabs(single_trail['stopHeadinga'] - single_trail['startHeadinga'] + 270) \
-                                    < angle_threshold:
+                            if math.fabs(single_trail['stopHeadinga'] - single_trail[
+                                'startHeadinga'] + 270) < angle_threshold:
                                 selected_trail_list.append(single_trail)
                     elif 'crossing turn_right normal' in turn_round_status:
                         # 找到所有角度符合右转向90度的轨迹
                         if single_trail['startHeadinga'] - 90 >= 0:
 
-                            if math.fabs(single_trail['stopHeadinga'] - single_trail['startHeadinga'] + 90) \
-                                    < angle_threshold:
+                            if math.fabs(single_trail['stopHeadinga'] - single_trail[
+                                'startHeadinga'] + 90) < angle_threshold:
                                 selected_trail_list.append(single_trail)
                         else:
-                            if math.fabs(single_trail['stopHeadinga'] - single_trail['startHeadinga'] - 270) \
-                                    < angle_threshold:
+                            if math.fabs(single_trail['stopHeadinga'] - single_trail[
+                                'startHeadinga'] - 270) < angle_threshold:
                                 selected_trail_list.append(single_trail)
                     elif 'uturn_left' in turn_round_status or 'uturn_right' in turn_round_status:
                         # 找到所有角度符合左掉头or右掉头180度的轨迹
                         if single_trail['startHeadinga'] + 180 <= 360:
-                            if math.fabs(single_trail['stopHeadinga'] - single_trail['startHeadinga'] - 180) \
-                                    < angle_threshold:
+                            if math.fabs(single_trail['stopHeadinga'] - single_trail[
+                                'startHeadinga'] - 180) < angle_threshold:
                                 selected_trail_list.append(single_trail)
                         else:
-                            if math.fabs(single_trail['stopHeadinga'] - single_trail['startHeadinga'] + 180) \
-                                    < angle_threshold:
+                            if math.fabs(single_trail['stopHeadinga'] - single_trail[
+                                'startHeadinga'] + 180) < angle_threshold:
                                 selected_trail_list.append(single_trail)
 
     if selected_trail_list:
@@ -345,7 +398,7 @@ def get_turn_round_trail(car_trails, trails_json_dict, start_speed, speed_status
     multiple = start_speed / final_trail.loc[0, 'vel_filtered']
     final_trail = multiple_uniform_trail(final_trail, multiple, rotate_tuple)
 
-    return final_trail, turning_angle
+    return final_trail
 
 
 def get_static_trail(period, start_point, heading_angle, lane_width):
@@ -374,4 +427,32 @@ def get_static_trail(period, start_point, heading_angle, lane_width):
     trail_res['right_e'] = start_point.x - lane_offset_e
     trail_res['right_n'] = start_point.y + lane_offset_n
 
-    return trail_res, heading_angle
+    return trail_res
+
+
+def get_ped_trail(period, ped_trails, sketch):
+    """
+    返回一条行人轨迹,主要筛选条件为轨迹长度和轨迹笔直度
+    :param period:要求的轨迹持续时间
+    :param ped_trails:行人轨迹库
+    :param sketch:行人轨迹分条概述
+    :return:符合的行人轨迹
+    """
+    # 按要求持续时间和轨迹真实持续时间差值排序轨迹
+    sketch['time_difference'] = period - sketch['period']
+    sketch = (sketch.iloc[sketch['time_difference'].abs().argsort()]).reset_index(drop=True)
+
+    # 使用轨迹持续时间和形式需要时间相同的轨迹
+    trail_res = (ped_trails[(ped_trails['Time'].values <= sketch.iloc[0]['stop']) & (
+            ped_trails['Time'].values >= sketch.iloc[0]['start'])]).reset_index(drop=True)
+    frame = len(trail_res) / (period * 10)
+    rng = pd.date_range("2020-05-10 00:00:00", periods=len(trail_res), freq="T")
+    if frame >= 1:
+        trail_res = resample_by_time(trail_res, frame, rng, flag=True)
+    else:
+        trail_res = resample_by_time(trail_res, math.floor(frame * 60), rng, flag=False)
+    trail_res['ObjectAbsVel'] = trail_res['ObjectAbsVel'] * frame
+    trail_res.rename(columns={'ObjectAbsVel': 'vel_filtered'}, inplace=True)
+    trail_res = trail_res.reset_index(drop=True)
+
+    return trail_res

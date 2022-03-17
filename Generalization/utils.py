@@ -1,9 +1,14 @@
-import copy
 import math
 from copy import deepcopy
 from functools import reduce
+from sklearn import metrics
+import numpy as np
 import pandas as pd
+from matplotlib import pyplot as plt
 from scenariogeneration import xosc
+import os
+import json
+from enumerations import DataType
 
 
 class Point:
@@ -65,48 +70,25 @@ def rotate(x_list, y_list, ox, oy, rad):
     return x_res, y_res
 
 
-def spin_trans_form(position_e, position_n, trail_new, rad=0, trails_count=1, **trail):
-    """
-    根据trail对trail_new做旋转变换
+def corTransform(trail1, trail2, e, n, rad, trail_new):
+    '''
+    依据trail1, 通过平移和旋转功能调整trail2
 
     Parameters
-    trail : TYPE
-        要拼接的轨迹.
-    e : TYPE
-        e列名称.
-    n : TYPE
-        n列名称.
-    rad : TYPE
-        旋转角度，弧度值.
-    trail_new : TYPE
-        处理后的trail2.
-
+    ----------
+    trail1 : 基准轨迹, dataframe
+    trail2 : 待操作轨迹, dataframe
+    e : e列名, str
+    n : n列名, str
+    rad : 旋转角度，弧度值
+    trail_new : 待返回的轨迹, dataframe
+    trail_new是复制trail2的, 防止对trail2操作影响了后续轨迹
     Returns
     -------
-    trail_new : TYPE
-        处理后的trail2.
+    通过平移和旋转功能调整的trail_new
 
-    """
-    if trails_count == 1:
-        # e_offset = -trail['trail'].at[0, position_e]
-        # n_offset = -trail['trail'].at[0, position_n]
-        e_offset = trail['trail'].iloc[-1][position_e] - trail['trail'].iloc[0][position_e]
-        n_offset = trail['trail'].iloc[-1][position_n] - trail['trail'].iloc[0][position_n]
-    else:
-        e_offset = trail['trail'].iloc[-1][position_e] - trail['trail_next'].iloc[0][position_e]
-        n_offset = trail['trail'].iloc[-1][position_n] - trail['trail_next'].iloc[0][position_n]
-    trail_new[position_e] += e_offset
-    trail_new[position_n] += n_offset
-    deg = math.degrees(rad)
-    new_position_e, new_position_n = rotate(trail_new[position_e], trail_new[position_n],
-                                            trail_new.iloc[0][position_e], trail_new.iloc[0][position_n], deg)
-    trail_new[position_e] = new_position_e
-    trail_new[position_n] = new_position_n
-    trail_new['headinga'] += deg
-    return trail_new
+    '''
 
-
-def corTransform(trail1, trail2, e, n, rad, trail_new):
     e_offset = trail1.at[len(trail1) - 1, e] - trail2.at[0, e]
     n_offset = trail1.at[len(trail1) - 1, n] - trail2.at[0, n]
     trail_new[e] += e_offset
@@ -118,6 +100,7 @@ def corTransform(trail1, trail2, e, n, rad, trail_new):
 
 
 def corTransform_init(trail, e, n, h, *args, init_e=0, init_n=0, init_h=0):
+    '根据给定初始的位置和角度调整一条轨迹'
     e_offset = init_e - trail.at[0, e]
     n_offset = init_n - trail.at[0, n]
     deg = trail.at[0, h] - init_h
@@ -126,7 +109,7 @@ def corTransform_init(trail, e, n, h, *args, init_e=0, init_n=0, init_h=0):
     for rotate_tuple in args[0]:
         trail[rotate_tuple[0]] += e_offset
         trail[rotate_tuple[1]] += n_offset
-        a, b = rotate(trail[rotate_tuple[0]], trail[rotate_tuple[1]], 0, 0, rad)
+        a, b = rotate(trail[rotate_tuple[0]], trail[rotate_tuple[1]], init_e, init_n, rad)
         trail[rotate_tuple[0]] = a
         trail[rotate_tuple[1]] = b
     trail[h] -= deg
@@ -134,6 +117,7 @@ def corTransform_init(trail, e, n, h, *args, init_e=0, init_n=0, init_h=0):
 
 
 def concatTrails(trail1, trail2, *args):
+    '根据前一条轨迹trail1的末尾位置和角度调整下一条轨迹trail2, 主要的平移和旋转功能是corTransform实现的'
     trail_new = trail2.copy()
     deg = trail1.at[len(trail1) - 1, 'headinga'] - trail_new.at[0, 'headinga']
     rad = math.radians(-deg)
@@ -141,6 +125,8 @@ def concatTrails(trail1, trail2, *args):
         trail_new = corTransform(trail1, trail2, rotate_tuple[0], rotate_tuple[1], rad, trail_new)
 
     trail_new['headinga'] += deg
+    trail_new = trail_new.reset_index(drop=True)
+    trail_new = trail_new.drop([0])
     return trail_new
 
 
@@ -149,9 +135,9 @@ def generateFinalTrail(name, lista, e, n, h, *args, init_e=0, init_n=0, init_h=0
     if lista:
         ego_trail = []
         # 初始轨迹坐标为原点，headingAngle为0
-        ego_trail.append(corTransform_init(lista[0], 'ego_e', 'ego_n', 'headinga', args[0], 0, 0, 0))
+        ego_trail.append(corTransform_init(lista[0], e, n, h, args[0], init_e=init_e, init_n=init_n, init_h=init_h))
         if len(lista) == 1:
-            print(name, "不需要拼接")
+            print(name, "找到一条完整轨迹不需要拼接")
         elif len(lista) > 1:
             for index in range(1, len(lista)):
                 ego_trail.append(concatTrails(ego_trail[-1], lista[index], args[0]))
@@ -164,45 +150,46 @@ def generateFinalTrail(name, lista, e, n, h, *args, init_e=0, init_n=0, init_h=0
         return lista
 
 
-def getEgoPosition(egodata, t, e, n, h):
+def trailModify(ego_trail, t, e, h):
+    '轨迹微调，根据最后一帧航向角偏离的程度，按插值比例偏移回中线位置'
+    max_h = ego_trail.at[len(ego_trail) - 1, h] - ego_trail.at[0, h]
+    max_time = ego_trail.index.tolist()[-1]
+    max_e = ego_trail.at[len(ego_trail) - 1, e] - ego_trail.at[0, e]
+    ego_trail[e] = ego_trail.apply(lambda x: x[e] - max_e * x.name / max_time, axis=1)
+    ego_trail[h] = ego_trail.apply(lambda x: x[h] - max_h * x.name / max_time, axis=1)
+
+    return ego_trail
+
+
+def getXoscPosition(egodata, t, e, n, h, offset_x, offset_y, offset_h):
+    '将dataframe的轨迹转换为场景文件的轨迹数据'
+
     position = []
     time = []
     egodata = egodata[[t, e, n, h]]
     egodata = egodata.reset_index(drop=True)
     egodata[t] = egodata.index / 10
+    egodata[e] = egodata[e] + offset_x
+    egodata[n] = egodata[n] + offset_y
+    egodata[h] = egodata[h] + offset_h
+
+    lasth = float(egodata.at[0, h])
+    init_flag = True
 
     for row in egodata.iterrows():
-        position.append(xosc.WorldPosition(x=float(row[1][e]), y=float(row[1][n]), h=math.radians(float(row[1][h]))))
-        time.append(float(row[1]['Time']))
+        hhh = math.radians(row[1][h])
+        if init_flag:
+            position.append(xosc.WorldPosition(x=float(row[1][e]), y=float(row[1][n]), z=0, h=hhh, p=0, r=0))
+            init_flag = False
+        else:
+            if float(row[1][h]) - lasth > 300:
+                hhh = math.radians(float(row[1][h]) - 360)
+            elif float(row[1][h]) - lasth < -300:
+                hhh = math.radians(float(row[1][h]) + 360)
+            position.append(xosc.WorldPosition(x=float(row[1][e]), y=float(row[1][n]), z=0, h=hhh, p=0, r=0))
+            lasth = hhh
+        time.append(float(row[1][t]))
     return position, time
-
-
-def rotate_trail(trail, headinga, *args):
-    """
-    轨迹要求：1.已经经过平移(自车在原点，目标车经过平移)2时间戳经过重新采样长度符合分段轨迹持续时间
-    函数功能：1args的参数全部按照headinga旋转至
-            以自车起点为原点
-            以自车起点朝向角为y轴的坐标系
-            2按照轨迹分段持续时间重新为轨迹时间赋值
-            3将轨迹朝向角度调整为自车起始位置的朝向角
-    :param trail:需要旋转的轨迹
-    :param headinga:此轨迹中自车第一帧的朝向角度
-    :param args:需要旋转的列名(如ego_e,ego_n,left_e,left_n)
-    :return:旋转过后的轨迹
-    """
-    ego_init_rad = math.radians(headinga)
-    start_time = trail.iloc[0]['Time']
-    init_data = [headinga, trail.iloc[0]['Time']]
-    temp_trail = deepcopy(trail)
-    trail['Time'] = (trail['Time'] - start_time) / 1000
-    trail['headinga'] = trail['headinga'] - init_data[0]
-    for rotate_tuple in args[0]:
-        trail[rotate_tuple[0]] = temp_trail[[rotate_tuple[0], rotate_tuple[1]]].apply(
-            lambda x: x[rotate_tuple[0]] * math.cos(ego_init_rad) + x[rotate_tuple[1]] * math.sin(ego_init_rad), axis=1)
-        trail[rotate_tuple[1]] = temp_trail[[rotate_tuple[0], rotate_tuple[1]]].apply(
-            lambda x: -x[rotate_tuple[0]] * math.sin(ego_init_rad) + x[rotate_tuple[1]] * math.cos(ego_init_rad),
-            axis=1)
-    return trail
 
 
 def resample_by_time(data, minnum, dt, flag=True):
@@ -224,7 +211,6 @@ def resample_by_time(data, minnum, dt, flag=True):
             r = data.resample(scale).first()
             return r
         elif isinstance(minnum, float):
-
             scale = str(3) + 'S'  # 3s 为基准
             r = data.resample(scale).interpolate()
             scale = str(round(60 * minnum)) + 'S'  # 速度扩大minnum倍
@@ -236,114 +222,132 @@ def resample_by_time(data, minnum, dt, flag=True):
         return r
 
 
-def get_adjust_trails(trails_count, **trail):
-    """
-    想要将trail2拼接到trail1之后，保证拼接部位平滑，需要对trail2做平移和旋转变换，返回处理后的trail2
-
-    Parameters
-    ----------
-    trail : TYPE
-        轨迹的数据.
-    trails_count:
-    1:单挑轨迹增加
-    2：两条轨迹拼
-
-    Returns
-    -------
-    trail_new : TYPE
-        处理后的trail.
-
-    """
-    if trails_count == 1:
-        trail_new = copy.deepcopy(trail['trail'])
-        deg = 0
-
-    else:
-        trail_new = copy.deepcopy(trail['trail'])
-        deg = trail['trail'].iloc[-1]['headinga'] - trail_new.at[0, 'headinga']
-
-    trail['trail'] = trail['trail'].reset_index(drop=True)
-    # deg = -trail_new.at[0, 'headinga']
-    rad = math.radians(deg)
-    for col in (('ego_e', 'ego_n'), ('left_e', 'left_n'), ('right_e', 'right_n')):
-        trail_new = spin_trans_form(*col, trail_new, rad, trails_count, **trail)
-    trail_new['headinga'] += deg
-    return trail_new
-
-
-def get_lane_distance(trail, trail_frame, required_change_distance):
-    """
-    @param trail: 轨迹
-    @param trail_frame: 轨迹当中的某一帧
-    @param required_change_distance: 如果要达到变道的效果，在这条车道中需要移动的距离
-    @return: 这一帧中移动的距离减去达到变道效果需要移动的距离
-    """
-    offset_e = math.fabs(trail_frame['ego_e'] - trail.at[0, 'ego_e'])
-    return math.fabs(offset_e - required_change_distance)
-
-
-def get_finale_trail(merge_trail, period, turning_angle):
-    spin_trail = (spin_trans_form(position_e='ego_e', position_n='ego_n',
-                                  trail_new=merge_trail.copy(),
-                                  trails_count=1, trail=merge_trail).iloc[::-1])[1:]
-    merge_trail = pd.concat([merge_trail, spin_trail], axis=0).reset_index(drop=True)
-    frame = math.ceil(period * 10 / len(merge_trail))
-    merge_trail = spin_trans_form(position_e='ego_e', position_n='ego_n',
-                                  trail_new=merge_trail.copy(),
-                                  deg=turning_angle, trails_count=1, trail=merge_trail)
-
-    merge_trail.loc[merge_trail.index[-1], 'Time'] = merge_trail.iloc[-2]['Time'] + (
-            merge_trail.iloc[-2]['Time'] - merge_trail.iloc[-3]['Time'])
-    static_time = pd.date_range('2021-01-01 00:00:00', periods=len(merge_trail), freq='T')
-    if frame > 1:
-        sample = math.floor(60 / frame)
-        merge_trail = resample_by_time(merge_trail, sample, static_time, False)
-    else:
-        sample = math.floor(len(merge_trail) / (period * 10))
-        merge_trail = resample_by_time(merge_trail, sample, static_time, True)
-    start_point = Point(merge_trail.at[0, 'ego_e'], merge_trail.at[0, 'ego_n'])
-    merge_trail['ego_e'] -= start_point.x
-    merge_trail['ego_n'] -= start_point.y
-    merge_trail.reset_index(drop=True)
-    return merge_trail
-
-
-def get_connect_trail(trails_list, trajectory):
-    """
-    用于物体不同形态轨迹之间连接
-    @param trails_list: 多段轨迹形成的列表
-    @param trajectory: 物体运动轨迹形态的标志位
-    @return
-    position_trail_list:已经连接好的传物体轨迹形态列表
-    """
-    trails_list[0], trails_list[1] = connect_trail(trails_list[0], trails_list[1], trajectory)
-    if len(trails_list) > 2:
-        get_connect_trail(trails_list[1:], trajectory)
-    else:
-        return trails_list
-    return trails_list
-
-
-def connect_trail(front_trail, behind_trail, trajectory):
-    # print(front_trail, behind_trail, trajectory)
-    # for b_single_trail in behind_trail:
-    #     b_single_trail.diff(periods=1, axis=0)
-    reset_tuple = ((1, 2), (2, 3), (3, 4))
-
-    for f_single_trail in front_trail:
-        end_x = f_single_trail.iloc[-1]['ego_e']
-        end_y = f_single_trail.iloc[-1]['ego_n']
-        end_heading_angle = f_single_trail.iloc[-1]['headinga']
-        end_speed = f_single_trail.iloc[-1]['vel_filtered']
-
-        end_point = Point(end_x, end_y)
-
-    return front_trail, behind_trail
-
-
 def multiple_uniform_trail(trail, multiple, *args):
-    for rotate_tuple in args[0]:
-        trail.loc[1:, rotate_tuple[0]] = trail.loc[1:, rotate_tuple[0]] * multiple
-        trail.loc[1:, rotate_tuple[1]] = trail.loc[1:, rotate_tuple[1]] * multiple
-    trail['vel_filtered'] = trail['vel_filtered'] * multiple
-    return trail
+    if multiple - 0 < 0.01:
+        return trail
+    else:
+        for rotate_tuple in args[0]:
+            trail.loc[:, rotate_tuple[0]] = trail.loc[:, rotate_tuple[0]] * multiple
+            trail.loc[:, rotate_tuple[1]] = trail.loc[:, rotate_tuple[1]] * multiple
+        trail['vel_filtered'] = trail['vel_filtered'] * multiple
+        return trail
+
+
+def get_cal_model(scenario_dict):
+    """
+    通过计算,完整的场景配置
+    :param scenario_dict: 单个场景参数(已泛化)
+    :return: 已经完全泛化的场景配置列表，每个元素为泛化的一个场景配置
+    """
+    for key, values in scenario_dict['generalization_type'].items():
+        if values == DataType.calculative.value:
+            ep_x = change_factor_type(scenario_dict['ego_start_x']) if key != 'ego_start_x' else ''
+            ep_y = change_factor_type(scenario_dict['ego_start_y']) if key != 'ego_start_y' else ''
+            ev = change_factor_type(scenario_dict['ego_start_velocity']) if key != 'ego_start_velocity' else ''
+            ev_t = scenario_dict['ego_velocity_time'] if key != 'ego_velocity_time' else ''
+            et_t = scenario_dict['ego_trajectory_time'] if key != 'ego_trajectory_time' else ''
+            if scenario_dict['obs_start_x']:
+                op_x = change_factor_type(scenario_dict['obs_start_x']) if key != 'obs_start_x' else ''
+                op_y = change_factor_type(scenario_dict['obs_start_y']) if key != 'obs_start_y' else ''
+                ov = change_factor_type(
+                    scenario_dict['obs_start_velocity']) if key != 'obs_start_velocity' else ''
+                ov_t = eval(scenario_dict['obs_velocity_time'][0]) if key != 'obs_velocity_time' else ''
+                ot_t = eval(scenario_dict['obs_trail_time'][0]) if key != 'obs_trail_time' else ''
+                ov_t = ov_t if isinstance(ov_t, list) else [ov_t]
+                ot_t = ot_t if isinstance(ot_t, list) else [ot_t]
+            formula = str(scenario_dict[key])
+            if "'" in formula:
+                formula = formula.split("'")[1]
+            if len(scenario_dict[key]) > 1:
+                other_obj = scenario_dict[key][1:]
+                formula = [eval(formula)] + other_obj
+            else:
+                formula = [eval(formula)]
+            scenario_dict[key] = formula
+    return scenario_dict
+
+
+def change_factor_type(factor):
+    if isinstance(factor, list):
+        factor = change_factor_type(factor[0])
+    return float(factor)
+
+
+def getLabel(output_path, func_ind, func_name):
+    '''
+    生成label.json文件
+    '''
+    labeljson = {}
+    labeljson['functional_module'] = [func_ind]
+    labeljson['scene_type'] = func_name
+    labeljson['rode_type'] = "城市普通道路"
+    labeljson['rode_section'] = "路段"
+    with open(os.path.join(output_path, output_path.split('/')[-1] + '.json'), 'w', encoding='utf-8') as f:
+        json.dump(labeljson, f, indent=4, ensure_ascii=False)
+
+
+def get_ped_data(ped_trail):
+    """
+    输入行人轨迹组成的df,按照不同轨迹分类,然后用最小二乘法计算出行人轨迹的航向角
+    :param ped_trail:行人轨迹的dataframe
+    :return:分类好的dataframe
+    """
+    ped_columns_list = ped_trail.columns.tolist() + ['part']
+    sketch_columns_list = ['start', 'stop', 'period', 'part']
+    new_pd = pd.DataFrame(columns=ped_columns_list)
+    ped_trail_sketch_df = pd.DataFrame(columns=sketch_columns_list)
+    trail_count = 1
+    for key, value in ped_trail.groupby('flag'):
+        single_trails_group = value.groupby((abs(value.Time - value.Time.shift()) > 2000).cumsum())
+        # 计算出行人轨迹的heading angle
+        for index, trail in single_trails_group:
+            if len(trail) > 15 and trail['ObjectAbsVel'].max() < 10 and trail['ObjectAbsVel'].mean() > 1:
+                x_array = np.array(trail.ped_e.values.tolist())
+                y_array = np.array(trail.ped_n.values.tolist())
+                m = len(y_array)
+                x_bar = np.mean(x_array)
+                sum_yx = 0
+                sum_x2 = 0
+                sum_delta = 0
+                for i in range(m):
+                    x = x_array[i]
+                    y = y_array[i]
+                    sum_yx += y * (x - x_bar)
+                    sum_x2 += x ** 2
+                w = sum_yx / (sum_x2 - m * (x_bar ** 2))
+                for i in range(m):
+                    x = x_array[i]
+                    y = y_array[i]
+                    sum_delta += (y - w * x)
+                b = sum_delta / m
+                pred_y = w * x_array + b
+
+                mse = metrics.mean_squared_error(y_array, pred_y)
+                # 通过方差判断行人轨迹是否笔直,还需要再设置阈值
+                if mse < 0.15:
+                    if (y_array[-1] - y_array[0]) > 0:
+                        rad = math.atan(w)
+                    else:
+                        rad = math.atan(w) + math.pi
+                    if rad < 0:
+                        rad = 2 * math.pi + rad
+                    heading_angle = math.degrees(rad)
+                    trail['part'] = trail_count
+                    trail['headinga'] = heading_angle
+                    temp_df = pd.DataFrame({
+                        "start": [trail.iloc[0]['Time']],
+                        'stop': [trail.iloc[-1]['Time']],
+                        'period': [round((trail.iloc[-1]['Time'] - trail.iloc[0]['Time']) / 1000, 2)],
+                        'part': [trail.iloc[0]['part']]
+                    })
+                    if trail_count == 0:
+                        new_pd = pd.concat([new_pd, trail], axis=0)
+                        ped_trail_sketch_df = (pd.concat([ped_trail_sketch_df, temp_df], axis=0)).reset_index(drop=True)
+                        trail_count += 1
+                    else:
+                        if not temp_df.iloc[0]['start'] in ped_trail_sketch_df['start'].values:
+                            new_pd = pd.concat([new_pd, trail], axis=0)
+                            ped_trail_sketch_df = (pd.concat([ped_trail_sketch_df, temp_df], axis=0)).reset_index(
+                                drop=True)
+                            trail_count += 1
+    return new_pd, ped_trail_sketch_df

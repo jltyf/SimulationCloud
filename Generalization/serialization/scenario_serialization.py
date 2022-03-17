@@ -12,7 +12,11 @@ class ScenarioData(object):
         self.scenario_dict['scenario_name'] = scenario_series['场景名称']
         self.scenario_dict['ego_start_x'] = scenario_series['自车初始x坐标']
         self.scenario_dict['ego_start_y'] = scenario_series['自车初始y坐标']
-        self.scenario_dict['ego_start_velocity'] = str(scenario_series['自车初始速度V0(km/h)']).split(' ')
+        self.scenario_dict['ego_start_velocity'] = [scenario_series['自车初始速度V0(km/h)']]
+        try:
+            eval(self.scenario_dict['ego_start_velocity'][0])
+        except:
+            self.scenario_dict['ego_start_velocity'] = self.scenario_dict['ego_start_velocity'][0]
         self.scenario_dict['ego_heading_angle'] = str(scenario_series['自车航向角'])
         self.scenario_dict['ego_velocity_status'] = str(scenario_series['自车行驶速度状态'])
         self.scenario_dict['ego_trajectory'] = str(scenario_series['自车轨迹形态'])
@@ -20,9 +24,6 @@ class ScenarioData(object):
         self.scenario_dict['ego_velocity_time'] = eval(scenario_series['自车速度分段持续时间'])
         self.scenario_dict['ego_trajectory_time'] = eval(scenario_series['自车轨迹形态分段持续时间'])
         self.scenario_dict['generalization_type'] = ast.literal_eval(scenario_series['泛化标志位'])
-        # self.scenario_dict['scene_type'] = str(scenario_series['scene_type'])
-        # self.scenario_dict['scene_description'] = str(scenario_series['scene_description'])
-        # self.scenario_dict['expect_test_result'] = str(scenario_series['expect_test_result'])
         if str(scenario_series['目标初始x坐标']):
             self.scenario_dict['obs_start_x'] = str(scenario_series['目标初始x坐标']).split(';')
             self.scenario_dict['obs_start_y'] = str(scenario_series['目标初始y坐标']).split(';')
@@ -33,7 +34,6 @@ class ScenarioData(object):
             self.scenario_dict['obs_trail_time'] = str(scenario_series['目标轨迹形态分段持续时间(s)']).split(';')
             self.scenario_dict['obs_heading_angle_rel'] = str(scenario_series['目标物相对自车航向角']).split(';')
             self.scenario_dict['obs_velocity_time'] = str(scenario_series['目标速度分段持续时间(s)']).split(';')
-            # self.scenario_dict['direction'] = str(scenario_series['目标正反向标志']).split(',')[-1]
             if self.scenario_dict['scenario_name'] in 'PCW':
                 self.scenario_dict['ped_initial_position_x'] = str(scenario_series['目标初始x坐标']).split(';')
                 self.scenario_dict['ped_initial_position_y'] = str(scenario_series['目标初始y坐标']).split(';')
@@ -104,10 +104,6 @@ class ScenarioData(object):
                         else:
                             temp_data[key] = [str(characteristic[keys_list.index(key)])]
             self.scenario_generalization_list.append(temp_data)
-        for key, values in self.scenario_dict['generalization_type'].items():
-            if values == DataType.calculative.value:
-                formula = eval(self.scenario_dict[key])
-                '''需要修改，获取算式'''
-                self.scenario_dict[key] = formula
+        
 
         return self.scenario_generalization_list
