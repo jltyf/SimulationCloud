@@ -153,17 +153,18 @@ class ScenarioData(object):
 
     def get_change_lane_time(self):
         """
-        通过两个条件判断自车开始变道
-        1航向角大于3度
-        2车道中心偏移距离大于半个车道
+        通过车道中心偏移距离大于1m时的时间开始判断变道
         :return: 变道轨迹的持续时间
         """
-        lane_offset = self.lane_width / 2
+        lane_offset = 1
         # 筛选出航向角小于3度且距离车道中心小于一半的数据
         change_lane_trail = self.scenario_data.query(
-            '(3<=heading_angle<=357)and(lane_center_offset<-@lane_offset or lane_center_offset>@lane_offset)')
+            '(lane_center_offset<-@lane_offset) or (lane_center_offset>@lane_offset)')
         timestamp_list = change_lane_trail.index.values.tolist()
-        start_time = timestamp_list[0]
-        end_time = timestamp_list[-1]
-        period = (end_time - start_time) / 1000
-        return period
+        try:
+            start_time = timestamp_list[0]
+            end_time = timestamp_list[-1]
+            period = (end_time - start_time) / 1000
+            return period
+        except:
+            return 0
