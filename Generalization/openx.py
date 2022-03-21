@@ -104,9 +104,11 @@ class Scenario(ScenarioGenerator):
         elif self.augtype == 7:
 
             # pedestrian model
-            for i in range(len(self.obs)):
-                row = self.obs[i]
-                entities.add_scenario_object(objname + str(i), male_ped)
+            entities.add_scenario_object(objname + str(0), male_ped)
+            if len(self.obs) >= 2:
+                for i in range(1, len(self.obs)):
+                    row = self.obs[i]
+                    entities.add_scenario_object(objname + str(i), white_veh, cnt2)
 
         positionEgo = self.gps
         positionObj = self.obs
@@ -127,8 +129,8 @@ class Scenario(ScenarioGenerator):
             for i in range(len(positionObj)):
                 row = positionObj[i]
                 name = objname + str(i)
-                x = -10000
-                y = 10000
+                x = row[0][0].x
+                y = row[0][0].y
                 obj_init_h = row[0][0].h
                 init.add_init_action(name,
                                      xosc.TeleportAction(xosc.WorldPosition(x=x, y=y, z=0, h=obj_init_h, p=0, r=0)))
@@ -169,6 +171,9 @@ class Scenario(ScenarioGenerator):
 
         # object car trail
         if positionObj:
+            pedflag = False
+            if self.augtype == 7:
+                pedflag = True
             for i in range(len(positionObj)):
                 row = positionObj[i]
                 name = objname + str(i)
@@ -186,15 +191,13 @@ class Scenario(ScenarioGenerator):
                                               xosc.SpeedCondition(0, xosc.Rule.greaterThan), 'Ego')
                 event2.add_trigger(trigger2)
 
-                if self.augtype == 7:
+                if pedflag:
                     pedaction = xosc.FollowTrajectoryAction(trajectoryM, xosc.FollowMode.position,
                                                             xosc.ReferenceContext.absolute, 1, 0)
                     event2.add_action('newspeed', pedaction)
-                    walp_trigger = xosc.EntityTrigger('ped_walp_trigger', 0, xosc.ConditionEdge.rising, \
-                                                      xosc.TimeToCollisionCondition(self.intersectime,
-                                                                                    xosc.Rule.lessThan, entity=name),
-                                                      'Ego')
-                    event2.add_trigger(walp_trigger)
+                    # walp_trigger =  xosc.EntityTrigger('ped_walp_trigger', 0, xosc.ConditionEdge.rising,\
+                    # xosc.TimeToCollisionCondition(self.intersectime, xosc.Rule.lessThan, entity=name), 'Ego')
+                    # event2.add_trigger(walp_trigger)
 
                 else:
                     event2.add_action('newspeed', speedaction2)
@@ -205,21 +208,18 @@ class Scenario(ScenarioGenerator):
                 event3 = xosc.Event('Event_ped', xosc.Priority.overwrite)
                 event3.add_trigger(trigger)
 
-                if self.augtype == 7:
+                if pedflag:
                     action3 = xosc.CustomCommandAction(0, 0, 0, 0, 1, 0, 0)
                     action3.add_element(self.createUDAction())
                     event3.add_action('newspeed', action3)
                     man.add_event(event3)
 
-                    finish_trigger = xosc.EntityTrigger('finish_trigger', 0, xosc.ConditionEdge.rising,
-                                                        xosc.ReachPositionCondition(position=row[0], tolerance=1), name)
-                    event4 = xosc.Event('Event_ped', xosc.Priority.overwrite)
-                    event4.add_trigger(finish_trigger)
-                    be_still_action = xosc.AbsoluteSpeedAction(0, xosc.TransitionDynamics(xosc.DynamicsShapes.step,
-                                                                                          xosc.DynamicsDimension.time,
-                                                                                          1))
-                    event4.add_action('ped_be_still_action', be_still_action)
-                    man.add_event(event4)
+                    # finish_trigger = xosc.EntityTrigger('finish_trigger', 0, xosc.ConditionEdge.rising, xosc.ReachPositionCondition(position=row[1][0],tolerance=1),name)
+                    # event4 = xosc.Event('Event_ped',xosc.Priority.overwrite)
+                    # event4.add_trigger(finish_trigger)
+                    # be_still_action = xosc.AbsoluteSpeedAction(0, xosc.TransitionDynamics(xosc.DynamicsShapes.step, xosc.DynamicsDimension.time, 1))
+                    # event4.add_action('ped_be_still_action',be_still_action)
+                    # man.add_event(event4)
 
                 mangr2 = xosc.ManeuverGroup('mangroup', selecttriggeringentities=True)
                 mangr2.add_actor(name)
@@ -232,7 +232,7 @@ class Scenario(ScenarioGenerator):
                 story2.add_act(act2)
 
                 sb.add_story(story2)
-
+                pedflag = False
         # prettyprint(sb.get_element())
 
         paramet = xosc.ParameterDeclarations()
@@ -242,7 +242,7 @@ class Scenario(ScenarioGenerator):
 
     def createUDAction(self, **kwargs):
         tree = ET.parse(
-            '/home/lxj/Documents/pyworkspace/code/scenariogeneration-main/openX/vtd/simulation0_20210625_1344.xosc')
+            '/home/lxj/Documents/git_project/SimulationCloud/SimulationCloud/Generalization/models/ped_CDATA.xosc')
         root = tree.getroot()
         ele = root[5][2][1][0][1][1][0][0][0]
         newnode = ET.Element("CustomCommandAction")
@@ -305,3 +305,175 @@ def change_CDATA(filepath):
     for line in all_line:
         f1.write(line)
     f1.close()
+
+
+def path_changer(xosc_path, xodr_path, osgb_path):
+    """
+    provided by Dongpeng Ding
+    :param xosc_path:
+    :param xodr_path:
+    :param osgb_path:
+    :return:
+    """
+    tree = ET.parse(xosc_path)
+    treeRoot = tree.getroot()
+
+    # for OpenScenario v0.9, v1.0
+    for RoadNetwork in treeRoot.findall('RoadNetwork'):
+
+        for Logics in RoadNetwork.findall('LogicFile'):
+            Logics.attrib['filepath'] = xodr_path
+        for SceneGraph in RoadNetwork.findall('SceneGraphFile'):
+            SceneGraph.attrib['filepath'] = osgb_path
+
+        for Logics in RoadNetwork.findall('Logics'):
+            Logics.attrib['filepath'] = xodr_path
+        for SceneGraph in RoadNetwork.findall('SceneGraph'):
+            SceneGraph.attrib['filepath'] = osgb_path
+
+    # for VTD xml
+    for Layout in treeRoot.findall('Layout'):
+        Layout.attrib['File'] = xodr_path
+        Layout.attrib['Database'] = osgb_path
+
+    tree.write(xosc_path, xml_declaration=True)
+
+
+def readXML(xoscPath):
+    xodrFileName = ""
+    osgbFileName = ""
+
+    tree = ET.parse(xoscPath)
+    treeRoot = tree.getroot()
+
+    for RoadNetwork in treeRoot.findall('RoadNetwork'):
+
+        for Logics in RoadNetwork.findall('LogicFile'):
+            xodrFileName = Logics.attrib['filepath']
+        for SceneGraph in RoadNetwork.findall('SceneGraphFile'):
+            osgbFileName = SceneGraph.attrib['filepath']
+
+        for Logics in RoadNetwork.findall('Logics'):
+            xodrFileName = Logics.attrib['filepath']
+        for SceneGraph in RoadNetwork.findall('SceneGraph'):
+            osgbFileName = SceneGraph.attrib['filepath']
+
+    return xodrFileName[xodrFileName.rindex("/") + 1:], osgbFileName[osgbFileName.rindex("/") + 1:]
+
+
+def formatThree(rootDirectory):
+    """
+    xodr and osgb file path are fixed
+    :return:
+    """
+
+    for root, dirs, files in os.walk(rootDirectory):
+        for file in files:
+            if ".xosc" == file[-5:]:
+                # xodrFilePath = "/volume4T/goodscenarios/generalization/toyiqi/model/Rd_001.xodr" # 泛化效果好的场景用的
+                # osgbFilePath = "/volume4T/goodscenarios/generalization/toyiqi/model/Rd_001.osgb" # 泛化效果好的场景用的
+                # xodrFilePath = "/volume4T/goodscenarios/generalization/toyiqi/model/Cross.xodr"  # 泛化效果好的场景用的
+                # osgbFilePath = "/volume4T/goodscenarios/generalization/toyiqi/model/Cross.osgb"  # 泛化效果好的场景用的
+                xodrFilePath = "/home/lxj/wendang_lxj/L4/L4_scenarios/piliang_model/China_UrbanRoad_014.xodr"  # 直路，泛化好用
+                osgbFilePath = "/home/lxj/wendang_lxj/L4/L4_scenarios/piliang_model/China_UrbanRoad_014.opt.osgb"  # 直路，泛化好用
+                # xodrFilePath = "/home/lxj/wendang_lxj/L4/L4_scenarios/piliang_model/China_Crossing_002.xodr"       # 十字路口，泛化好用
+                # osgbFilePath = "/home/lxj/wendang_lxj/L4/L4_scenarios/piliang_model/China_Crossing_002.opt.osgb"   # 十字路口，泛化好用
+                # xodrFilePath = "/home/lxj/wendang_lxj/Sharing_VAN/homework/test/DF_yuexiang_1224.xodr"       # Sharing-van还原用的
+                # osgbFilePath = "/home/lxj/wendang_lxj/Sharing_VAN/homework/test/DF_yuexiang_1224.opt.osgb"   # Sharing-van还原用的
+
+                path_changer(root + "/" + file, xodrFilePath, osgbFilePath)
+                print("Change success: " + root + "/" + file)
+
+
+def formatTwo(rootDirectory):
+    """
+    data format:
+    simulation
+        file.xosc
+        file.xodr
+        file.osgb
+    :return:
+    """
+    for root, dirs, files in os.walk(rootDirectory):
+        for file in files:
+            if ".xosc" == file[-5:]:
+
+                xodrFilePath = ""
+                osgbFilePath = ""
+
+                for odrFile in os.listdir(root):
+                    if ".xodr" == odrFile[-5:]:
+                        xodrFilePath = root + "/" + odrFile
+                        break
+
+                for osgbFile in os.listdir(root):
+                    if ".osgb" == osgbFile[-5:]:
+                        osgbFilePath = root + "/" + osgbFile
+                        break
+
+                path_changer(root + "/" + file, xodrFilePath, osgbFilePath)
+                print("Change success: " + root + "/" + file)
+
+
+def formatOne(rootDirectory):
+    """
+    data format:
+        openx
+            xosc
+                file.xosc
+            xodr
+                file.xodr
+            osgb
+                file.osgb
+    :return:
+    """
+    for root, dirs, files in os.walk(rootDirectory):
+        for file in files:
+            if "xosc" == file[-4:]:
+
+                xodrFilePath = ""
+                osgbFilePath = ""
+
+                for odrFile in os.listdir(root[:-4] + "xodr"):
+                    if "xodr" == odrFile[-4:]:
+                        xodrFilePath = root[:-4] + "xodr/" + odrFile
+                        break
+
+                for osgbFile in os.listdir(root[:-4] + "osgb"):
+                    if "osgb" == osgbFile[-4:]:
+                        osgbFilePath = root[:-4] + "osgb/" + osgbFile
+                        break
+
+                path_changer(root + "/" + file, xodrFilePath, osgbFilePath)
+                print("Change success: " + root + "/" + file)
+
+
+def chongQingFormat(rootDirectory):
+    """
+    supporting file format: chong qing folder format
+    :return:
+    """
+
+    counter = 1
+
+    for root, dirs, files in os.walk(rootDirectory):
+        for file in files:
+            if "xosc" == file[-4:]:
+                if "ver1.0.xosc" == file[-11:]:
+
+                    xodrFileName, osgbFileName = readXML(root + "/" + file)
+
+                    xodrFilePath = "/Xodrs/" + xodrFileName
+                    osgbFilePath = "/Databases/" + osgbFileName
+
+                    path_changer(root + "/" + file, xodrFilePath, osgbFilePath)
+                    print(counter, "Change success: " + root + "/" + file)
+                else:
+                    xodrFileName, osgbFileName = readXML(root + "/" + file)
+
+                    xodrFilePath = "/Xodrs/" + xodrFileName
+                    osgbFilePath = "/Databases/" + osgbFileName
+
+                    path_changer(root + "/" + file, xodrFilePath, osgbFilePath)
+                    print(counter, "Change success: " + root + "/" + file)
+                counter += 1

@@ -7,7 +7,7 @@ from enumerations import TrailType, TrailMotionType, SpeedType
 class Trail(object):
 
     def __init__(self, trail_type, car_trail, ped_trail, json_trail, speed_status, scenario, trail_section, start_speed,
-                 heading_angle, rotate_tuple, start_point, object_index=0):
+                 heading_angle, rotate_tuple, start_point, ego_delta_col, object_index=0):
         self.scenario = scenario
         self.speed_status = speed_status
         if trail_type == TrailType.ped_trail:
@@ -17,7 +17,12 @@ class Trail(object):
         self.trail_type = trail_type
         self.trail_section = trail_section
         self.start_point = start_point
+        self.ego_delta_col = ego_delta_col
         self.lane_width = 3.5  # 车道线宽宽度
+        # self.turning_angle = 0
+        # 判断是自车轨迹还是目标物轨迹，忽略行人判断，归到目标物，待确认
+        # self.start_speed = self.scenario['ego_start_speed'] if trail_type.value == TrailType.ego_trail.value else \
+        #     self.scenario['obs_start_speed'][object_index]
         self.start_speed = start_speed
         self.heading_angle = heading_angle
         self.trail_motion_status = self.scenario['ego_trajectory'][trail_section] \
@@ -48,20 +53,21 @@ class Trail(object):
                 if speed_status == SpeedType.uniform.value:
                     return get_uniform_speed_trail(car_trails=self.car_trail, trails_json_dict=self.json_trail,
                                                    start_speed=self.start_speed, period=period,
-                                                   rotate_tuple=self.rotate_tuple)
+                                                   rotate_tuple=self.rotate_tuple, ego_delta_col=self.ego_delta_col)
 
                 # 变速
                 elif speed_status == SpeedType.Decelerate.value or speed_status == SpeedType.Accelerate.value:
                     return get_variable_speed_trail(car_trails=self.car_trail, trails_json_dict=self.json_trail,
                                                     start_speed=self.start_speed, period=period,
-                                                    speed_status_num=speed_status, rotate_tuple=self.rotate_tuple)
+                                                    speed_status_num=speed_status,
+                                                    rotate_tuple=self.rotate_tuple, ego_delta_col=self.ego_delta_col)
 
                 # 起步 or 刹停
                 elif speed_status == SpeedType.Start.value or speed_status == SpeedType.Stop.value:
                     return get_start_stop_trail(car_trails=self.car_trail, trails_json_dict=self.json_trail,
                                                 start_speed=self.start_speed, period=period,
-                                                speed_status_num=speed_status, rotate_tuple=self.rotate_tuple)
-
+                                                speed_status_num=speed_status,
+                                                rotate_tuple=self.rotate_tuple, ego_delta_col=self.ego_delta_col)
             # 变道和连续变道
             elif TrailMotionType.lane_change_left.value <= motion_status <= TrailMotionType.lane_change_right_twice.value:
                 return get_change_lane_trail(car_trails=self.car_trail, trails_json_dict=self.json_trail,

@@ -12,6 +12,7 @@ class ScenarioData(object):
         self.scenario_dict['scenario_name'] = scenario_series['场景名称']
         self.scenario_dict['ego_start_x'] = scenario_series['自车初始x坐标']
         self.scenario_dict['ego_start_y'] = scenario_series['自车初始y坐标']
+        self.scenario_dict['scenario_resume'] = scenario_series['场景简述']
         self.scenario_dict['ego_start_velocity'] = [scenario_series['自车初始速度V0(km/h)']]
         try:
             eval(self.scenario_dict['ego_start_velocity'][0])
@@ -24,6 +25,9 @@ class ScenarioData(object):
         self.scenario_dict['ego_velocity_time'] = eval(scenario_series['自车速度分段持续时间'])
         self.scenario_dict['ego_trajectory_time'] = eval(scenario_series['自车轨迹形态分段持续时间'])
         self.scenario_dict['generalization_type'] = ast.literal_eval(scenario_series['泛化标志位'])
+        # self.scenario_dict['scene_type'] = str(scenario_series['scene_type'])
+        # self.scenario_dict['scene_description'] = str(scenario_series['scene_description'])
+        # self.scenario_dict['expect_test_result'] = str(scenario_series['expect_test_result'])
         if str(scenario_series['目标初始x坐标']):
             self.scenario_dict['obs_start_x'] = str(scenario_series['目标初始x坐标']).split(';')
             self.scenario_dict['obs_start_y'] = str(scenario_series['目标初始y坐标']).split(';')
@@ -104,6 +108,5 @@ class ScenarioData(object):
                         else:
                             temp_data[key] = [str(characteristic[keys_list.index(key)])]
             self.scenario_generalization_list.append(temp_data)
-        
 
         return self.scenario_generalization_list

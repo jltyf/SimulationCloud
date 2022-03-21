@@ -5,10 +5,10 @@ import pandas as pd
 import numpy as np
 from functools import reduce
 from enumerations import SpeedType, TrailMotionType
-from utils import resample_by_time, multiple_uniform_trail, concatTrails, corTransform_init
+from utils import resample_by_time, multiple_uniform_trail, concatTrails, corTransform_init, extractTrail, trailModify
 
 
-def get_uniform_speed_trail(car_trails, trails_json_dict, start_speed, period, rotate_tuple):
+def get_uniform_speed_trail(car_trails, trails_json_dict, start_speed, period, rotate_tuple, ego_delta_col):
     """
     return:直线轨迹
     从匀速的轨迹库中 分类别取出轨迹
@@ -42,8 +42,7 @@ def get_uniform_speed_trail(car_trails, trails_json_dict, start_speed, period, r
     # 提取轨迹数据
     start_time = final_trail['start']
     end_time = final_trail['stop']
-    single_trail = (trails[(trails['Time'].values <= end_time)
-                           & (trails['Time'].values >= start_time)]).reset_index(drop=True)
+    single_trail = extractTrail(trails, start_time, end_time)
 
     # 单条匀速轨迹太短通过自身多次拼接延长
     trails_list = []
@@ -68,10 +67,18 @@ def get_uniform_speed_trail(car_trails, trails_json_dict, start_speed, period, r
     # 根据初始设定速度微调坐标
     multiple = start_speed / trail_res.loc[0, 'vel_filtered']
     trail_res = multiple_uniform_trail(trail_res, multiple, rotate_tuple)
+
+    # 将所有轨迹都旋转为0点，为了对轨迹角度微调
+    trail_res = corTransform_init(trail_res, 'ego_e', 'ego_n', 'headinga', rotate_tuple)
+    if ego_delta_col:
+        delta_h = abs(trail_res.at[len(trail_res) - 1, 'headinga'] - trail_res.at[0, 'headinga'])
+        if delta_h > 0.2:
+            trail_res = trailModify(trail_res, 'Time', ego_delta_col, 'headinga')
     return trail_res
 
 
-def get_variable_speed_trail(car_trails, trails_json_dict, start_speed, period, speed_status_num, rotate_tuple):
+def get_variable_speed_trail(car_trails, trails_json_dict, start_speed, period, speed_status_num, rotate_tuple,
+                             ego_delta_col):
     """
     Parameters
     ----------
@@ -124,8 +131,7 @@ def get_variable_speed_trail(car_trails, trails_json_dict, start_speed, period, 
                 for section in json_index_list_temp:
                     start_time = temp_list[section]['start']
                     end_time = temp_list[section]['stop']
-                    section_trail = (trails[(trails['Time'].values <= end_time)
-                                            & (trails['Time'].values >= start_time)]).reset_index(drop=True)
+                    section_trail = extractTrail(trails, start_time, end_time)
 
                     # 根据前段轨迹调整本轨迹的位置和方向
                     if trails_list:
@@ -157,17 +163,24 @@ def get_variable_speed_trail(car_trails, trails_json_dict, start_speed, period, 
                 # 选取最接近初始速度的轨迹
                 speed_difference = abs(merge_trail.at[0, 'vel_filtered'] - start_speed)
                 if speed_difference < previous_speed_difference:
-                    final_trail = merge_trail
+                    trail_res = merge_trail
                     previous_speed_difference = speed_difference
 
     # 根据初始设定速度微调坐标
-    multiple = start_speed / final_trail.loc[0, 'vel_filtered']
-    final_trail = multiple_uniform_trail(final_trail, multiple, rotate_tuple)
+    multiple = start_speed / trail_res.loc[0, 'vel_filtered']
+    trail_res = multiple_uniform_trail(trail_res, multiple, rotate_tuple)
 
-    return final_trail
+    # 将所有轨迹都旋转为0点，为了对轨迹角度微调
+    trail_res = corTransform_init(trail_res, 'ego_e', 'ego_n', 'headinga', rotate_tuple)
+    if ego_delta_col:
+        delta_h = abs(trail_res.at[len(trail_res) - 1, 'headinga'] - trail_res.at[0, 'headinga'])
+        if delta_h > 0.2:
+            trail_res = trailModify(trail_res, 'Time', ego_delta_col, 'headinga')
+    return trail_res
 
 
-def get_start_stop_trail(car_trails, trails_json_dict, start_speed, period, speed_status_num, rotate_tuple):
+def get_start_stop_trail(car_trails, trails_json_dict, start_speed, period, speed_status_num, rotate_tuple,
+                         ego_delta_col):
     if speed_status_num == int(SpeedType.Start.value):
         speed_status = 'Start'
     else:
@@ -190,8 +203,7 @@ def get_start_stop_trail(car_trails, trails_json_dict, start_speed, period, spee
             # 提取轨迹数据
             start_time = single_json['start']
             end_time = single_json['stop']
-            trail_new = (trails[(trails['Time'].values <= end_time)
-                                & (trails['Time'].values >= start_time)]).reset_index(drop=True)
+            trail_new = extractTrail(trails, start_time, end_time)
 
             # 根据轨迹时间长度做重采样
             frame = len(trail_new) / (period * 10)
@@ -208,6 +220,15 @@ def get_start_stop_trail(car_trails, trails_json_dict, start_speed, period, spee
                 if single_json['longituteOffset'] > previous_trail_length:
                     previous_trail_length = single_json['longituteOffset']
                     final_trail = trail_new
+
+                    # 将所有轨迹都旋转为0点，为了对轨迹角度微调
+                    final_trail = corTransform_init(final_trail, 'ego_e', 'ego_n', 'headinga', rotate_tuple)
+                    if ego_delta_col:
+                        delta_h = abs(final_trail.at[len(final_trail) - 1, 'headinga'] - final_trail.at[0, 'headinga'])
+                        ego_delta_col = 'ego_e'
+                        if delta_h > 0.2:
+                            final_trail = trailModify(final_trail, 'Time', ego_delta_col, 'headinga')
+
             else:
                 # 刹停选取最接近初始速度的轨迹
                 speed_difference = abs(trail_new.at[0, 'vel_filtered'] - start_speed)
@@ -218,6 +239,13 @@ def get_start_stop_trail(car_trails, trails_json_dict, start_speed, period, spee
                 # 根据初始设定速度微调坐标
                 multiple = start_speed / final_trail.loc[0, 'vel_filtered']
                 final_trail = multiple_uniform_trail(final_trail, multiple, rotate_tuple)
+
+                # 将所有轨迹都旋转为0点，为了对轨迹角度微调
+                final_trail = corTransform_init(final_trail, 'ego_e', 'ego_n', 'headinga', rotate_tuple)
+                if ego_delta_col:
+                    delta_h = abs(final_trail.at[len(final_trail) - 1, 'headinga'] - final_trail.at[0, 'headinga'])
+                    if delta_h > 0.2:
+                        final_trail = trailModify(final_trail, 'Time', ego_delta_col, 'headinga')
 
     return final_trail
 
@@ -253,7 +281,7 @@ def get_change_lane_trail(car_trails, trails_json_dict, lane_width, start_speed,
     elif motion_status == TrailMotionType.lane_change_right_twice.value:
         min_lateral_offset = 2.5 + lane_width
         left_flag = False
-    trails_data = copy.deepcopy(car_trails)
+    trails = copy.deepcopy(car_trails)
 
     # 初步筛选符合转向条件的json文件
     for motion in trails_json_dict:
@@ -268,24 +296,26 @@ def get_change_lane_trail(car_trails, trails_json_dict, lane_width, start_speed,
         change_lane_json_dict[motion] = sorted(change_lane_json_dict[motion], key=operator.itemgetter('startSpeed'),
                                                reverse=True)
         for trail_json in change_lane_json_dict[motion]:
-            if (trail_json['stop'] - trail_json['start']) / 1000 < period and abs(
-                    trail_json['startHeadinga'] - trail_json['stopHeadinga']) < 2 and (
+            if abs(trail_json['startHeadinga'] - trail_json['stopHeadinga']) < 0.5 and (
                     min_lateral_offset < abs(trail_json['lateralOffset']) < 2 * min_lateral_offset):
 
-                trail = trails_data[(trails_data['Time'] <= trail_json['stop']) & (
-                        trails_data['Time'] >= trail_json['start'])].reset_index(drop=True)
+                start_time = trail_json['start']
+                end_time = trail_json['stop']
+                trail = extractTrail(trails, start_time, end_time)
 
                 # 重新采样获得长度需要的轨迹
                 frame = len(trail) / (period * 10)
                 rng = pd.date_range("2020-05-10 00:00:00", periods=len(trail), freq="T")
                 if frame >= 1:
-                    trail = trail[:period * 10 + 1]
+                    trail = resample_by_time(trail, frame, rng, flag=True)
                 else:
-                    trail = resample_by_time(trail, math.floor(frame * 60), rng, flag=False)[:period * 10 + 1]
-                    trail['vel_filtered'] = trail['vel_filtered'] * frame
-                    trail = trail.reset_index(drop=True)
-
-                optional_trails_list.append(trail)
+                    trail = resample_by_time(trail, math.floor(frame * 60), rng, flag=False)
+                trail['vel_filtered'] = trail['vel_filtered'] * frame
+                trail = trail.drop_duplicates(subset=['ego_e', 'ego_n', 'headinga'], keep='first')
+                trail = trail.reset_index(drop=True)
+                if len(trail) > (period - 1) * 10 and abs(
+                        trail.at[0, 'headinga'] - trail.at[len(trail) - 1, 'headinga']) < 0.5:
+                    optional_trails_list.append(trail)
 
     # 筛选出初始速度最接近的轨迹
     for trail in optional_trails_list:
@@ -375,8 +405,7 @@ def get_turn_round_trail(car_trails, trails_json_dict, start_speed, turn_round_f
             # 提取轨迹数据
             start_time = single_json['start']
             end_time = single_json['stop']
-            trail_new = (trails[(trails['Time'].values <= end_time)
-                                & (trails['Time'].values >= start_time)]).reset_index(drop=True)
+            trail_new = extractTrail(trails, start_time, end_time)
 
             # 根据轨迹时间长度做重采样
             frame = len(trail_new) / (period * 10)

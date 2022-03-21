@@ -4,7 +4,6 @@ from functools import reduce
 from sklearn import metrics
 import numpy as np
 import pandas as pd
-from matplotlib import pyplot as plt
 from scenariogeneration import xosc
 import os
 import json
@@ -50,6 +49,16 @@ def dump_json(trails_label_json):
             trails_label_json_dict[trails_json['lateralType']] = {key: [] for key in velocity_fromkeys}
         trails_label_json_dict[trails_json['lateralType']][trails_json['longituteType']].append(deepcopy(trails_json))
     return trails_label_json_dict
+
+
+def extractTrail(trails, start_time, end_time):
+    '从原始轨迹中提取一段数据'
+    single_trail = (trails[(trails['Time'].values <= end_time)
+                           & (trails['Time'].values >= start_time)]).reset_index(drop=True)
+    single_partID = single_trail.at[0, 'partID']
+    single_trail = single_trail[single_trail['partID'] == single_partID]
+    single_trail = single_trail.reset_index(drop=True)
+    return single_trail
 
 
 def rotate(x_list, y_list, ox, oy, rad):
@@ -101,6 +110,7 @@ def corTransform(trail1, trail2, e, n, rad, trail_new):
 
 def corTransform_init(trail, e, n, h, *args, init_e=0, init_n=0, init_h=0):
     '根据给定初始的位置和角度调整一条轨迹'
+    trail = trail.reset_index(drop=True)
     e_offset = init_e - trail.at[0, e]
     n_offset = init_n - trail.at[0, n]
     deg = trail.at[0, h] - init_h
@@ -118,6 +128,8 @@ def corTransform_init(trail, e, n, h, *args, init_e=0, init_n=0, init_h=0):
 
 def concatTrails(trail1, trail2, *args):
     '根据前一条轨迹trail1的末尾位置和角度调整下一条轨迹trail2, 主要的平移和旋转功能是corTransform实现的'
+    trail1 = trail1.reset_index(drop=True)
+    trail2 = trail2.reset_index(drop=True)
     trail_new = trail2.copy()
     deg = trail1.at[len(trail1) - 1, 'headinga'] - trail_new.at[0, 'headinga']
     rad = math.radians(-deg)
@@ -127,25 +139,26 @@ def concatTrails(trail1, trail2, *args):
     trail_new['headinga'] += deg
     trail_new = trail_new.reset_index(drop=True)
     trail_new = trail_new.drop([0])
+    trail_new = trail_new.reset_index(drop=True)
     return trail_new
 
 
 def generateFinalTrail(name, lista, e, n, h, *args, init_e=0, init_n=0, init_h=0):
     '将一个轨迹list里的多个元素拼接为一条轨迹'
     if lista:
-        ego_trail = []
+        trail = []
         # 初始轨迹坐标为原点，headingAngle为0
-        ego_trail.append(corTransform_init(lista[0], e, n, h, args[0], init_e=init_e, init_n=init_n, init_h=init_h))
+        trail.append(corTransform_init(lista[0], e, n, h, args[0], init_e=init_e, init_n=init_n, init_h=init_h))
         if len(lista) == 1:
             print(name, "找到一条完整轨迹不需要拼接")
         elif len(lista) > 1:
             for index in range(1, len(lista)):
-                ego_trail.append(concatTrails(ego_trail[-1], lista[index], args[0]))
+                trail.append(concatTrails(trail[-1], lista[index], args[0]))
         # 将所有的轨迹数据合并为一条轨迹
         uniondata = lambda x, y: pd.concat([x, y])
-        ego_merge_trail = reduce(uniondata, ego_trail)
-        ego_merge_trail = ego_merge_trail.reset_index(drop=True)
-        return ego_merge_trail
+        merge_trail = reduce(uniondata, trail)
+        merge_trail = merge_trail.reset_index(drop=True)
+        return merge_trail
     else:
         return lista
 
@@ -212,13 +225,13 @@ def resample_by_time(data, minnum, dt, flag=True):
             return r
         elif isinstance(minnum, float):
             scale = str(3) + 'S'  # 3s 为基准
-            r = data.resample(scale).interpolate()
+            r = data.resample(scale).interpolate(method='linear')
             scale = str(round(60 * minnum)) + 'S'  # 速度扩大minnum倍
             r = r.resample(scale).interpolate()
             return r
     else:
         scale = str(minnum) + 'S'
-        r = data.resample(scale).interpolate()
+        r = data.resample(scale).interpolate(method='linear')
         return r
 
 
@@ -258,6 +271,7 @@ def get_cal_model(scenario_dict):
             formula = str(scenario_dict[key])
             if "'" in formula:
                 formula = formula.split("'")[1]
+
             if len(scenario_dict[key]) > 1:
                 other_obj = scenario_dict[key][1:]
                 formula = [eval(formula)] + other_obj
@@ -326,9 +340,9 @@ def get_ped_data(ped_trail):
                 # 通过方差判断行人轨迹是否笔直,还需要再设置阈值
                 if mse < 0.15:
                     if (y_array[-1] - y_array[0]) > 0:
-                        rad = math.atan(w)
+                        rad = math.atan(w) - 0.5 * math.pi
                     else:
-                        rad = math.atan(w) + math.pi
+                        rad = math.atan(w) + 0.5 * math.pi
                     if rad < 0:
                         rad = 2 * math.pi + rad
                     heading_angle = math.degrees(rad)
@@ -350,4 +364,6 @@ def get_ped_data(ped_trail):
                             ped_trail_sketch_df = (pd.concat([ped_trail_sketch_df, temp_df], axis=0)).reset_index(
                                 drop=True)
                             trail_count += 1
+    new_pd['ego_e'] = new_pd['ped_n']
+    new_pd['ego_n'] = new_pd['ped_e']
     return new_pd, ped_trail_sketch_df

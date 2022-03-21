@@ -11,10 +11,13 @@ from Generalization.trail import Trail
 from Generalization.utils import dump_json
 from enumerations import TrailType
 from utils import get_cal_model, generateFinalTrail, getXoscPosition, trailModify, getLabel, Point
-from openx import Scenario, change_CDATA
+from openx import Scenario, change_CDATA, formatThree
 import warnings
 
 warnings.filterwarnings("ignore")
+pd.set_option('max_colwidth', 100)
+# pd.set_option('display.max_columns', None)
+pd.set_option('display.max_rows', None)
 
 
 def parsingConfigurationFile(absPath, ADAS_module):
@@ -46,6 +49,7 @@ def parsingConfigurationFile(absPath, ADAS_module):
             rotate_tuple = ('ego_e', 'ego_n'), ('left_e', 'left_n'), ('right_e', 'right_n')
             for ego_speed_status in single_scenario['ego_velocity_status']:
                 trail_type = TrailType.ego_trail
+                ego_delta_col = 'ego_e'  # 因轨迹航向角的微小偏移所做的微调，选择的列'ego_e'通过道路模型确定
                 if ego_trail_section == 0:
                     start_speed = float(single_scenario['ego_start_velocity'])
                     heading_angle = float(single_scenario['ego_heading_angle'])
@@ -57,7 +61,7 @@ def parsingConfigurationFile(absPath, ADAS_module):
 
                 ego_trail_slices = Trail(trail_type, car_trail_data, ped_trail_data, trails_json_dict, ego_speed_status,
                                          single_scenario, ego_trail_section, start_speed, heading_angle, rotate_tuple,
-                                         start_point)
+                                         start_point, ego_delta_col)
                 if ego_trail_slices:
                     ego_trails_list.append(ego_trail_slices.position)
                 else:
@@ -73,11 +77,7 @@ def parsingConfigurationFile(absPath, ADAS_module):
                                                init_e=init_e, init_n=init_n, init_h=init_h)
                 # ego_trail = ego_trail.drop_duplicates(subset=['ego_e', 'ego_n', 'headinga'], keep='first') # 静止轨迹会被删掉
                 # ego_trail = ego_trail.reset_index(drop=True)
-                # 因轨迹航向角的微小偏移所做的微调，选择的列'ego_e'通过道路模型确定
-                ego_delta_col = 'ego_e'
-                delta_h = abs(ego_trail.at[len(ego_trail) - 1, 'headinga'] - ego_trail.at[0, 'headinga'])
-                if delta_h > 0.5:
-                    ego_trail = trailModify(ego_trail, 'Time', ego_delta_col, 'headinga')
+
             else:
                 print(scenario_series['场景编号'], "ego没有符合条件的轨迹, 失败")
 
@@ -91,8 +91,18 @@ def parsingConfigurationFile(absPath, ADAS_module):
                     object_trail_section = 0
                     for object_split_status in object_status:
                         trail_type = TrailType.vehicle_trail
+
                         if object_index == 0 and '行人' in single_scenario['scenario_resume']:
                             trail_type = TrailType.ped_trail
+
+                        # 因轨迹航向角的微小偏移所做的微调，选择的列'ego_e'和自车保持一致
+                        if init_h % 180 == 0:
+                            obj_delta_col = ego_delta_col
+                        elif init_h % 90 == 0:
+                            obj_delta_col = 'ego_n'
+                        else:
+                            obj_delta_col = None
+
                         if object_trail_section == 0:
                             start_speed = float(single_scenario['obs_start_velocity'][object_index])
                             heading_angle = float(single_scenario['obs_heading_angle_rel'][object_index])
@@ -107,7 +117,7 @@ def parsingConfigurationFile(absPath, ADAS_module):
                         object_trail_slices = Trail(trail_type, car_trail_data, ped_trail_data, trails_json_dict,
                                                     object_split_status,
                                                     single_scenario, object_trail_section, start_speed, heading_angle,
-                                                    rotate_tuple, start_point, object_index)
+                                                    rotate_tuple, start_point, obj_delta_col, object_index)
                         if object_trail_slices:
                             object_trail_list.append(object_trail_slices.position)
                         else:
@@ -124,54 +134,50 @@ def parsingConfigurationFile(absPath, ADAS_module):
                             single_scenario['ego_heading_angle'])
                         object_trail = generateFinalTrail('object', object_trail_list, 'ego_e', 'ego_n', 'headinga',
                                                           rotate_tuple, init_e=init_e, init_n=init_n, init_h=init_h)
-                        # 因轨迹航向角的微小偏移所做的微调，选择的列'ego_e'和自车保持一致
-                        if init_h % 180 == 0:
-                            obj_delta_col = ego_delta_col
-                        elif init_h % 90 == 0:
-                            obj_delta_col = 'ego_n'
-                        else:
-                            obj_delta_col = None
 
-                        if obj_delta_col:
-                            delta_h = abs(
-                                object_trail.at[len(object_trail) - 1, 'headinga'] - object_trail.at[0, 'headinga'])
-                            if delta_h > 0.5:
-                                object_trail = trailModify(object_trail, 'Time', obj_delta_col, 'headinga')
                     else:
                         print(scenario_series['场景编号'], "obs没有符合条件的轨迹")
 
                     object_position_list.append(object_trail)
 
             # 转化仿真场景路径点, 生成仿真场景文件
-            offset_x = 7  # 因匹配泛化道路模型要做的e偏移量
-            offset_y = 0  # 因匹配泛化道路模型要做的n偏移量
-            offset_h = 90  # 初始车头朝向和道路方向不一致，因此要调整h偏移量
+            offset_x = 7  # 因匹配泛化道路模型要做的e偏移量 China_UrbanRoad_014直路:7 China_Crossing_002十字路口:5.5 
+            offset_y = 0  # 因匹配泛化道路模型要做的n偏移量 China_UrbanRoad_014直路:0 China_Crossing_002十字路口:-65 
+            offset_h = 90  # 因匹配泛化道路模型要做的h偏移量 China_UrbanRoad_014直路:90 China_Crossing_002十字路口:90
 
             ego_points, egotime = getXoscPosition(ego_trail, 'Time', 'ego_e', 'ego_n', 'headinga', offset_x, offset_y,
-                                                  offset_h)
+                                                  offset_h)  # 初始轨迹朝向与道路方向一致
+            # ego_points, egotime = getXoscPosition(ego_trail, 'Time', 'ego_n', 'ego_e', 'headinga', offset_x, offset_y, offset_h) # 初始轨迹朝向与道路方向垂直
             object_points = []
             if object_position_list:
                 for obsL in range(len(object_position_list)):
                     object_points.append(
                         getXoscPosition(object_position_list[obsL], 'Time', 'ego_e', 'ego_n', 'headinga', offset_x,
-                                        offset_y, offset_h))
+                                        offset_y, offset_h))  # 初始轨迹朝向与道路方向一致
+                    # object_points.append(getXoscPosition(object_position_list[obsL], 'Time', 'ego_n', 'ego_e', 'headinga', offset_x, offset_y, offset_h)) # 初始轨迹朝向与道路方向垂直
 
             egoSpeed = 5  # 随意设的，不发挥作用
             sceperiod = math.ceil(egotime[-1] - egotime[0])
-            s = Scenario(ego_points, object_points, 0, egotime, egoSpeed, 0, 0, 0, sceperiod)
+            augtype = 0  # 0为车，7为第一个目标是行人
+            if 'PCW' in scenario_series['场景编号'] or '行人' in scenario_series['场景简述']:
+                augtype = 7
+            s = Scenario(ego_points, object_points, 0, egotime, egoSpeed, 0, 0, augtype, sceperiod)
             s.print_permutations()
             output_path = os.path.join(absPath + '/trails/', 'simulation_new',
                                        scenario_series['场景编号'] + '_' + str(scenario_index))
             files = s.generate(
                 output_path)  # '/home/lxj/Documents/pyworkspace/data/trails/simulation_new/AEB_1-1_17/AEB_1-1_17.xosc'
+            formatThree(output_path)
             scenario_index += 1
             print(files)
-            if 'PCW' in scenario_series['场景编号']:
+            if 'PCW' in scenario_series['场景编号'] or '行人' in scenario_series['场景简述']:
                 change_CDATA(files[0][0])  # 行人场景特例，对xosc文件内的特殊字符做转换
 
             # 生成每个场景的描述文件 json
             getLabel(output_path, scenario_series['场景编号'], scenario_series['场景名称'])
 
+            # 拷贝到vtd路径下
+            os.system('cp ' + files[0][0] + ' /home/lxj/VIRES/VTD.2021.3/Data/Projects/Current/Scenarios/')
     print(fileCnt)
 
 
