@@ -8,10 +8,10 @@ import json
 import pandas as pd
 from Generalization.serialization.scenario_serialization import ScenarioData
 from Generalization.trail import Trail
-from Generalization.utils import dump_json
+from Generalization.utils import dump_json, formatThree, change_CDATA
 from enumerations import TrailType
 from utils import get_cal_model, generateFinalTrail, getXoscPosition, trailModify, getLabel, Point
-from openx import Scenario, change_CDATA, formatThree
+from openx import Scenario
 import warnings
 
 warnings.filterwarnings("ignore")
@@ -32,7 +32,7 @@ def parsingConfigurationFile(absPath, ADAS_module):
     ped_trail_data = pd.read_csv(ped_trail)
 
     # 按功能列表分别读取不同的功能配置表
-    parm_data = pd.read_excel(os.path.join(absPath + '/trails/', "配置参数表样例0210.xlsx"),
+    parm_data = pd.read_excel(os.path.join(absPath + '/trails/', "配置参数表样例0325.xlsx"),
                               sheet_name=ADAS_module, keep_default_na=False, engine='openpyxl')
     ADAS_list = [ADAS for ADAS in ADAS_module]
     scenario_df = [parm_data[scenario_list] for scenario_list in ADAS_list][0]
@@ -165,8 +165,9 @@ def parsingConfigurationFile(absPath, ADAS_module):
             s.print_permutations()
             output_path = os.path.join(absPath + '/trails/', 'simulation_new',
                                        scenario_series['场景编号'] + '_' + str(scenario_index))
-            files = s.generate(
-                output_path)  # '/home/lxj/Documents/pyworkspace/data/trails/simulation_new/AEB_1-1_17/AEB_1-1_17.xosc'
+            if not os.path.exists(output_path):
+                os.makedirs(output_path)
+            files = s.generate(output_path)
             formatThree(output_path)
             scenario_index += 1
             print(files)
@@ -177,9 +178,9 @@ def parsingConfigurationFile(absPath, ADAS_module):
             getLabel(output_path, scenario_series['场景编号'], scenario_series['场景名称'])
 
             # 拷贝到vtd路径下
-            os.system('cp ' + files[0][0] + ' /home/lxj/VIRES/VTD.2021.3/Data/Projects/Current/Scenarios/')
+            # os.system('cp ' + files[0][0] + ' /home/lxj/VIRES/VTD.2021.3/Data/Projects/Current/Scenarios/')
     print(fileCnt)
 
 
 if __name__ == "__main__":
-    parsingConfigurationFile("/home/lxj/Documents/pyworkspace/data", ['ALC-base'])
+    parsingConfigurationFile("D:/泛化", ['LKA'])

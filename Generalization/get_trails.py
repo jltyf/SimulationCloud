@@ -120,9 +120,9 @@ def get_variable_speed_trail(car_trails, trails_json_dict, start_speed, period, 
                 json_index_list_temp = [index]
                 last_index = len(json_index_list_temp) - 1
                 for index_temp in range(index + 1, len(trail_value)):
-                    if (speed_status_num == str(SpeedType.Accelerate.value) and temp_list[last_index]['stopSpeed'] <=
+                    if (speed_status_num == SpeedType.Accelerate.value and temp_list[last_index]['stopSpeed'] <=
                         temp_list[index_temp]['startSpeed'] <= temp_list[last_index]['stopSpeed'] + 1) or (
-                            speed_status_num == str(SpeedType.Decelerate.value) and temp_list[last_index][
+                            speed_status_num == SpeedType.Decelerate.value and temp_list[last_index][
                         'stopSpeed'] >= temp_list[index_temp]['startSpeed'] >= temp_list[last_index]['stopSpeed'] - 1):
                         json_index_list_temp.append(index_temp)
 
@@ -157,8 +157,12 @@ def get_variable_speed_trail(car_trails, trails_json_dict, start_speed, period, 
                 else:
                     merge_trail = resample_by_time(merge_trail, math.floor(frame * 60), rng, flag=False)[
                                   :period * 10 + 1]
-                    merge_trail['vel_filtered'] = merge_trail['vel_filtered'] * frame
+                    merge_trail = merge_trail.drop_duplicates(subset=['ego_e', 'ego_n', 'headinga'],
+                                                              keep='first')  # 重复轨迹会被删掉
                     merge_trail = merge_trail.reset_index(drop=True)
+                    if len(merge_trail) < (period - 1) * 10:
+                        continue
+                    merge_trail['vel_filtered'] = merge_trail['vel_filtered'] * frame
 
                 # 选取最接近初始速度的轨迹
                 speed_difference = abs(merge_trail.at[0, 'vel_filtered'] - start_speed)
@@ -210,8 +214,14 @@ def get_start_stop_trail(car_trails, trails_json_dict, start_speed, period, spee
             rng = pd.date_range("2020-05-10 00:00:00", periods=len(trail_new), freq="T")
             if frame >= 1:
                 trail_new = resample_by_time(trail_new, frame, rng, flag=True)
+                trail_new = trail_new.drop_duplicates(subset=['ego_e', 'ego_n', 'headinga'], keep='first')  # 重复轨迹会被删掉
+                if len(trail_new) < (period - 1) * 10:
+                    continue
             else:
                 trail_new = resample_by_time(trail_new, math.floor(frame * 60), rng, flag=False)
+                trail_new = trail_new.drop_duplicates(subset=['ego_e', 'ego_n', 'headinga'], keep='first')  # 重复轨迹会被删掉
+                if len(trail_new) < (period - 1) * 10:
+                    continue
             trail_new['vel_filtered'] = trail_new['vel_filtered'] * frame
             trail_new = trail_new.reset_index(drop=True)
 
@@ -308,8 +318,16 @@ def get_change_lane_trail(car_trails, trails_json_dict, lane_width, start_speed,
                 rng = pd.date_range("2020-05-10 00:00:00", periods=len(trail), freq="T")
                 if frame >= 1:
                     trail = resample_by_time(trail, frame, rng, flag=True)
+                    trail = trail.drop_duplicates(subset=['ego_e', 'ego_n', 'headinga'], keep='first')  # 重复轨迹会被删掉
+                    trail = trail.reset_index(drop=True)
+                    if len(trail) < (period - 1) * 10:
+                        continue
                 else:
                     trail = resample_by_time(trail, math.floor(frame * 60), rng, flag=False)
+                    trail = trail.drop_duplicates(subset=['ego_e', 'ego_n', 'headinga'], keep='first')  # 重复轨迹会被删掉
+                    trail = trail.reset_index(drop=True)
+                    if len(trail) < (period - 1) * 10:
+                        continue
                 trail['vel_filtered'] = trail['vel_filtered'] * frame
                 trail = trail.drop_duplicates(subset=['ego_e', 'ego_n', 'headinga'], keep='first')
                 trail = trail.reset_index(drop=True)
@@ -412,8 +430,14 @@ def get_turn_round_trail(car_trails, trails_json_dict, start_speed, turn_round_f
             rng = pd.date_range("2020-05-10 00:00:00", periods=len(trail_new), freq="T")
             if frame >= 1:
                 trail_new = resample_by_time(trail_new, frame, rng, flag=True)
+                trail_new = trail_new.drop_duplicates(subset=['ego_e', 'ego_n', 'headinga'], keep='first')  # 重复轨迹会被删掉
+                if len(trail_new) < (period - 1) * 10:
+                    continue
             else:
                 trail_new = resample_by_time(trail_new, math.floor(frame * 60), rng, flag=False)
+                trail_new = trail_new.drop_duplicates(subset=['ego_e', 'ego_n', 'headinga'], keep='first')  # 重复轨迹会被删掉
+                if len(trail_new) < (period - 1) * 10:
+                    continue
             trail_new['vel_filtered'] = trail_new['vel_filtered'] * frame
             trail_new = trail_new.reset_index(drop=True)
 

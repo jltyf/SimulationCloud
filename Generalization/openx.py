@@ -10,7 +10,10 @@ from scenariogeneration import xodr
 from scenariogeneration import xosc
 from scenariogeneration import ScenarioGenerator
 from scenariogeneration.xodr import RoadSide, Object, ObjectType, Dynamic, Orientation
-import math, os
+import math
+import os
+
+from Generalization.utils import create_static_object
 
 
 class Scenario(ScenarioGenerator):
@@ -26,7 +29,7 @@ class Scenario(ScenarioGenerator):
         self.augtype = augtype
         self.sceperiod = sceperiod
 
-    def road(self, **kwargs):
+    def road(self):
         positionEgo = self.gps
         planview = xodr.PlanView()
 
@@ -69,7 +72,7 @@ class Scenario(ScenarioGenerator):
         odr.adjust_roads_and_lanes()
         return odr
 
-    def scenario(self, **kwargs):
+    def scenario(self):
         road = xosc.RoadNetwork(self.road_file, scenegraph="/simulation0.osgb")
 
         catalog = xosc.Catalog()
@@ -84,6 +87,7 @@ class Scenario(ScenarioGenerator):
         red_veh = xosc.Vehicle('Audi_A3_2009_black', xosc.VehicleCategory.car, bb, fa, ba, 69.444, 200, 10)
         white_veh = xosc.Vehicle('Audi_A3_2009_red', xosc.VehicleCategory.car, bb, fa, ba, 69.444, 200, 10)
         male_ped = xosc.Pedestrian('Christian', 'male_adult', 70, xosc.PedestrianCategory.pedestrian, pbb)
+        # white_veh = xosc.Vehicle('Kawasaki_ZX-9R_black', xosc.VehicleCategory.motorbike, bb, fa, ba, 69.444, 200, 10)
 
         prop = xosc.Properties()
         cnt = xosc.Controller('DefaultDriver', prop)
@@ -241,8 +245,9 @@ class Scenario(ScenarioGenerator):
         return sce
 
     def createUDAction(self, **kwargs):
-        tree = ET.parse(
-            '/home/lxj/Documents/git_project/SimulationCloud/SimulationCloud/Generalization/models/ped_CDATA.xosc')
+        ped_path = os.path.join(os.getcwd(), 'models/ped_CDATA.xosc')
+        tree = ET.parse(ped_path)
+        # '/home/lxj/Documents/git_project/SimulationCloud/SimulationCloud/Generalization/models/ped_CDATA.xosc')
         root = tree.getroot()
         ele = root[5][2][1][0][1][1][0][0][0]
         newnode = ET.Element("CustomCommandAction")
@@ -250,230 +255,4 @@ class Scenario(ScenarioGenerator):
         newnode.text = '<![CDATA[' + ele.text + ']]>'
         return newnode
 
-
 # 创建道路旁静止的场景
-def create_static_object(road, object_dict):
-    for single_object in object_dict:
-        for k, v in ObjectType.__members__.items():
-            if k == single_object.attrib['type']:
-                single_object.attrib['type'] = v
-                break
-
-        road_object = Object(
-            s=single_object.attrib['s'],
-            t=single_object.attrib['t'],
-            Type=single_object.attrib['type'],
-            dynamic=Dynamic.no,
-            id=single_object.attrib['id'],
-            name=single_object.attrib['name'],
-            zOffset=single_object.attrib['zOffset'],
-            validLength=single_object.attrib['validLength'],
-            orientation=Orientation.none,
-            length=single_object.attrib['length'],
-            width=single_object.attrib['width'],
-            height=single_object.attrib['height'],
-            pitch=single_object.attrib['pitch'],
-            roll=single_object.attrib['roll']
-        )
-
-        # 判断此object是否是重复的元素
-        repeat = single_object.find('repeat')
-        if repeat is not None:
-            road.add_object_roadside(road_object_prototype=road_object, repeatDistance=0, side=RoadSide.left,
-                                     tOffset=1.75)
-            road.add_object_roadside(road_object_prototype=road_object, repeatDistance=0, side=RoadSide.right,
-                                     tOffset=-1.755)
-        else:
-            road.add_object(road_object)
-    return road
-
-
-def change_CDATA(filepath):
-    '行人场景特例，对xosc文件内的特殊字符做转换'
-    f = open(filepath, "r", encoding="UTF-8")
-    txt = f.readline()
-    all_line = []
-    # txt是否为空可以作为判断文件是否到了末尾
-    while txt:
-        txt = txt.replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&").replace("&quot;", '"').replace(
-            "&apos;", "'")
-        all_line.append(txt)
-        # 读取文件的下一行
-        txt = f.readline()
-    f.close()
-    f1 = open(filepath, 'w', encoding="UTF-8")
-    for line in all_line:
-        f1.write(line)
-    f1.close()
-
-
-def path_changer(xosc_path, xodr_path, osgb_path):
-    """
-    provided by Dongpeng Ding
-    :param xosc_path:
-    :param xodr_path:
-    :param osgb_path:
-    :return:
-    """
-    tree = ET.parse(xosc_path)
-    treeRoot = tree.getroot()
-
-    # for OpenScenario v0.9, v1.0
-    for RoadNetwork in treeRoot.findall('RoadNetwork'):
-
-        for Logics in RoadNetwork.findall('LogicFile'):
-            Logics.attrib['filepath'] = xodr_path
-        for SceneGraph in RoadNetwork.findall('SceneGraphFile'):
-            SceneGraph.attrib['filepath'] = osgb_path
-
-        for Logics in RoadNetwork.findall('Logics'):
-            Logics.attrib['filepath'] = xodr_path
-        for SceneGraph in RoadNetwork.findall('SceneGraph'):
-            SceneGraph.attrib['filepath'] = osgb_path
-
-    # for VTD xml
-    for Layout in treeRoot.findall('Layout'):
-        Layout.attrib['File'] = xodr_path
-        Layout.attrib['Database'] = osgb_path
-
-    tree.write(xosc_path, xml_declaration=True)
-
-
-def readXML(xoscPath):
-    xodrFileName = ""
-    osgbFileName = ""
-
-    tree = ET.parse(xoscPath)
-    treeRoot = tree.getroot()
-
-    for RoadNetwork in treeRoot.findall('RoadNetwork'):
-
-        for Logics in RoadNetwork.findall('LogicFile'):
-            xodrFileName = Logics.attrib['filepath']
-        for SceneGraph in RoadNetwork.findall('SceneGraphFile'):
-            osgbFileName = SceneGraph.attrib['filepath']
-
-        for Logics in RoadNetwork.findall('Logics'):
-            xodrFileName = Logics.attrib['filepath']
-        for SceneGraph in RoadNetwork.findall('SceneGraph'):
-            osgbFileName = SceneGraph.attrib['filepath']
-
-    return xodrFileName[xodrFileName.rindex("/") + 1:], osgbFileName[osgbFileName.rindex("/") + 1:]
-
-
-def formatThree(rootDirectory):
-    """
-    xodr and osgb file path are fixed
-    :return:
-    """
-
-    for root, dirs, files in os.walk(rootDirectory):
-        for file in files:
-            if ".xosc" == file[-5:]:
-                # xodrFilePath = "/volume4T/goodscenarios/generalization/toyiqi/model/Rd_001.xodr" # 泛化效果好的场景用的
-                # osgbFilePath = "/volume4T/goodscenarios/generalization/toyiqi/model/Rd_001.osgb" # 泛化效果好的场景用的
-                # xodrFilePath = "/volume4T/goodscenarios/generalization/toyiqi/model/Cross.xodr"  # 泛化效果好的场景用的
-                # osgbFilePath = "/volume4T/goodscenarios/generalization/toyiqi/model/Cross.osgb"  # 泛化效果好的场景用的
-                xodrFilePath = "/home/lxj/wendang_lxj/L4/L4_scenarios/piliang_model/China_UrbanRoad_014.xodr"  # 直路，泛化好用
-                osgbFilePath = "/home/lxj/wendang_lxj/L4/L4_scenarios/piliang_model/China_UrbanRoad_014.opt.osgb"  # 直路，泛化好用
-                # xodrFilePath = "/home/lxj/wendang_lxj/L4/L4_scenarios/piliang_model/China_Crossing_002.xodr"       # 十字路口，泛化好用
-                # osgbFilePath = "/home/lxj/wendang_lxj/L4/L4_scenarios/piliang_model/China_Crossing_002.opt.osgb"   # 十字路口，泛化好用
-                # xodrFilePath = "/home/lxj/wendang_lxj/Sharing_VAN/homework/test/DF_yuexiang_1224.xodr"       # Sharing-van还原用的
-                # osgbFilePath = "/home/lxj/wendang_lxj/Sharing_VAN/homework/test/DF_yuexiang_1224.opt.osgb"   # Sharing-van还原用的
-
-                path_changer(root + "/" + file, xodrFilePath, osgbFilePath)
-                print("Change success: " + root + "/" + file)
-
-
-def formatTwo(rootDirectory):
-    """
-    data format:
-    simulation
-        file.xosc
-        file.xodr
-        file.osgb
-    :return:
-    """
-    for root, dirs, files in os.walk(rootDirectory):
-        for file in files:
-            if ".xosc" == file[-5:]:
-
-                xodrFilePath = ""
-                osgbFilePath = ""
-
-                for odrFile in os.listdir(root):
-                    if ".xodr" == odrFile[-5:]:
-                        xodrFilePath = root + "/" + odrFile
-                        break
-
-                for osgbFile in os.listdir(root):
-                    if ".osgb" == osgbFile[-5:]:
-                        osgbFilePath = root + "/" + osgbFile
-                        break
-
-                path_changer(root + "/" + file, xodrFilePath, osgbFilePath)
-                print("Change success: " + root + "/" + file)
-
-
-def formatOne(rootDirectory):
-    """
-    data format:
-        openx
-            xosc
-                file.xosc
-            xodr
-                file.xodr
-            osgb
-                file.osgb
-    :return:
-    """
-    for root, dirs, files in os.walk(rootDirectory):
-        for file in files:
-            if "xosc" == file[-4:]:
-
-                xodrFilePath = ""
-                osgbFilePath = ""
-
-                for odrFile in os.listdir(root[:-4] + "xodr"):
-                    if "xodr" == odrFile[-4:]:
-                        xodrFilePath = root[:-4] + "xodr/" + odrFile
-                        break
-
-                for osgbFile in os.listdir(root[:-4] + "osgb"):
-                    if "osgb" == osgbFile[-4:]:
-                        osgbFilePath = root[:-4] + "osgb/" + osgbFile
-                        break
-
-                path_changer(root + "/" + file, xodrFilePath, osgbFilePath)
-                print("Change success: " + root + "/" + file)
-
-
-def chongQingFormat(rootDirectory):
-    """
-    supporting file format: chong qing folder format
-    :return:
-    """
-
-    counter = 1
-
-    for root, dirs, files in os.walk(rootDirectory):
-        for file in files:
-            if "xosc" == file[-4:]:
-                if "ver1.0.xosc" == file[-11:]:
-
-                    xodrFileName, osgbFileName = readXML(root + "/" + file)
-
-                    xodrFilePath = "/Xodrs/" + xodrFileName
-                    osgbFilePath = "/Databases/" + osgbFileName
-
-                    path_changer(root + "/" + file, xodrFilePath, osgbFilePath)
-                    print(counter, "Change success: " + root + "/" + file)
-                else:
-                    xodrFileName, osgbFileName = readXML(root + "/" + file)
-
-                    xodrFilePath = "/Xodrs/" + xodrFileName
-                    osgbFilePath = "/Databases/" + osgbFileName
-
-                    path_changer(root + "/" + file, xodrFilePath, osgbFilePath)
-                    print(counter, "Change success: " + root + "/" + file)
-                counter += 1
