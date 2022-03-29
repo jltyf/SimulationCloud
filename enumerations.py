@@ -111,9 +111,53 @@ class ScenarioType(Enum):
 
 class CollisionStatus(Enum):
     """
-    场景类型：
-    碰撞    1
+    碰撞情况：
+    碰撞     1
     未碰撞   0
     """
     no_collision = 0
     collision = auto()
+
+
+class Weather(Enum):
+    """
+    天气情况：
+    晴       1
+    雨       2
+    雪       3
+    雾       4
+    """
+    sunny = auto()
+    rainy = auto()
+    snowy = auto()
+    foggy = auto()
+
+
+class VehicleModel(Enum):
+    """
+    车辆模型：
+    Audi_A3_2009_black     1
+    Audi_A3_2009_red       2
+    """
+    audi_black = auto()
+    audi_red = auto()
+
+
+class RoadType(Enum):
+    """
+    车辆模型：
+    城市直道	        1
+    城市弯道	        2
+    城市十字路口	    3
+    匝道	            4
+    高速路	        5
+    桥梁	            6
+    隧道	            7
+    """
+    city_straight = auto()
+    city_curve = auto()
+    city_crossroads = auto()
+    ramp = auto()
+    freeway = auto()
+    bridge = auto()
+    tunnel = auto()

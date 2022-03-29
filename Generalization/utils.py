@@ -8,6 +8,8 @@ from scenariogeneration import xosc
 import os
 import json
 from enumerations import DataType
+from scenariogeneration.xodr import RoadSide, Object, ObjectType, Dynamic, Orientation
+import xml.etree.ElementTree as ET
 
 
 class Point:
