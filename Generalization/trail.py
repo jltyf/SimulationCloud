@@ -77,14 +77,15 @@ class Trail(object):
                                              period=period, motion_status=motion_status, rotate_tuple=self.rotate_tuple)
             # 左转 or 右转 or 左掉头 or 右掉头
             elif TrailMotionType.turn_left.value <= motion_status <= TrailMotionType.turn_around_right.value:
-                if self.scenario['scenario_road_type'] == RoadType.city_curve.value:
+                if self.scenario['scenario_road_type'] == RoadType.city_curve_left.value or \
+                        self.scenario['scenario_road_type'] == RoadType.city_curve_right.value:
                     r = abs(int(self.scenario['scenario_radius_curvature'][0]))
                     straight_trail = get_uniform_speed_trail(car_trails=self.car_trail,
                                                              trails_json_dict=self.json_trail,
                                                              start_speed=self.start_speed, period=period,
                                                              rotate_tuple=self.rotate_tuple,
                                                              ego_delta_col=self.ego_delta_col,
-                                                             demand_distance=math.pi*0.5*r)
+                                                             demand_distance=math.pi * 0.5 * r)
                     return get_curve_point(straight_trail, r, self.rotate_tuple, motion_status)
                 else:
                     return get_turn_round_trail(car_trails=self.car_trail, trails_json_dict=self.json_trail,

@@ -27,7 +27,8 @@ class ScenarioData(object):
         self.scenario_dict['ego_velocity_time'] = ast.literal_eval(scenario_series['自车速度分段持续时间'])
         self.scenario_dict['ego_trajectory_time'] = ast.literal_eval(scenario_series['自车轨迹形态分段持续时间'])
         # 只有弯道时才起效果
-        if self.scenario_dict['scenario_road_type'] == RoadType.city_curve.value:
+        if self.scenario_dict['scenario_road_type'] == RoadType.city_curve_left.value or \
+                self.scenario_dict['scenario_road_type'] == RoadType.city_curve_right.value:
             self.scenario_dict['scenario_radius_curvature'] = str(scenario_series['车道线曲率半径']).split(',')
         self.scenario_dict['generalization_type'] = ast.literal_eval(scenario_series['泛化标志位'])
         # self.scenario_dict['scene_type'] = str(scenario_series['scene_type'])

@@ -147,15 +147,17 @@ class RoadType(Enum):
     """
     车辆模型：
     城市直道	        1
-    城市弯道	        2
-    城市十字路口	    3
-    匝道	            4
-    高速路	        5
-    桥梁	            6
-    隧道	            7
+    城市左弯道	    2
+    城市右弯道	    3
+    城市十字路口	    4
+    匝道	            5
+    高速路	        6
+    桥梁	            7
+    隧道	            8
     """
     city_straight = auto()
-    city_curve = auto()
+    city_curve_left = auto()
+    city_curve_right = auto()
     city_crossroads = auto()
     ramp = auto()
     freeway = auto()

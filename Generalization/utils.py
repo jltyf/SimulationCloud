@@ -1,6 +1,7 @@
 import math
 from copy import deepcopy
 from functools import reduce
+from pathlib import Path
 
 from matplotlib import pyplot as plt
 from matplotlib.ticker import MultipleLocator
@@ -10,7 +11,7 @@ import pandas as pd
 from scenariogeneration import xosc
 import os
 import json
-from enumerations import DataType, TrailMotionType
+from enumerations import DataType, TrailMotionType, RoadType
 from scenariogeneration.xodr import RoadSide, Object, ObjectType, Dynamic, Orientation
 import xml.etree.ElementTree as ET
 
@@ -483,26 +484,53 @@ def readXML(xoscPath):
     return xodrFileName[xodrFileName.rindex("/") + 1:], osgbFileName[osgbFileName.rindex("/") + 1:]
 
 
-def formatThree(rootDirectory):
+def formatThree(rootDirectory, road_type, radius):
     """
     xodr and osgb file path are fixed
     :return:
     """
-
+    root_path = '/home/tang/road_model'
     for root, dirs, files in os.walk(rootDirectory):
         for file in files:
             if ".xosc" == file[-5:]:
+                if road_type == RoadType.city_straight.value:
+                    xodrFilePath = os.path.join(root_path, 'Xodr/China_UrbanRoad_014.xodr')  # 直路，泛化好用
+                    osgbFilePath = os.path.join(root_path, 'Osgb/China_UrbanRoad_014.opt.osgb')
+                elif road_type == RoadType.city_crossroads.value:
+                    xodrFilePath = os.path.join(root_path, 'Xodr/China_Crossing_002.xodr')  # 十字路口，泛化好用
+                    osgbFilePath = os.path.join(root_path, 'Osgb/China_Crossing_002.opt.osgb')  # 十字路口，泛化好用
+                elif road_type == RoadType.city_curve_left.value:
+                    if radius == 150:
+                        xodrFilePath = os.path.join(root_path, 'Xodr/L_r150.xodr')
+                        osgbFilePath = os.path.join(root_path, 'Osgb/L_r150.opt.osgb')
+                    elif radius == 300:
+                        xodrFilePath = os.path.join(root_path, 'Xodr/L_r300.xodr')
+                        osgbFilePath = os.path.join(root_path, 'Osgb/L_r300.opt.osgb')
+                    elif radius == 500:
+                        xodrFilePath = os.path.join(root_path, 'Xodr/L_r500.xodr')
+                        osgbFilePath = os.path.join(root_path, 'Osgb/L_r500.opt.osgb')
+                elif road_type == RoadType.city_curve_right.value:
+                    if radius == 150:
+                        xodrFilePath = os.path.join(root_path, 'Xodr/R_r150.xodr')
+                        osgbFilePath = os.path.join(root_path, 'Osgb/R_r150.opt.osgb')
+                    elif radius == 300:
+                        xodrFilePath = os.path.join(root_path, 'Xodr/R_r300.xodr')
+                        osgbFilePath = os.path.join(root_path, 'Osgb/R_r300.opt.osgb')
+                    elif radius == 500:
+                        xodrFilePath = os.path.join(root_path, 'Xodr/R_r500.xodr')
+                        osgbFilePath = os.path.join(root_path, 'Osgb/R_r500.opt.osgb')
                 # xodrFilePath = "/volume4T/goodscenarios/generalization/toyiqi/model/Rd_001.xodr" # 泛化效果好的场景用的
                 # osgbFilePath = "/volume4T/goodscenarios/generalization/toyiqi/model/Rd_001.osgb" # 泛化效果好的场景用的
                 # xodrFilePath = "/volume4T/goodscenarios/generalization/toyiqi/model/Cross.xodr"  # 泛化效果好的场景用的
                 # osgbFilePath = "/volume4T/goodscenarios/generalization/toyiqi/model/Cross.osgb"  # 泛化效果好的场景用的
-                xodrFilePath = "/home/lxj/wendang_lxj/L4/L4_scenarios/piliang_model/China_UrbanRoad_014.xodr"  # 直路，泛化好用
-                osgbFilePath = "/home/lxj/wendang_lxj/L4/L4_scenarios/piliang_model/China_UrbanRoad_014.opt.osgb"  # 直路，泛化好用
+                # xodrFilePath = "/home/lxj/wendang_lxj/L4/L4_scenarios/piliang_model/China_UrbanRoad_014.xodr"  # 直路，泛化好用
+                # osgbFilePath = "/home/lxj/wendang_lxj/L4/L4_scenarios/piliang_model/China_UrbanRoad_014.opt.osgb"  # 直路，泛化好用
                 # xodrFilePath = "/home/lxj/wendang_lxj/L4/L4_scenarios/piliang_model/China_Crossing_002.xodr"       # 十字路口，泛化好用
                 # osgbFilePath = "/home/lxj/wendang_lxj/L4/L4_scenarios/piliang_model/China_Crossing_002.opt.osgb"   # 十字路口，泛化好用
                 # xodrFilePath = "/home/lxj/wendang_lxj/Sharing_VAN/homework/test/DF_yuexiang_1224.xodr"       # Sharing-van还原用的
                 # osgbFilePath = "/home/lxj/wendang_lxj/Sharing_VAN/homework/test/DF_yuexiang_1224.opt.osgb"   # Sharing-van还原用的
-
+                xodrFilePath = Path(xodrFilePath).as_posix()
+                osgbFilePath = Path(osgbFilePath).as_posix()
                 path_changer(root + "/" + file, xodrFilePath, osgbFilePath)
                 print("Change success: " + root + "/" + file)
 
