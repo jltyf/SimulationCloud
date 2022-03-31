@@ -8,8 +8,8 @@ import json
 import pandas as pd
 from Generalization.serialization.scenario_serialization import ScenarioData
 from Generalization.trail import Trail
-from Generalization.utils import dump_json, formatThree, change_CDATA
-from enumerations import TrailType
+from Generalization.utils import dump_json, formatThree, change_CDATA, get_plt
+from enumerations import TrailType, RoadType
 from utils import get_cal_model, generateFinalTrail, getXoscPosition, trailModify, getLabel, Point
 from openx import Scenario
 import warnings
@@ -139,12 +139,24 @@ def parsingConfigurationFile(absPath, ADAS_module):
                         print(scenario_series['场景编号'], "obs没有符合条件的轨迹")
 
                     object_position_list.append(object_trail)
-
             # 转化仿真场景路径点, 生成仿真场景文件
-            offset_x = 7  # 因匹配泛化道路模型要做的e偏移量 China_UrbanRoad_014直路:7 China_Crossing_002十字路口:5.5 
-            offset_y = 0  # 因匹配泛化道路模型要做的n偏移量 China_UrbanRoad_014直路:0 China_Crossing_002十字路口:-65 
             offset_h = 90  # 因匹配泛化道路模型要做的h偏移量 China_UrbanRoad_014直路:90 China_Crossing_002十字路口:90
-
+            if single_scenario['scenario_road_type'] == RoadType.city_straight.value:
+                offset_x = 7  # 因匹配泛化道路模型要做的e偏移量 China_UrbanRoad_014直路:7 China_Crossing_002十字路口:5.5
+                offset_y = 0  # 因匹配泛化道路模型要做的n偏移量 China_UrbanRoad_014直路:0 China_Crossing_002十字路口:-65
+            elif single_scenario['scenario_road_type'] == RoadType.city_crossroads.value:
+                offset_x = 5.5
+                offset_y = -65
+            elif single_scenario['scenario_road_type'] == RoadType.city_curve.value:
+                if len(ego_trails_list) > 0:
+                    offset_x = 210.3
+                    offset_y = 81.6
+                    for trail in ego_trails_list[0:-1]:
+                        offset_x -= (trail.iloc[-1]['ego_e'] - trail.iloc[0]['ego_e'])
+                        offset_y -= (trail.iloc[-1]['ego_n'] - trail.iloc[0]['ego_n'])
+                else:
+                    offset_x = 210.3
+                    offset_y = 81.6
             ego_points, egotime = getXoscPosition(ego_trail, 'Time', 'ego_e', 'ego_n', 'headinga', offset_x, offset_y,
                                                   offset_h)  # 初始轨迹朝向与道路方向一致
             # ego_points, egotime = getXoscPosition(ego_trail, 'Time', 'ego_n', 'ego_e', 'headinga', offset_x, offset_y, offset_h) # 初始轨迹朝向与道路方向垂直
@@ -174,6 +186,7 @@ def parsingConfigurationFile(absPath, ADAS_module):
             if 'PCW' in scenario_series['场景编号'] or '行人' in scenario_series['场景简述']:
                 change_CDATA(files[0][0])  # 行人场景特例，对xosc文件内的特殊字符做转换
 
+            get_plt(ego_trail)
             # 生成每个场景的描述文件 json
             getLabel(output_path, scenario_series['场景编号'], scenario_series['场景名称'])
 

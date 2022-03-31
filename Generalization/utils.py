@@ -1,13 +1,16 @@
 import math
 from copy import deepcopy
 from functools import reduce
+
+from matplotlib import pyplot as plt
+from matplotlib.ticker import MultipleLocator
 from sklearn import metrics
 import numpy as np
 import pandas as pd
 from scenariogeneration import xosc
 import os
 import json
-from enumerations import DataType
+from enumerations import DataType, TrailMotionType
 from scenariogeneration.xodr import RoadSide, Object, ObjectType, Dynamic, Orientation
 import xml.etree.ElementTree as ET
 
@@ -63,7 +66,7 @@ def extractTrail(trails, start_time, end_time):
     return single_trail
 
 
-def rotate(x_list, y_list, ox, oy, rad):
+def rotate(x_list, y_list, ox, oy, rad, flag=0):
     """
     position_list (list): a list of tuples; (x, y, z, h, p, r)
     deg: clock-wise radius
@@ -298,7 +301,7 @@ def getLabel(output_path, func_ind, func_name):
     labeljson['scene_type'] = func_name
     labeljson['rode_type'] = "城市普通道路"
     labeljson['rode_section'] = "路段"
-    with open(os.path.join(output_path, output_path.split('/')[-1] + '.json'), 'w', encoding='utf-8') as f:
+    with open(os.path.join(output_path, os.path.basename(output_path) + '.json'), 'w', encoding='utf-8') as f:
         json.dump(labeljson, f, indent=4, ensure_ascii=False)
 
 
@@ -596,3 +599,35 @@ def chongQingFormat(rootDirectory):
                     path_changer(root + "/" + file, xodrFilePath, osgbFilePath)
                     print(counter, "Change success: " + root + "/" + file)
                 counter += 1
+
+
+def get_plt(trail):
+    """
+    测试用,绘制轨迹的路线
+    :param trail: 轨迹的dataframe
+    :return:
+    """
+    t = trail
+    ax = plt.gca()
+    # ax.set_xlim(t.iloc[0]['ego_e'], t.iloc[-1]['ego_e'])
+    # ax.set_ylim(t.iloc[0]['ego_n'], t.iloc[-1]['ego_n'])
+    X = np.array(t.ego_e.values.tolist())
+    Y = np.array(t.ego_n.values.tolist())
+    # plt.plot(X,Y,lable="$sin(X)$",color="red",linewidth=2)
+
+    # plt.figure(figsize=(50, 20))
+    plt.figure()
+    plt.xlabel("E")  #
+    plt.ylabel("N")  # Y
+
+    x_major_locator = MultipleLocator(1)
+
+    y_major_locator = MultipleLocator(1)
+
+    ax.xaxis.set_major_locator(x_major_locator)
+    ax.yaxis.set_major_locator(y_major_locator)
+
+    plt.plot(X, Y)  # 绘制曲线图
+    # 在ipython的交互环境中需要这句话才能显示出来
+    plt.gca().set_aspect('equal', adjustable='box')
+    plt.show()

@@ -5,10 +5,12 @@ import pandas as pd
 import numpy as np
 from functools import reduce
 from enumerations import SpeedType, TrailMotionType
-from utils import resample_by_time, multiple_uniform_trail, concatTrails, corTransform_init, extractTrail, trailModify
+from utils import resample_by_time, multiple_uniform_trail, concatTrails, corTransform_init, extractTrail, trailModify, \
+    get_plt
 
 
-def get_uniform_speed_trail(car_trails, trails_json_dict, start_speed, period, rotate_tuple, ego_delta_col):
+def get_uniform_speed_trail(car_trails, trails_json_dict, start_speed, period, rotate_tuple, ego_delta_col,
+                            demand_distance=-1):
     """
     return:直线轨迹
     从匀速的轨迹库中 分类别取出轨迹
@@ -28,7 +30,7 @@ def get_uniform_speed_trail(car_trails, trails_json_dict, start_speed, period, r
                 uniform_json_dict[motion] = selected_trail_list
 
     previous_speed_difference = 100
-    # 从挑选的轨迹中找到速度差异最小的轨迹
+    # 从挑选的轨迹中找到速度差异最小的轨迹,如果有
     for trail_motion in uniform_json_dict:
         uniform_json_dict[trail_motion] = sorted(uniform_json_dict[trail_motion],
                                                  key=operator.itemgetter('startSpeed'), reverse=True)
@@ -66,6 +68,13 @@ def get_uniform_speed_trail(car_trails, trails_json_dict, start_speed, period, r
 
     # 根据初始设定速度微调坐标
     multiple = start_speed / trail_res.loc[0, 'vel_filtered']
+
+    # 如果是处理弯道轨迹需要限制最大行驶距离
+    if not demand_distance == -1:
+        distance = ((trail_res.iloc[-1]['ego_e'] - trail_res.iloc[0]['ego_e']) ** 2 + (
+                trail_res.iloc[-1]['ego_n'] - trail_res.iloc[0]['ego_n']) ** 2) ** 0.5
+        if distance > demand_distance:
+            multiple = demand_distance / distance
     trail_res = multiple_uniform_trail(trail_res, multiple, rotate_tuple)
 
     # 将所有轨迹都旋转为0点，为了对轨迹角度微调
@@ -155,7 +164,7 @@ def get_variable_speed_trail(car_trails, trails_json_dict, start_speed, period, 
                 if frame >= 1:
                     merge_trail = merge_trail[:period * 10 + 1]
                 else:
-                    merge_trail = resample_by_time(merge_trail, math.floor(frame * 60), rng, flag=False)[
+                    merge_trail = resample_by_time(merge_trail, math.ceil(frame * 60), rng, flag=False)[
                                   :period * 10 + 1]
                     merge_trail = merge_trail.drop_duplicates(subset=['ego_e', 'ego_n', 'headinga'],
                                                               keep='first')  # 重复轨迹会被删掉
@@ -509,3 +518,24 @@ def get_ped_trail(period, ped_trails, sketch):
     trail_res = trail_res.reset_index(drop=True)
 
     return trail_res
+
+
+def get_curve_point(trail, radius, rotate_tuple, motion_status):
+    trail['headinga'] = ((trail.ego_e - trail.iloc[0]['ego_e']) ** 2 + (
+            trail.ego_n - trail.iloc[0]['ego_n']) ** 2) ** 0.5 / radius
+    if motion_status == TrailMotionType.turn_right.value:
+        trail['headinga'] = math.pi * 2 - trail['headinga']
+    for group in rotate_tuple:
+        if motion_status == TrailMotionType.turn_right.value:
+            init_point = (trail.iloc[0][group[0]] + radius, trail.iloc[0][group[1]])
+        else:
+            init_point = (trail.iloc[0][group[0]] - radius, trail.iloc[0][group[1]])
+        trail[group[0]] = trail.apply(
+            lambda x: ((trail.iloc[0][group[0]] - init_point[0]) * math.cos(x['headinga']) + (
+                    trail.iloc[0][group[1]] - init_point[1]) * math.sin(x['headinga'])) + init_point[0], axis=1)
+        trail[group[1]] = trail.apply(
+            lambda x: -(((trail.iloc[0][group[1]] - init_point[1]) * math.cos(x['headinga']) - (
+                    trail.iloc[0][group[0]] - init_point[0]) * math.sin(x['headinga'])) + init_point[1]), axis=1)
+    # get_plt(trail)
+    trail['headinga'] = trail.apply(lambda x: math.degrees(x['headinga']), axis=1)
+    return trail

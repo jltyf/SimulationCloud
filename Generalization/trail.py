@@ -1,7 +1,9 @@
+import math
+
 from Generalization.get_trails import get_uniform_speed_trail, get_variable_speed_trail, get_turn_round_trail, \
-    get_change_lane_trail, get_static_trail, get_start_stop_trail, get_ped_trail
+    get_change_lane_trail, get_static_trail, get_start_stop_trail, get_ped_trail, get_curve_point
 from Generalization.utils import get_ped_data
-from enumerations import TrailType, TrailMotionType, SpeedType
+from enumerations import TrailType, TrailMotionType, SpeedType, RoadType
 
 
 class Trail(object):
@@ -75,8 +77,18 @@ class Trail(object):
                                              period=period, motion_status=motion_status, rotate_tuple=self.rotate_tuple)
             # 左转 or 右转 or 左掉头 or 右掉头
             elif TrailMotionType.turn_left.value <= motion_status <= TrailMotionType.turn_around_right.value:
-                return get_turn_round_trail(car_trails=self.car_trail, trails_json_dict=self.json_trail,
-                                            start_speed=self.start_speed, turn_round_flag=motion_status,
-                                            period=period, rotate_tuple=self.rotate_tuple)
+                if self.scenario['scenario_road_type'] == RoadType.city_curve.value:
+                    r = abs(int(self.scenario['scenario_radius_curvature'][0]))
+                    straight_trail = get_uniform_speed_trail(car_trails=self.car_trail,
+                                                             trails_json_dict=self.json_trail,
+                                                             start_speed=self.start_speed, period=period,
+                                                             rotate_tuple=self.rotate_tuple,
+                                                             ego_delta_col=self.ego_delta_col,
+                                                             demand_distance=math.pi*0.5*r)
+                    return get_curve_point(straight_trail, r, self.rotate_tuple, motion_status)
+                else:
+                    return get_turn_round_trail(car_trails=self.car_trail, trails_json_dict=self.json_trail,
+                                                start_speed=self.start_speed, turn_round_flag=motion_status,
+                                                period=period, rotate_tuple=self.rotate_tuple)
         else:
             return get_ped_trail(period=period, ped_trails=self.ped_trail, sketch=self.ped_trail_sketch_df)
