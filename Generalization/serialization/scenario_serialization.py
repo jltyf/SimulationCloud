@@ -38,6 +38,8 @@ class ScenarioData(object):
             self.scenario_dict['obs_start_x'] = str(scenario_series['目标初始x坐标']).split(';')
             self.scenario_dict['obs_start_y'] = str(scenario_series['目标初始y坐标']).split(';')
             self.scenario_dict['obs_start_velocity'] = str(scenario_series['目标初始速度V1(km/h)']).split(';')
+            self.scenario_dict['obs_lateral_acceleration'] = str(scenario_series['目标物最大横向加速度(m/s²)']).split(';')
+            self.scenario_dict['obs_longitudinal_acceleration'] = str(scenario_series['目标物最大纵向加速度(m/s²)']).split(';')
             self.scenario_dict['obs_velocity_status'] = str(scenario_series['目标行驶速度状态']).split(';')
             self.scenario_dict['obs_trajectory'] = str(scenario_series['目标轨迹形态']).split(';')
             self.scenario_dict['obs_duration_time'] = str(scenario_series['目标轨迹持续时间(s)']).split(';')
@@ -61,39 +63,49 @@ class ScenarioData(object):
         characteristic_list = list()
         keys_list = list()
         other_obj_dict = dict()
-        for key, values in self.scenario_dict['generalization_type'].items():
-            values_list = list()
-            if key not in self.scenario_dict['generalization_list']:
-                if values == DataType.generalizable.value:
-                    # # 备用请勿删除
-                    # _ = ast.literal_eval(str(self.scenario_dict[key][0]))
-                    try:
-                        generalization_list = ast.literal_eval(str(self.scenario_dict[key]))
-                    except:
-                        if isinstance(eval(str(self.scenario_dict[key][0])), list):
-                            other_obj_dict[key] = self.scenario_dict[key][1:]
-                            generalization_list = eval(self.scenario_dict[key][0])
-                        else:
-                            generalization_list = self.scenario_dict[key]
-                    min_value = generalization_list[0]
-                    max_value = generalization_list[1]
-                    step = generalization_list[2]
-                    float_flag = False
-                    if min_value < 1 or step < 1:
-                        min_value = int(min_value * 100)
-                        max_value = int(max_value * 100)
-                        step = int(step * 100)
-                        float_flag = True
-                    for value in range(min_value, max_value + step, step):
-                        if float_flag:
-                            value = value / 100
-                        values_list.append(value)
-                    keys_list.append(key)
-                    characteristic_list.append(values_list)
-            else:
-                if values == DataType.generalizable.value:
-                    keys_list.append(key)
-                    characteristic_list.append(self.scenario_dict[key])
+        if self.scenario_dict['generalization_type']:
+            for key, values in self.scenario_dict['generalization_type'].items():
+                values_list = list()
+                if key not in self.scenario_dict['generalization_list']:
+                    if values == DataType.generalizable.value or values == DataType.generalizable_limit.value:
+                        # # 备用请勿删除
+                        # _ = ast.literal_eval(str(self.scenario_dict[key][0]))
+                        if values == DataType.generalizable_limit.value:
+                            temp_limit_data = self.scenario_dict[key][0].split('|')
+                            self.scenario_dict[key][0] = temp_limit_data[0]
+                            self.scenario_dict[key+'_limit'] = temp_limit_data[1]
+                        try:
+                            if 'obs' in key:
+                                if isinstance(eval(str(self.scenario_dict[key][0])), list):
+                                    other_obj_dict[key] = self.scenario_dict[key][1:]
+                                generalization_list = ast.literal_eval((self.scenario_dict[key][0]))
+                            else:
+                                generalization_list = ast.literal_eval(str(self.scenario_dict[key]))
+                        except:
+                            if isinstance(eval(str(self.scenario_dict[key][0])), list):
+                                other_obj_dict[key] = self.scenario_dict[key][1:]
+                                generalization_list = eval(self.scenario_dict[key][0])
+                            else:
+                                generalization_list = self.scenario_dict[key]
+                        min_value = generalization_list[0]
+                        max_value = generalization_list[1]
+                        step = generalization_list[2]
+                        float_flag = False
+                        if min_value < 1 or step < 1:
+                            min_value = int(min_value * 100)
+                            max_value = int(max_value * 100)
+                            step = int(step * 100)
+                            float_flag = True
+                        for value in range(min_value, max_value + step, step):
+                            if float_flag:
+                                value = value / 100
+                            values_list.append(value)
+                        keys_list.append(key)
+                        characteristic_list.append(values_list)
+                else:
+                    if values == DataType.generalizable.value:
+                        keys_list.append(key)
+                        characteristic_list.append(self.scenario_dict[key])
 
         if not characteristic_list:
             return [self.scenario_dict]
@@ -105,7 +117,7 @@ class ScenarioData(object):
         for characteristic in characteristic_list:
             temp_data = self.scenario_dict.copy()
             for key in keys_list:
-                if other_obj_dict and other_obj_dict[key]:
+                if other_obj_dict and key in other_obj_dict.keys():
                     if isinstance(characteristic, tuple):
                         temp_data[key] = [str(characteristic[keys_list.index(key)]), *other_obj_dict[key]]
                     else:
@@ -124,3 +136,8 @@ class ScenarioData(object):
             self.scenario_generalization_list.append(temp_data)
 
         return self.scenario_generalization_list
+
+    def get_limit_data(self, limit_value, key):
+        limit_data = limit_value.split('|')
+        self.scenario_dict[key + 'limit'] = limit_data[1]
+        return limit_data[0]

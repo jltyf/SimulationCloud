@@ -258,39 +258,57 @@ def get_cal_model(scenario_dict):
     :param scenario_dict: 单个场景参数(已泛化)
     :return: 已经完全泛化的场景配置列表，每个元素为泛化的一个场景配置
     """
+    range_flag = True
     for key, values in scenario_dict['generalization_type'].items():
-        if values == DataType.calculative.value:
-            ep_x = change_factor_type(scenario_dict['ego_start_x']) if key != 'ego_start_x' else ''
-            ep_y = change_factor_type(scenario_dict['ego_start_y']) if key != 'ego_start_y' else ''
-            ev = change_factor_type(scenario_dict['ego_start_velocity']) if key != 'ego_start_velocity' else ''
-            ev_t = scenario_dict['ego_velocity_time'] if key != 'ego_velocity_time' else ''
-            et_t = scenario_dict['ego_trajectory_time'] if key != 'ego_trajectory_time' else ''
+        if values == DataType.calculative.value or values == DataType.generalizable_limit.value:
+            cal_dict = dict()
+            ep_x = change_factor_type(scenario_dict['ego_start_x'])
+            ep_y = change_factor_type(scenario_dict['ego_start_y'])
+            ev = change_factor_type(scenario_dict['ego_start_velocity'])
+            ev_t = scenario_dict['ego_velocity_time']
+            et_t = scenario_dict['ego_trajectory_time']
             if scenario_dict['obs_start_x']:
-                op_x = change_factor_type(scenario_dict['obs_start_x']) if key != 'obs_start_x' else ''
-                op_y = change_factor_type(scenario_dict['obs_start_y']) if key != 'obs_start_y' else ''
-                ov = change_factor_type(
-                    scenario_dict['obs_start_velocity']) if key != 'obs_start_velocity' else ''
-                ov_t = eval(scenario_dict['obs_velocity_time'][0]) if key != 'obs_velocity_time' else ''
-                ot_t = eval(scenario_dict['obs_trail_time'][0]) if key != 'obs_trail_time' else ''
+                op_x = change_factor_type(scenario_dict['obs_start_x'])
+                op_x = change_factor_type(scenario_dict['obs_start_x'])
+                op_y = change_factor_type(scenario_dict['obs_start_y'])
+                # ov = change_factor_type(
+                #     scenario_dict['obs_start_velocity']) if key != 'obs_start_velocity' else ''
+                ov = change_factor_type(scenario_dict['obs_start_velocity'])
+                ov_t = eval(scenario_dict['obs_velocity_time'][0])
+                ot_t = eval(scenario_dict['obs_trail_time'][0])
                 ov_t = ov_t if isinstance(ov_t, list) else [ov_t]
                 ot_t = ot_t if isinstance(ot_t, list) else [ot_t]
-            formula = str(scenario_dict[key])
-            if "'" in formula:
-                formula = formula.split("'")[1]
+            if values == DataType.calculative.value:
+                formula = str(scenario_dict[key])
+                if "'" in formula:
+                    formula = formula.split("'")[1]
+                if len(scenario_dict[key]) > 1:
+                    other_obj = scenario_dict[key][1:]
+                    formula = [eval(formula)] + other_obj
+                else:
+                    formula = [eval(formula)]
+                scenario_dict[key] = formula
+                range_flag = True
+            elif values == DataType.generalizable_limit.value:
+                formula = scenario_dict[key + '_limit']
+                if eval(formula):
+                    range_flag = True
+                else:
+                    range_flag = False
 
-            if len(scenario_dict[key]) > 1:
-                other_obj = scenario_dict[key][1:]
-                formula = [eval(formula)] + other_obj
-            else:
-                formula = [eval(formula)]
-            scenario_dict[key] = formula
-    return scenario_dict
+    return scenario_dict, range_flag
 
 
 def change_factor_type(factor):
     if isinstance(factor, list):
-        factor = change_factor_type(factor[0])
-    return float(factor)
+        try:
+            factor = change_factor_type(factor[0])
+        except:
+            factor = ''
+    try:
+        return float(factor)
+    except:
+        return factor
 
 
 def getLabel(output_path, func_ind, func_name):

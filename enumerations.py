@@ -86,13 +86,15 @@ class OrientationType(Enum):
 class DataType(Enum):
     """
     目标物的朝向类型：
-    固定值      1
-    可以泛化    2
-    需要计算    3
+    固定值         1
+    可以泛化       2
+    需要计算       3
+    泛化后范围值    4
     """
     static = auto()
     generalizable = auto()
     calculative = auto()
+    generalizable_limit = auto()
 
 
 class ScenarioType(Enum):

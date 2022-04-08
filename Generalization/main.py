@@ -42,7 +42,11 @@ def parsingConfigurationFile(absPath, ADAS_module):
         scenario_list = scenario.get_scenario_model()
         scenario_index = 0
         for single_scenario in scenario_list:
-            single_scenario = get_cal_model(single_scenario)
+            single_scenario, range_flag = get_cal_model(single_scenario)
+
+            # 如果需要泛化的值不在不等式的范围内，此条数据作废
+            if not range_flag:
+                continue
             ego_trails_list = list()
             # 根据自车场景速度情况选择轨迹
             ego_trail_section = 0
@@ -142,6 +146,8 @@ def parsingConfigurationFile(absPath, ADAS_module):
             # 转化仿真场景路径点, 生成仿真场景文件
             offset_h = 90  # 因匹配泛化道路模型要做的h偏移量 China_UrbanRoad_014直路:90 China_Crossing_002十字路口:90
             radius = 0
+
+            # 根据不同的道路模型设置偏移量
             if single_scenario['scenario_road_type'] == RoadType.city_straight.value:
                 offset_x = 7  # 因匹配泛化道路模型要做的e偏移量 China_UrbanRoad_014直路:7 China_Crossing_002十字路口:5.5
                 offset_y = 0  # 因匹配泛化道路模型要做的n偏移量 China_UrbanRoad_014直路:0 China_Crossing_002十字路口:-65
@@ -221,4 +227,4 @@ def parsingConfigurationFile(absPath, ADAS_module):
 
 
 if __name__ == "__main__":
-    parsingConfigurationFile("D:/泛化", ['LKA'])
+    parsingConfigurationFile("D:/泛化", ['ACC-bass'])
