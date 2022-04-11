@@ -63,6 +63,8 @@ class ScenarioData(object):
         characteristic_list = list()
         keys_list = list()
         other_obj_dict = dict()
+        lac_index = None
+        long_index = None
         if self.scenario_dict['generalization_type']:
             for key, values in self.scenario_dict['generalization_type'].items():
                 values_list = list()
@@ -73,7 +75,7 @@ class ScenarioData(object):
                         if values == DataType.generalizable_limit.value:
                             temp_limit_data = self.scenario_dict[key][0].split('|')
                             self.scenario_dict[key][0] = temp_limit_data[0]
-                            self.scenario_dict[key+'_limit'] = temp_limit_data[1]
+                            self.scenario_dict[key + '_limit'] = temp_limit_data[1]
                         try:
                             if 'obs' in key:
                                 if isinstance(eval(str(self.scenario_dict[key][0])), list):
@@ -87,6 +89,14 @@ class ScenarioData(object):
                                 generalization_list = eval(self.scenario_dict[key][0])
                             else:
                                 generalization_list = self.scenario_dict[key]
+                        for i in generalization_list:
+                            if isinstance(i, list):
+                                if 'lateral' in key:
+                                    lac_index = generalization_list.index(i)
+                                    generalization_list = i
+                                elif 'longitudinal' in key:
+                                    long_index = generalization_list.index(i)
+                                    generalization_list = i
                         min_value = generalization_list[0]
                         max_value = generalization_list[1]
                         step = generalization_list[2]
@@ -117,22 +127,27 @@ class ScenarioData(object):
         for characteristic in characteristic_list:
             temp_data = self.scenario_dict.copy()
             for key in keys_list:
-                if other_obj_dict and key in other_obj_dict.keys():
+                if (lac_index or long_index) and 'lateral' in key:
+                    acc_value = ast.literal_eval(temp_data[key][0])
+                    acc_value[lac_index] = characteristic[keys_list.index(key)]
+                    generalization_value = str(acc_value)
+                elif (lac_index or long_index) and 'longitudinal' in key:
+                    acc_value = ast.literal_eval(temp_data[key][0])
+                    acc_value[long_index] = characteristic[keys_list.index(key)]
+                    generalization_value = str(acc_value)
+                elif other_obj_dict and key in other_obj_dict.keys():
                     if isinstance(characteristic, tuple):
-                        temp_data[key] = [str(characteristic[keys_list.index(key)]), *other_obj_dict[key]]
+                        generalization_value = [str(characteristic[keys_list.index(key)]), *other_obj_dict[key]]
                     else:
-                        temp_data[key] = [str(characteristic), *other_obj_dict[key]]
+                        generalization_value = [str(characteristic), *other_obj_dict[key]]
                 else:
-                    if 'ego' in key:
-                        if len(keys_list) == 1:
-                            temp_data[key] = str(characteristic)
-                        else:
-                            temp_data[key] = str(characteristic[keys_list.index(key)])
+                    if len(keys_list) == 1:
+                        generalization_value = str(characteristic)
                     else:
-                        if len(keys_list) == 1:
-                            temp_data[key] = [str(characteristic)]
-                        else:
-                            temp_data[key] = [str(characteristic[keys_list.index(key)])]
+                        generalization_value = str(characteristic[keys_list.index(key)])
+                    if 'ego' not in key:
+                        generalization_value = [generalization_value]
+                temp_data[key] = generalization_value
             self.scenario_generalization_list.append(temp_data)
 
         return self.scenario_generalization_list

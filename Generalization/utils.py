@@ -1,3 +1,4 @@
+import ast
 import math
 from copy import deepcopy
 from functools import reduce
@@ -282,7 +283,7 @@ def get_cal_model(scenario_dict):
                 formula = str(scenario_dict[key])
                 if "'" in formula:
                     formula = formula.split("'")[1]
-                if len(scenario_dict[key]) > 1:
+                if not isinstance(scenario_dict[key], str) and len(scenario_dict[key]) > 1:
                     other_obj = scenario_dict[key][1:]
                     formula = [eval(formula)] + other_obj
                 else:
@@ -295,6 +296,8 @@ def get_cal_model(scenario_dict):
                     range_flag = True
                 else:
                     range_flag = False
+        if 'ego' in key and isinstance(scenario_dict[key], list):
+            scenario_dict[key] = scenario_dict[key][0]
 
     return scenario_dict, range_flag
 

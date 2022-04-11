@@ -227,4 +227,5 @@ def parsingConfigurationFile(absPath, ADAS_module):
 
 
 if __name__ == "__main__":
-    parsingConfigurationFile("D:/泛化", ['ACC-bass'])
+    # parsingConfigurationFile("D:/泛化", ['ACC-bass'])
+    parsingConfigurationFile("D:/泛化", ['test'])
