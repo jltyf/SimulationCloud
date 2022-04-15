@@ -123,7 +123,7 @@ def parsingConfigurationFile(absPath, ADAS_module):
                                                     object_split_status,
                                                     single_scenario, object_trail_section, start_speed, heading_angle,
                                                     rotate_tuple, start_point, obj_delta_col, object_index)
-                        if object_trail_slices:
+                        if len(object_trail_slices.position) > 0:
                             object_trail_list.append(object_trail_slices.position)
                         else:
                             print(f'object第{object_trail_section + 1}段轨迹没有生成', object_trail_section)
@@ -202,7 +202,7 @@ def parsingConfigurationFile(absPath, ADAS_module):
                     obs_points, obs_time = getXoscPosition(object_position_list[obsL], 'Time', 'ego_e', 'ego_n',
                                                            'headinga', offset_x,
                                                            offset_y, offset_h)
-                    if '6' or '7' in motion:
+                    if '6' in motion or '7' in motion:
                         # 根据车速和目标车初始位置计算出目标车移动这段距离需要的时间
                         trail_motion_time_count = int(round(
                             (abs(obj_distance) * 3.6 / float(single_scenario['obs_start_velocity'][object_index])),
@@ -235,7 +235,7 @@ def parsingConfigurationFile(absPath, ADAS_module):
             if 'PCW' in scenario_series['场景编号'] or '行人' in scenario_series['场景简述']:
                 change_CDATA(files[0][0])  # 行人场景特例，对xosc文件内的特殊字符做转换
 
-            # get_plt(ego_trail)  #查看生成得自车轨迹 测试用
+            # get_plt(ego_trail, object_position_list)  # 查看生成得自车轨迹 测试用
             # 生成每个场景的描述文件 json
             getLabel(output_path, scenario_series['场景编号'], scenario_series['场景名称'])
 

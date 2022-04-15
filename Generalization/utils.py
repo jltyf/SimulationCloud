@@ -290,13 +290,13 @@ def get_cal_model(scenario_dict):
                 else:
                     formula = [eval(formula)]
                 scenario_dict[key] = formula
-                range_flag = True
             elif values == DataType.generalizable_limit.value:
                 formula = scenario_dict[key + '_limit']
                 if eval(formula):
                     range_flag = True
                 else:
                     range_flag = False
+                    return scenario_dict, range_flag
         if 'ego' in key and isinstance(scenario_dict[key], list):
             scenario_dict[key] = scenario_dict[key][0]
 
@@ -651,33 +651,34 @@ def chongQingFormat(rootDirectory):
                 counter += 1
 
 
-def get_plt(trail):
+def get_plt(ego_trail, obs_trail_list=None):
     """
     测试用,绘制轨迹的路线
-    :param trail: 轨迹的dataframe
+    :param obs_trail_list: 如果有目标车 目标车的轨迹dataframe_list
+    :param ego_trail: 轨迹的dataframe
     :return:
     """
-    t = trail
+    t = ego_trail
     ax = plt.gca()
-    # ax.set_xlim(t.iloc[0]['ego_e'], t.iloc[-1]['ego_e'])
-    # ax.set_ylim(t.iloc[0]['ego_n'], t.iloc[-1]['ego_n'])
-    X = np.array(t.ego_e.values.tolist())
-    Y = np.array(t.ego_n.values.tolist())
-    # plt.plot(X,Y,lable="$sin(X)$",color="red",linewidth=2)
-
-    # plt.figure(figsize=(50, 20))
     plt.figure()
     plt.xlabel("E")  #
     plt.ylabel("N")  # Y
 
     x_major_locator = MultipleLocator(1)
-
     y_major_locator = MultipleLocator(1)
-
     ax.xaxis.set_major_locator(x_major_locator)
     ax.yaxis.set_major_locator(y_major_locator)
 
+    X = np.array(t.ego_e.values.tolist())
+    Y = np.array(t.ego_n.values.tolist())
     plt.plot(X, Y)  # 绘制曲线图
     # 在ipython的交互环境中需要这句话才能显示出来
     plt.gca().set_aspect('equal', adjustable='box')
+    if obs_trail_list:
+        for obs_trail in obs_trail_list:
+            X = np.array(obs_trail.ego_e.values.tolist())
+            Y = np.array(obs_trail.ego_n.values.tolist())
+            plt.plot(X, Y)  # 绘制曲线图
+            # 在ipython的交互环境中需要这句话才能显示出来
+            plt.gca().set_aspect('equal', adjustable='box')
     plt.show()
