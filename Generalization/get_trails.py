@@ -86,18 +86,24 @@ def get_uniform_speed_trail(car_trails, trails_json_dict, start_speed, period, r
     return trail_res
 
 
-def get_variable_speed_trail(car_trails, trails_json_dict, start_speed, period, speed_status_num, rotate_tuple,
-                             ego_delta_col):
+def get_variable_speed_trail(car_trails, trails_json_dict, start_speed, period, speed_status_num, acc_limit,
+                             rotate_tuple, ego_delta_col):
     """
-    Parameters
-    ----------
-    car_trails: 原始的轨迹数据
-    trails_json_dict:标记所有轨迹类型的json数据
-    period: 持续时间
-    speed_status_num: 当前需要处理的轨迹属于哪种加速状态
-    Return 返回多条变速轨迹，如果所能生成的轨迹数量大于max_trails，返回轨迹条数是max_trails
-    -------
+
+    :param car_trails: 原始的轨迹数据
+    :param trails_json_dict: 标记所有轨迹类型的json数据
+    :param start_speed: 轨迹起始速度
+    :param period: 轨迹持续时间
+    :param speed_status_num: 当前需要处理的轨迹属于哪种加速状态
+    :param rotate_tuple: 需要旋转处理的列
+    :param ego_delta_col: 自车需要处理的列
+    :param acc_limit: 横纵向加速度的最大限制,数据格式为tuple,第一位位横向加速度最大值,第二位位纵向加速度最大值
+    :return: 符合需求的轨迹
     """
+    lateral_acc_max = 100 if acc_limit[0] == -1 else acc_limit[0]
+    longitudinal_acc_max = 100 if acc_limit[1] == -1 else acc_limit[1]
+    lateral_acc_min = 0.3 * lateral_acc_max if lateral_acc_max != 100 else 0
+    longitudinal_acc_min = 0.3 * longitudinal_acc_max if longitudinal_acc_max != 100 else 0
     if speed_status_num == int(SpeedType.Accelerate.value):
         speed_status = 'Accelerate'
     else:
@@ -113,7 +119,11 @@ def get_variable_speed_trail(car_trails, trails_json_dict, start_speed, period, 
                 if trail_speed in speed_status:
                     selected_trail_list = []
                     for single_trail in trail_value:
-                        if math.fabs(single_trail['stopHeadinga'] - single_trail['startHeadinga']) < 0.5:
+                        if math.fabs(single_trail['stopHeadinga'] - single_trail['startHeadinga']) < 0.5 and (
+                                abs(single_trail['LateralAccelarationMax']) < lateral_acc_max and abs(
+                                single_trail['LongitudinalAccelaration']) < longitudinal_acc_max) and (
+                                abs(single_trail['LateralAccelaration']) > lateral_acc_min and abs(
+                                single_trail['LongitudinalAccelarationMax']) > longitudinal_acc_min):
                             selected_trail_list.append(single_trail)
                         variable_json_dict = {trail_motion: {trail_speed: selected_trail_list}}
 

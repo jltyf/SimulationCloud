@@ -1,3 +1,4 @@
+import ast
 import math
 
 from Generalization.get_trails import get_uniform_speed_trail, get_variable_speed_trail, get_turn_round_trail, \
@@ -21,6 +22,15 @@ class Trail(object):
         self.start_point = start_point
         self.ego_delta_col = ego_delta_col
         self.lane_width = 3.5  # 车道线宽宽度
+        try:
+            lateral_acc = int(ast.literal_eval(scenario['obs_lateral_acceleration'][object_index])[trail_section])
+        except:
+            lateral_acc = int(scenario['obs_lateral_acceleration'][object_index])
+        try:
+            longitudinal_acc = int(ast.literal_eval(scenario['obs_longitudinal_acceleration'][object_index])[trail_section])
+        except:
+            longitudinal_acc = int(scenario['obs_longitudinal_acceleration'][object_index])
+        self.acc_limit = (lateral_acc, longitudinal_acc)
         # self.turning_angle = 0
         # 判断是自车轨迹还是目标物轨迹，忽略行人判断，归到目标物，待确认
         # self.start_speed = self.scenario['ego_start_speed'] if trail_type.value == TrailType.ego_trail.value else \
@@ -61,7 +71,7 @@ class Trail(object):
                 elif speed_status == SpeedType.Decelerate.value or speed_status == SpeedType.Accelerate.value:
                     return get_variable_speed_trail(car_trails=self.car_trail, trails_json_dict=self.json_trail,
                                                     start_speed=self.start_speed, period=period,
-                                                    speed_status_num=speed_status,
+                                                    speed_status_num=speed_status, acc_limit=self.acc_limit,
                                                     rotate_tuple=self.rotate_tuple, ego_delta_col=self.ego_delta_col)
 
                 # 起步 or 刹停

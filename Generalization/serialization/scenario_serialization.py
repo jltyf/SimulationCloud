@@ -130,7 +130,7 @@ class ScenarioData(object):
                 if (lac_index or long_index) and 'lateral' in key:
                     acc_value = ast.literal_eval(temp_data[key][0])
                     acc_value[lac_index] = characteristic[keys_list.index(key)]
-                    generalization_value = str(acc_value)
+                    generalization_value = [str(acc_value)]
                 elif (lac_index or long_index) and 'longitudinal' in key:
                     acc_value = ast.literal_eval(temp_data[key][0])
                     acc_value[long_index] = characteristic[keys_list.index(key)]
@@ -147,7 +147,10 @@ class ScenarioData(object):
                         generalization_value = str(characteristic[keys_list.index(key)])
                     if 'ego' not in key:
                         generalization_value = [generalization_value]
-                temp_data[key] = generalization_value
+                if 'acceleration' in key:
+                    temp_data[key][0] = generalization_value
+                else:
+                    temp_data[key] = generalization_value
             self.scenario_generalization_list.append(temp_data)
 
         return self.scenario_generalization_list

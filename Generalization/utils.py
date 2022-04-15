@@ -62,7 +62,8 @@ def extractTrail(trails, start_time, end_time):
     '从原始轨迹中提取一段数据'
     single_trail = (trails[(trails['Time'].values <= end_time)
                            & (trails['Time'].values >= start_time)]).reset_index(drop=True)
-    single_partID = single_trail.at[0, 'partID']
+    # single_partID = single_trail.at[0, 'partID']
+    single_partID = single_trail.partID.value_counts().idxmax()
     single_trail = single_trail[single_trail['partID'] == single_partID]
     single_trail = single_trail.reset_index(drop=True)
     return single_trail

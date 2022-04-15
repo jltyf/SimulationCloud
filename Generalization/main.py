@@ -2,6 +2,7 @@
     这个文件对新数据,可以生成直线和路口类型文件，对应的道路模型是China_Crossing_002.opt 和 China_UrbanRoad_014.opt
     China_UrbanRoad_014.opt 道路是北向的
 '''
+import ast
 import math
 import os
 import json
@@ -187,18 +188,39 @@ def parsingConfigurationFile(absPath, ADAS_module):
                                                   offset_h)  # 初始轨迹朝向与道路方向一致
             # ego_points, egotime = getXoscPosition(ego_trail, 'Time', 'ego_n', 'ego_e', 'headinga', offset_x, offset_y, offset_h) # 初始轨迹朝向与道路方向垂直
             object_points = []
+            trail_motion_time_count = 0
             if object_position_list:
                 for obsL in range(len(object_position_list)):
-                    object_points.append(
-                        getXoscPosition(object_position_list[obsL], 'Time', 'ego_e', 'ego_n', 'headinga', offset_x,
-                                        offset_y, offset_h))  # 初始轨迹朝向与道路方向一致
+                    motion = single_scenario['obs_trajectory'][object_index]
+                    obj_distance = single_scenario['obs_start_x'][object_index]
+                    if '6' in motion:
+                        index = motion.index('6')
+                        offset_y -= obj_distance
+                    elif '7' in motion:
+                        index = motion.index('7')
+                        offset_y -= obj_distance
+                    obs_points, obs_time = getXoscPosition(object_position_list[obsL], 'Time', 'ego_e', 'ego_n',
+                                                           'headinga', offset_x,
+                                                           offset_y, offset_h)
+                    if '6' or '7' in motion:
+                        # 根据车速和目标车初始位置计算出目标车移动这段距离需要的时间
+                        trail_motion_time_count = int(round(
+                            (abs(obj_distance) * 3.6 / float(single_scenario['obs_start_velocity'][object_index])),
+                            1) * 10)
+                        del obs_points[0:trail_motion_time_count]
+                        del obs_time[0:trail_motion_time_count]
+                        obs_time[:] = [round(x - trail_motion_time_count / 10, 2) for x in obs_time]
+                    object_points.append((obs_points, obs_time))
                     # object_points.append(getXoscPosition(object_position_list[obsL], 'Time', 'ego_n', 'ego_e', 'headinga', offset_x, offset_y, offset_h)) # 初始轨迹朝向与道路方向垂直
-
             egoSpeed = 5  # 随意设的，不发挥作用
-            sceperiod = math.ceil(egotime[-1] - egotime[0])
+
             augtype = 0  # 0为车，7为第一个目标是行人
             if 'PCW' in scenario_series['场景编号'] or '行人' in scenario_series['场景简述']:
                 augtype = 7
+            if not trail_motion_time_count == 0:
+                ego_points = ego_points[:len(ego_points) - trail_motion_time_count]
+                egotime = egotime[:len(egotime) - trail_motion_time_count]
+            sceperiod = math.ceil(egotime[-1] - egotime[0])
             s = Scenario(ego_points, object_points, 0, egotime, egoSpeed, 0, 0, augtype, sceperiod)
             s.print_permutations()
             output_path = os.path.join(absPath + '/trails/', 'simulation_new',
@@ -207,10 +229,6 @@ def parsingConfigurationFile(absPath, ADAS_module):
                 os.makedirs(output_path)
             files = s.generate(output_path)
             road_type = single_scenario['scenario_road_type']
-            # if RoadType.city_curve_left.value <= road_type <= RoadType.city_curve_right.value:
-            #     radius = abs(int(single_scenario['scenario_radius_curvature'][0]))
-            # else:
-            #     radius = 0
             formatThree(output_path, road_type, radius)
             scenario_index += 1
             print(files)
