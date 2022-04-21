@@ -33,7 +33,7 @@ def parsingConfigurationFile(absPath, ADAS_module):
     ped_trail_data = pd.read_csv(ped_trail)
 
     # 按功能列表分别读取不同的功能配置表
-    parm_data = pd.read_excel(os.path.join(absPath + '/trails/', "配置参数表样例0325.xlsx"),
+    parm_data = pd.read_excel(os.path.join(absPath + '/trails/', "配置参数表样例0415.xlsx"),
                               sheet_name=ADAS_module, keep_default_na=False, engine='openpyxl')
     ADAS_list = [ADAS for ADAS in ADAS_module]
     scenario_df = [parm_data[scenario_list] for scenario_list in ADAS_list][0]

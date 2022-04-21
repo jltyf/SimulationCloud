@@ -69,10 +69,12 @@ class Trail(object):
 
                 # 变速
                 elif speed_status == SpeedType.Decelerate.value or speed_status == SpeedType.Accelerate.value:
+                    required_speed = int(self.scenario['obs_start_velocity'][0])
                     return get_variable_speed_trail(car_trails=self.car_trail, trails_json_dict=self.json_trail,
                                                     start_speed=self.start_speed, period=period,
                                                     speed_status_num=speed_status, acc_limit=self.acc_limit,
-                                                    rotate_tuple=self.rotate_tuple, ego_delta_col=self.ego_delta_col)
+                                                    rotate_tuple=self.rotate_tuple, ego_delta_col=self.ego_delta_col,
+                                                    required_speed=required_speed)
 
                 # 起步 or 刹停
                 elif speed_status == SpeedType.Start.value or speed_status == SpeedType.Stop.value:

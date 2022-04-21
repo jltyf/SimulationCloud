@@ -87,7 +87,7 @@ def get_uniform_speed_trail(car_trails, trails_json_dict, start_speed, period, r
 
 
 def get_variable_speed_trail(car_trails, trails_json_dict, start_speed, period, speed_status_num, acc_limit,
-                             rotate_tuple, ego_delta_col):
+                             rotate_tuple, ego_delta_col, required_speed):
     """
 
     :param car_trails: 原始的轨迹数据
@@ -325,9 +325,7 @@ def get_change_lane_trail(car_trails, trails_json_dict, lane_width, start_speed,
         change_lane_json_dict[motion] = sorted(change_lane_json_dict[motion], key=operator.itemgetter('startSpeed'),
                                                reverse=True)
         for trail_json in change_lane_json_dict[motion]:
-            if abs(trail_json['startHeadinga'] - trail_json['stopHeadinga']) < 0.5 and (
-                    min_lateral_offset < abs(trail_json['lateralOffset']) < 2 * min_lateral_offset):
-
+            if abs(trail_json['startHeadinga'] - trail_json['stopHeadinga']) < 0.5:
                 start_time = trail_json['start']
                 end_time = trail_json['stop']
                 trail = extractTrail(trails, start_time, end_time)

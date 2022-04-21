@@ -31,9 +31,6 @@ class ScenarioData(object):
                 self.scenario_dict['scenario_road_type'] == RoadType.city_curve_right.value:
             self.scenario_dict['scenario_radius_curvature'] = str(scenario_series['车道线曲率半径']).split(',')
         self.scenario_dict['generalization_type'] = ast.literal_eval(scenario_series['泛化标志位'])
-        # self.scenario_dict['scene_type'] = str(scenario_series['scene_type'])
-        # self.scenario_dict['scene_description'] = str(scenario_series['scene_description'])
-        # self.scenario_dict['expect_test_result'] = str(scenario_series['expect_test_result'])
         if str(scenario_series['目标初始x坐标']):
             self.scenario_dict['obs_start_x'] = str(scenario_series['目标初始x坐标']).split(';')
             self.scenario_dict['obs_start_y'] = str(scenario_series['目标初始y坐标']).split(';')
