@@ -6,19 +6,27 @@ import ast
 import math
 import os
 import json
+import threading
+import time
+import warnings
 import pandas as pd
+from minio import Minio
+
 from Generalization.serialization.scenario_serialization import ScenarioData
 from Generalization.trail import Trail
-from Generalization.utils import dump_json, formatThree, change_CDATA, get_plt
+from Generalization.utils import dump_json, formatThree, change_CDATA, get_plt, upload_xosc
 from enumerations import TrailType, RoadType
 from utils import get_cal_model, generateFinalTrail, getXoscPosition, trailModify, getLabel, Point
+from configparser import ConfigParser
 from openx import Scenario
-import warnings
 
 warnings.filterwarnings("ignore")
 pd.set_option('max_colwidth', 100)
 # pd.set_option('display.max_columns', None)
 pd.set_option('display.max_rows', None)
+cfg = ConfigParser()
+cfg.read("../setting.ini")
+setting_data = dict(cfg.items("minio"))
 
 
 def parsingConfigurationFile(absPath, ADAS_module):
@@ -37,6 +45,12 @@ def parsingConfigurationFile(absPath, ADAS_module):
                               sheet_name=ADAS_module, keep_default_na=False, engine='openpyxl')
     ADAS_list = [ADAS for ADAS in ADAS_module]
     scenario_df = [parm_data[scenario_list] for scenario_list in ADAS_list][0]
+    client = Minio(
+        endpoint=setting_data['endpoint'],
+        access_key=setting_data['access key'],
+        secret_key=setting_data['secret key'],
+        secure=False
+    )
     for index, scenario_series in scenario_df.iterrows():
         print(scenario_series['场景编号'], 'Start')
         scenario = ScenarioData(scenario_series)
@@ -238,6 +252,12 @@ def parsingConfigurationFile(absPath, ADAS_module):
             # get_plt(ego_trail, object_position_list)  # 查看生成得自车轨迹 测试用
             # 生成每个场景的描述文件 json
             getLabel(output_path, scenario_series['场景编号'], scenario_series['场景名称'])
+            # 上传到minio
+            minio_path = '批量泛化场景/' + ADAS_list[0] + '/' + scenario_series['场景编号'] + '/' + os.path.basename(files[0][0])
+            # upload_xosc(client, setting_data['bucket name'], minio_path, files[0][0])
+            t1 = threading.Thread(target=upload_xosc,
+                                  args=(client, setting_data['bucket name'], minio_path, files[0][0]))
+            t1.start()
 
             # 拷贝到vtd路径下
             # os.system('cp ' + files[0][0] + ' /home/lxj/VIRES/VTD.2021.3/Data/Projects/Current/Scenarios/')
@@ -246,4 +266,7 @@ def parsingConfigurationFile(absPath, ADAS_module):
 
 if __name__ == "__main__":
     # parsingConfigurationFile("D:/泛化", ['ACC-bass'])
-    parsingConfigurationFile("D:/泛化", ['test'])
+    T1 = time.time()
+    parsingConfigurationFile("D:/泛化", ['ACC'])
+    T2 = time.time()
+    print(T2-T1)

@@ -651,6 +651,19 @@ def chongQingFormat(rootDirectory):
                 counter += 1
 
 
+def upload_xosc(minio_client, bucket_name, bucket_path, file_path):
+    """
+    泛化后将xosc文件上传到minio
+    :param minio_client: 已初始化的minioclient
+    :param bucket_name: 储存桶名
+    :param bucket_path: 在储存桶种的路径
+    :param file_path: 本地文件路径
+    :return: 上传文件的结果
+    """
+    result = minio_client.fput_object(bucket_name, bucket_path, file_path)
+    return result
+
+
 def get_plt(ego_trail, obs_trail_list=None):
     """
     测试用,绘制轨迹的路线
