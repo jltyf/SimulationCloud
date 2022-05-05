@@ -17,6 +17,7 @@ from enumerations import TrailType, RoadType
 from utils import get_cal_model, generateFinalTrail, getXoscPosition, trailModify, getLabel, Point
 from configparser import ConfigParser
 from openx import Scenario
+from log.log_set import Loggers
 
 warnings.filterwarnings("ignore")
 pd.set_option('max_colwidth', 100)
@@ -36,11 +37,6 @@ app = Flask(import_name=__name__)
 
 
 def generalization(scenario_data, single_scenario, car_trail_data, ped_trail_data, trails_json_dict, scenario_index):
-    single_scenario, range_flag = get_cal_model(single_scenario)
-
-    # 如果需要泛化的值不在不等式的范围内，此条数据作废
-    if not range_flag:
-        return False
     ego_trails_list = list()
     # 根据自车场景速度情况选择轨迹
     ego_trail_section = 0
@@ -265,7 +261,6 @@ def get_result(future):
 @app.route("/test_1.0", methods=["POST"])
 def parsingConfigurationFile():
     scenario_data = request.values  # 获取 JSON 数据
-    # return "login fail", 404, [("token", "123456"), ("City", "shenzhen")]
     car_trail = os.path.join(absPath + '/trails/', 'CarTrails_Merge.csv')
     ped_trail = os.path.join(absPath + '/trails/', 'PedTrails_Merge.csv')
     json_trail = os.path.join(absPath + '/trails/', 'Trails_Merge.json')
@@ -278,28 +273,52 @@ def parsingConfigurationFile():
 
     # 按功能列表分别读取不同的功能配置表
     print(scenario_data['sceneId'], 'Start')
-    scenario = ScenarioData(scenario_data)
-    scenario_list = scenario.get_scenario_model()
-    scenario_index = 0
-    result_list = list()
-    process_list = list()
-
-    with Pool(processes=5) as executor:
-        for single_scenario in scenario_list:
-            process = executor.apply_async(generalization,
-                                           (scenario_data, single_scenario, car_trail_data, ped_trail_data,
-                                            trails_json_dict, scenario_index))
-            scenario_index += 1
-            process_list.append(process)
-        for result in process_list:
-            if result.get():
-                result_list.append(result.get())
-    print(fileCnt)
-    response = {'success': True,
-                'code': 200,
-                'message': '请求成功!',
-                'params': result_list}
-    return response
+    try:
+        scenario = ScenarioData(scenario_data)
+        scenario_list = scenario.get_scenario_model()
+        scenario_index = 0
+        result_list = list()
+        process_list = list()
+    except Exception as e:
+        error_txt = e.args[0]
+        log = Loggers()
+        log.logger.info(f'错误类型:泛化入参错误,错误信息:{error_txt},错误模板:{scenario_data["sceneId"]}')
+        response = {'success': False,
+                    'code': 101,
+                    'message': '传入的泛化参数错误，泛化失败!',
+                    'params': None}
+        return response
+    try:
+        a = int(scenario_data["sceneId"])
+        with Pool(processes=5) as executor:
+            for single_scenario in scenario_list:
+                single_scenario, range_flag = get_cal_model(single_scenario)
+                # 如果需要泛化的值不在不等式的范围内，此条数据作废
+                if not range_flag:
+                    continue
+                process = executor.apply_async(generalization,
+                                               (scenario_data, single_scenario, car_trail_data, ped_trail_data,
+                                                trails_json_dict, scenario_index))
+                scenario_index += 1
+                process_list.append(process)
+            for result in process_list:
+                if result.get():
+                    result_list.append(result.get())
+        print(fileCnt)
+        response = {'success': True,
+                    'code': 200,
+                    'message': '请求成功!',
+                    'params': result_list}
+        return response
+    except Exception as e:
+        error_txt = e.args[0]
+        log = Loggers()
+        log.logger.info(f'错误类型:场景生成失败,错误信息:{error_txt},错误模板:{scenario_data["sceneId"]}')
+        response = {'success': False,
+                    'code': 102,
+                    'message': '场景生成失败!',
+                    'params': None}
+        return response
 
 
 if __name__ == "__main__":
