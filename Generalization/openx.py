@@ -14,10 +14,11 @@ import math
 import os
 
 from Generalization.utils import create_static_object
+from enumerations import Weather
 
 
 class Scenario(ScenarioGenerator):
-    def __init__(self, gps, obs, ObjectID, gpsTime, egoSpeed, Speed, intersectime, augtype, sceperiod):
+    def __init__(self, gps, obs, ObjectID, gpsTime, egoSpeed, Speed, intersectime, augtype, sceperiod, weather, time):
         ScenarioGenerator.__init__(self)
         self.gps = gps
         self.obs = obs
@@ -28,6 +29,9 @@ class Scenario(ScenarioGenerator):
         self.intersectime = intersectime
         self.augtype = augtype
         self.sceperiod = sceperiod
+        time_list = time.split(':')
+        self.time = (True, 2019, 12, 19, int(time_list[0]), int(time_list[1]), int(time_list[2]))
+        self.weather = weather
 
     def road(self):
         positionEgo = self.gps
@@ -240,6 +244,7 @@ class Scenario(ScenarioGenerator):
         # prettyprint(sb.get_element())
 
         paramet = xosc.ParameterDeclarations()
+        self.create_environment(init)
 
         sce = xosc.Scenario('my scenario', 'Maggie', paramet, entities, sb, road, catalog)
         return sce
@@ -255,4 +260,24 @@ class Scenario(ScenarioGenerator):
         newnode.text = '<![CDATA[' + ele.text + ']]>'
         return newnode
 
-# 创建道路旁静止的场景
+    # 创建场景天气
+    def create_environment(self, init):
+        cloud_state = xosc.CloudState.free
+        precipitation = xosc.PrecipitationType.dry
+        visual_fog_range = 2000
+        if self.weather == Weather.foggy.value:
+            visual_fog_range = 500
+        if self.weather == Weather.rainy.value:
+            precipitation = xosc.PrecipitationType.rain
+        elif self.weather == Weather.snowy.value:
+            precipitation = xosc.PrecipitationType.snow
+        init.add_global_action(
+            xosc.EnvironmentAction(name="InitEnvironment", environment=xosc.Environment(
+                xosc.TimeOfDay(*self.time),
+                xosc.Weather(
+                    sun_intensity=2000, sun_azimuth=40, sun_elevation=20,
+                    cloudstate=cloud_state,
+                    precipitation=precipitation,
+                    precipitation_intensity=1,
+                    visual_fog_range=visual_fog_range),
+                xosc.RoadCondition(friction_scale_factor=0.7))))

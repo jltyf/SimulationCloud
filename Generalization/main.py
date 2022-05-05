@@ -235,7 +235,10 @@ def parsingConfigurationFile(absPath, ADAS_module):
                 ego_points = ego_points[:len(ego_points) - trail_motion_time_count]
                 egotime = egotime[:len(egotime) - trail_motion_time_count]
             sceperiod = math.ceil(egotime[-1] - egotime[0])
-            s = Scenario(ego_points, object_points, 0, egotime, egoSpeed, 0, 0, augtype, sceperiod)
+            weather = single_scenario['scenario_weather'][0]
+            scenario_time = single_scenario['scenario_time'][0]
+            s = Scenario(ego_points, object_points, 0, egotime, egoSpeed, 0, 0, augtype, sceperiod, weather,
+                         scenario_time)
             s.print_permutations()
             output_path = os.path.join(absPath + '/trails/', 'simulation_new',
                                        scenario_series['场景编号'] + '_' + str(scenario_index))
@@ -266,7 +269,4 @@ def parsingConfigurationFile(absPath, ADAS_module):
 
 if __name__ == "__main__":
     # parsingConfigurationFile("D:/泛化", ['ACC-bass'])
-    T1 = time.time()
     parsingConfigurationFile("D:/泛化", ['ACC'])
-    T2 = time.time()
-    print(T2-T1)
