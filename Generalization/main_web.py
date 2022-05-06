@@ -3,6 +3,7 @@
     China_UrbanRoad_014.opt 道路是北向的
 '''
 from flask import Flask, request
+from gevent import pywsgi
 import math
 import os
 import sys
@@ -333,8 +334,13 @@ def parsingConfigurationFile():
 
 
 if __name__ == "__main__":
-    app.run(
-        host='0.0.0.0',
-        port=5000,
-        debug=True
+    server = pywsgi.WSGIServer(
+        ('0.0.0.0', 5000), app
     )
+    server.serve_forever()
+
+    # app.run(
+    #     host='0.0.0.0',
+    #     port=5000,
+    #     debug=True
+    # )
