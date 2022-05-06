@@ -5,6 +5,10 @@
 from flask import Flask, request
 import math
 import os
+import sys
+
+sys.path.append('/home/SimulationCloud/')
+
 import json
 import warnings
 import pandas as pd
@@ -25,8 +29,9 @@ pd.set_option('max_colwidth', 100)
 pd.set_option('display.max_rows', None)
 cfg = ConfigParser()
 cfg.read("../setting.ini")
-setting_data = dict(cfg.items("minio"))
-absPath = 'D:/泛化'
+setting_data = dict(cfg.items("dev"))
+model_data = dict(cfg.items("model path"))
+absPath = setting_data['data path']
 client = Minio(
     endpoint=setting_data['endpoint'],
     access_key=setting_data['access key'],
@@ -136,18 +141,19 @@ def generalization(scenario_data, single_scenario, car_trail_data, ped_trail_dat
     # 转化仿真场景路径点, 生成仿真场景文件
     offset_h = 90  # 因匹配泛化道路模型要做的h偏移量 China_UrbanRoad_014直路:90 China_Crossing_002十字路口:90
     radius = 0
+    root_path = setting_data['generalization models path']
 
     # 根据不同的道路模型设置偏移量
     if single_scenario['scenario_road_type'] == RoadType.city_straight.value:
         offset_x = 7  # 因匹配泛化道路模型要做的e偏移量 China_UrbanRoad_014直路:7 China_Crossing_002十字路口:5.5
         offset_y = 0  # 因匹配泛化道路模型要做的n偏移量 China_UrbanRoad_014直路:0 China_Crossing_002十字路口:-65
-        xodr_path = 'road_model/Xodr/China_UrbanRoad_014.xodr'
-        osgb_path = 'road_model/Osgb/China_UrbanRoad_014.opt.osgb'
+        xodr_path = root_path + '/' + model_data['city straight xodr']
+        osgb_path = root_path + '/' + model_data['city straight osgb']
     elif single_scenario['scenario_road_type'] == RoadType.city_crossroads.value:
         offset_x = 5.5
         offset_y = -65
-        xodr_path = 'road_model/Xodr/China_Crossing_002.xodr'
-        osgb_path = 'road_model/Osgb/China_Crossing_002.opt.osgb'
+        xodr_path = root_path + '/' + model_data['city crossroads xodr']
+        osgb_path = root_path + '/' + model_data['city crossroads osgb']
     elif single_scenario['scenario_road_type'] == RoadType.city_curve_left.value or \
             single_scenario['scenario_road_type'] == RoadType.city_curve_right.value:
         radius = abs(int(single_scenario['scenario_radius_curvature'][0]))
@@ -157,32 +163,32 @@ def generalization(scenario_data, single_scenario, car_trail_data, ped_trail_dat
             if radius == 150:
                 offset_x = 214.2
                 offset_y = 81.6
-                xodr_path = 'road_model/Xodr/L_r150.xodr'
-                osgb_path = 'road_model/Osgb/L_r150.opt.osgb'
+                xodr_path = root_path + '/' + model_data['city curve left 150 xodr']
+                osgb_path = root_path + '/' + model_data['city curve left 150 osgb']
             elif radius == 300:
                 offset_x = 213.2
                 offset_y = -68.57
-                xodr_path = 'road_model/Xodr/L_r300.xodr'
-                osgb_path = 'road_model/Osgb/L_r300.opt.osgb'
+                xodr_path = root_path + '/' + model_data['city curve left 300 xodr']
+                osgb_path = root_path + '/' + model_data['city curve left 300 osgb']
             elif radius == 500:
                 offset_x = 213.7
                 offset_y = -268.5
-                xodr_path = 'road_model/Xodr/L_r500.xodr'
-                osgb_path = 'road_model/Osgb/L_r500.opt.osgb'
+                xodr_path = root_path + '/' + model_data['city curve left 500 xodr']
+                osgb_path = root_path + '/' + model_data['city curve left 500 osgb']
         elif '7' in motion:
             index = motion.index('7')
             offset_x = -200.6
             if radius == 150:
                 offset_y = 79.58
-                xodr_path = 'road_model/Xodr/R_r150.xodr'
-                osgb_path = 'road_model/Osgb/R_r150.opt.osgb'
+                xodr_path = root_path + '/' + model_data['city curve right 150 xodr']
+                osgb_path = root_path + '/' + model_data['city curve right 150 osgb']
             elif radius == 300:
                 offset_y = -70.38
-                xodr_path = 'road_model/Xodr/R_r300.xodr'
-                osgb_path = 'road_model/Osgb/R_r300.opt.osgb'
+                xodr_path = root_path + '/' + model_data['city curve right 300 xodr']
+                osgb_path = root_path + '/' + model_data['city curve right 300 osgb']
             elif radius == 500:
-                xodr_path = 'road_model/Xodr/R_r500.xodr'
-                osgb_path = 'road_model/Osgb/R_r500.opt.osgb'
+                xodr_path = root_path + '/' + model_data['city curve right 500 xodr']
+                osgb_path = root_path + '/' + model_data['city curve right 500 osgb']
                 offset_y = -326.54
         # 分段弯道
         if len(motion) > 0:
@@ -236,7 +242,7 @@ def generalization(scenario_data, single_scenario, car_trail_data, ped_trail_dat
         os.makedirs(output_path)
     files = s.generate(output_path)
     road_type = single_scenario['scenario_road_type']
-    formatThree(output_path, road_type, radius)
+    formatThree(output_path, road_type, radius, xodr_path, osgb_path)
     print(files)
     if 'PCW' in scenario_data['sceneId'] or '行人' in scenario_data['scenarioResume']:
         change_CDATA(files[0][0])  # 行人场景特例，对xosc文件内的特殊字符做转换
@@ -251,7 +257,13 @@ def generalization(scenario_data, single_scenario, car_trail_data, ped_trail_dat
     upload_xosc(client, setting_data['bucket name'], minio_path, files[0][0])
     xosc_path = minio_path
 
-    return xosc_path, xodr_path, osgb_path
+    result_dict = {
+        'osgbAddress': osgb_path,
+        'xodrAddress': xodr_path,
+        'xoscAddress': xosc_path,
+    }
+
+    return result_dict
 
 
 def get_result(future):
@@ -260,7 +272,7 @@ def get_result(future):
 
 @app.route("/test_1.0", methods=["POST"])
 def parsingConfigurationFile():
-    scenario_data = request.values  # 获取 JSON 数据
+    scenario_data = json.loads(request.get_data(as_text=True))  # 获取 JSON 数据
     car_trail = os.path.join(absPath + '/trails/', 'CarTrails_Merge.csv')
     ped_trail = os.path.join(absPath + '/trails/', 'PedTrails_Merge.csv')
     json_trail = os.path.join(absPath + '/trails/', 'Trails_Merge.json')
@@ -289,7 +301,6 @@ def parsingConfigurationFile():
                     'params': None}
         return response
     try:
-        a = int(scenario_data["sceneId"])
         with Pool(processes=5) as executor:
             for single_scenario in scenario_list:
                 single_scenario, range_flag = get_cal_model(single_scenario)
@@ -322,4 +333,8 @@ def parsingConfigurationFile():
 
 
 if __name__ == "__main__":
-    app.run(port=5000, debug=True)
+    app.run(
+        host='0.0.0.0',
+        port=5000,
+        debug=True
+    )
