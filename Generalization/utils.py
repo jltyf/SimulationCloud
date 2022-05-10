@@ -507,7 +507,7 @@ def readXML(xoscPath):
     return xodrFileName[xodrFileName.rindex("/") + 1:], osgbFileName[osgbFileName.rindex("/") + 1:]
 
 
-def formatThree(rootDirectory, road_type, radius, xodr_path, osgb_path):
+def formatThree(rootDirectory, xodr_path, osgb_path):
     """
     xodr and osgb file path are fixed
     :return:

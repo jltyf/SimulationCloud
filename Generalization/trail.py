@@ -22,15 +22,19 @@ class Trail(object):
         self.start_point = start_point
         self.ego_delta_col = ego_delta_col
         self.lane_width = 3.5  # 车道线宽宽度
-        try:
-            lateral_acc = int(ast.literal_eval(scenario['obs_lateral_acceleration'][object_index])[trail_section])
-        except:
-            lateral_acc = int(scenario['obs_lateral_acceleration'][object_index])
-        try:
-            longitudinal_acc = int(ast.literal_eval(scenario['obs_longitudinal_acceleration'][object_index])[trail_section])
-        except:
-            longitudinal_acc = int(scenario['obs_longitudinal_acceleration'][object_index])
-        self.acc_limit = (lateral_acc, longitudinal_acc)
+        if scenario['obs_start_x']:
+            try:
+                lateral_acc = int(ast.literal_eval(scenario['obs_lateral_acceleration'][object_index])[trail_section])
+            except:
+                lateral_acc = int(scenario['obs_lateral_acceleration'][object_index])
+            try:
+                longitudinal_acc = int(
+                    ast.literal_eval(scenario['obs_longitudinal_acceleration'][object_index])[trail_section])
+            except:
+                longitudinal_acc = int(scenario['obs_longitudinal_acceleration'][object_index])
+            self.acc_limit = (lateral_acc, longitudinal_acc)
+        else:
+            self.acc_limit = (-1, -1)
         # self.turning_angle = 0
         # 判断是自车轨迹还是目标物轨迹，忽略行人判断，归到目标物，待确认
         # self.start_speed = self.scenario['ego_start_speed'] if trail_type.value == TrailType.ego_trail.value else \

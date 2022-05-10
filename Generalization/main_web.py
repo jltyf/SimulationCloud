@@ -18,7 +18,7 @@ from multiprocessing import Pool
 from Generalization.serialization.scenario_serialization_web import ScenarioData
 from Generalization.trail import Trail
 from Generalization.utils import dump_json, formatThree, change_CDATA, get_plt, upload_xosc
-from enumerations import TrailType, RoadType
+from enumerations import TrailType, RoadType, ObjectType
 from utils import get_cal_model, generateFinalTrail, getXoscPosition, trailModify, getLabel, Point
 from configparser import ConfigParser
 from openx import Scenario
@@ -226,24 +226,28 @@ def generalization(scenario_data, single_scenario, car_trail_data, ped_trail_dat
             # object_points.append(getXoscPosition(object_position_list[obsL], 'Time', 'ego_n', 'ego_e', 'headinga', offset_x, offset_y, offset_h)) # 初始轨迹朝向与道路方向垂直
     egoSpeed = 5  # 随意设的，不发挥作用
 
-    augtype = 0  # 0为车，7为第一个目标是行人
-    if 'PCW' in scenario_data['sceneId'] or '行人' in scenario_data['scenarioResume']:
-        augtype = 7
+    if 'PCW' in scenario_data['场景编号'] or '行人' in scenario_data['场景简述']:
+        aug_type = ObjectType.pedestrian.value
+    elif '摩托' in scenario_data['场景简述']:
+        aug_type = ObjectType.motorcycle.value
+    elif '自行车' in scenario_data['场景简述']:
+        aug_type = ObjectType.bicycle.value
+    else:
+        aug_type = ObjectType.vehicle.value
     if not trail_motion_time_count == 0:
         ego_points = ego_points[:len(ego_points) - trail_motion_time_count]
         egotime = egotime[:len(egotime) - trail_motion_time_count]
     sceperiod = math.ceil(egotime[-1] - egotime[0])
     weather = single_scenario['scenario_weather'][0]
     scenario_time = single_scenario['scenario_time'][0]
-    s = Scenario(ego_points, object_points, 0, egotime, egoSpeed, 0, 0, augtype, sceperiod, weather, scenario_time)
+    s = Scenario(ego_points, object_points, 0, egotime, egoSpeed, 0, 0, aug_type, sceperiod, weather, scenario_time)
     s.print_permutations()
     output_path = os.path.join(absPath + '/trails/', 'simulation_new',
                                scenario_data['sceneId'] + '_' + str(scenario_index))
     if not os.path.exists(output_path):
         os.makedirs(output_path)
     files = s.generate(output_path)
-    road_type = single_scenario['scenario_road_type']
-    formatThree(output_path, road_type, radius, xodr_path, osgb_path)
+    formatThree(output_path, xodr_path, osgb_path)
     print(files)
     if 'PCW' in scenario_data['sceneId'] or '行人' in scenario_data['scenarioResume']:
         change_CDATA(files[0][0])  # 行人场景特例，对xosc文件内的特殊字符做转换

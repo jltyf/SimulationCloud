@@ -9,16 +9,16 @@ import xml.etree.ElementTree as ET
 from scenariogeneration import xodr
 from scenariogeneration import xosc
 from scenariogeneration import ScenarioGenerator
-from scenariogeneration.xodr import RoadSide, Object, ObjectType, Dynamic, Orientation
+from scenariogeneration.xodr import RoadSide, Object, Dynamic, Orientation
 import math
 import os
 
 from Generalization.utils import create_static_object
-from enumerations import Weather
+from enumerations import Weather, ObjectType
 
 
 class Scenario(ScenarioGenerator):
-    def __init__(self, gps, obs, ObjectID, gpsTime, egoSpeed, Speed, intersectime, augtype, sceperiod, weather, time):
+    def __init__(self, gps, obs, ObjectID, gpsTime, egoSpeed, Speed, intersectime, aug_type, period, weather, time):
         ScenarioGenerator.__init__(self)
         self.gps = gps
         self.obs = obs
@@ -27,8 +27,8 @@ class Scenario(ScenarioGenerator):
         self.egoSpeed = egoSpeed
         self.Speed = Speed
         self.intersectime = intersectime
-        self.augtype = augtype
-        self.sceperiod = sceperiod
+        self.aug_type = aug_type
+        self.period = period
         time_list = time.split(':')
         self.time = (True, 2019, 12, 19, int(time_list[0]), int(time_list[1]), int(time_list[2]))
         self.weather = weather
@@ -91,7 +91,8 @@ class Scenario(ScenarioGenerator):
         red_veh = xosc.Vehicle('Audi_A3_2009_black', xosc.VehicleCategory.car, bb, fa, ba, 69.444, 200, 10)
         white_veh = xosc.Vehicle('Audi_A3_2009_red', xosc.VehicleCategory.car, bb, fa, ba, 69.444, 200, 10)
         male_ped = xosc.Pedestrian('Christian', 'male_adult', 70, xosc.PedestrianCategory.pedestrian, pbb)
-        # white_veh = xosc.Vehicle('Kawasaki_ZX-9R_black', xosc.VehicleCategory.motorbike, bb, fa, ba, 69.444, 200, 10)
+        if self.aug_type == ObjectType.motorcycle.value:
+            white_veh = xosc.Vehicle('Kawasaki_ZX-9R_black', xosc.VehicleCategory.motorbike, bb, fa, ba, 69.444, 200, 10)
 
         prop = xosc.Properties()
         cnt = xosc.Controller('DefaultDriver', prop)
@@ -102,14 +103,14 @@ class Scenario(ScenarioGenerator):
         entities.add_scenario_object(egoname, red_veh, cnt)
         objname = 'Player'
 
-        if self.augtype != 7:
+        if self.aug_type != 1:
 
             # object car model
             for i in range(len(self.obs)):
                 row = self.obs[i]
                 entities.add_scenario_object(objname + str(i), white_veh, cnt2)
 
-        elif self.augtype == 7:
+        elif self.aug_type == 1:
 
             # pedestrian model
             entities.add_scenario_object(objname + str(0), male_ped)
@@ -172,7 +173,7 @@ class Scenario(ScenarioGenerator):
         story1.add_act(act)
 
         sb = xosc.StoryBoard(init, stoptrigger=xosc.ValueTrigger('stop_trigger', 0, xosc.ConditionEdge.none,
-                                                                 xosc.SimulationTimeCondition(self.sceperiod,
+                                                                 xosc.SimulationTimeCondition(self.period,
                                                                                               xosc.Rule.greaterThan),
                                                                  'stop'))
         sb.add_story(story1)
@@ -180,7 +181,7 @@ class Scenario(ScenarioGenerator):
         # object car trail
         if positionObj:
             pedflag = False
-            if self.augtype == 7:
+            if self.aug_type == 1:
                 pedflag = True
             for i in range(len(positionObj)):
                 row = positionObj[i]

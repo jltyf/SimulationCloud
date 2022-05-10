@@ -48,13 +48,15 @@ class SpeedType(Enum):
 class ObjectType(Enum):
     """
     物体的类型：
-    自车       1
-    目标车     2
-    行人       3
+    机动车     0
+    行人       1
+    摩托车     2
+    自行车     3
     """
-    ego = auto()
-    vehicle = auto()
+    vehicle = 0
     pedestrian = auto()
+    motorcycle = auto()
+    bicycle = auto()
 
 
 class TrailType(Enum):
