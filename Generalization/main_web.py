@@ -141,7 +141,6 @@ def generalization(scenario_data, single_scenario, car_trail_data, ped_trail_dat
             object_position_list.append(object_trail)
     # 转化仿真场景路径点, 生成仿真场景文件
     offset_h = 90  # 因匹配泛化道路模型要做的h偏移量 China_UrbanRoad_014直路:90 China_Crossing_002十字路口:90
-    radius = 0
     root_path = setting_data['generalization models path']
 
     # 根据不同的道路模型设置偏移量
@@ -226,11 +225,11 @@ def generalization(scenario_data, single_scenario, car_trail_data, ped_trail_dat
             # object_points.append(getXoscPosition(object_position_list[obsL], 'Time', 'ego_n', 'ego_e', 'headinga', offset_x, offset_y, offset_h)) # 初始轨迹朝向与道路方向垂直
     egoSpeed = 5  # 随意设的，不发挥作用
 
-    if 'PCW' in scenario_data['场景编号'] or '行人' in scenario_data['场景简述']:
+    if 'PCW' in scenario_data['sceneId'] or '行人' in scenario_data['scenarioResume']:
         aug_type = ObjectType.pedestrian.value
-    elif '摩托' in scenario_data['场景简述']:
+    elif '摩托' in scenario_data['scenarioResume']:
         aug_type = ObjectType.motorcycle.value
-    elif '自行车' in scenario_data['场景简述']:
+    elif '自行车' in scenario_data['scenarioResume']:
         aug_type = ObjectType.bicycle.value
     else:
         aug_type = ObjectType.vehicle.value
@@ -256,8 +255,8 @@ def generalization(scenario_data, single_scenario, car_trail_data, ped_trail_dat
     # 生成每个场景的描述文件 json
     getLabel(output_path, scenario_data['sceneId'], scenario_data['scenarioName'])
     # 上传到minio
-    minio_path = '批量泛化场景/' + scenario_data['sceneId'].split('_')[0] + '/' + scenario_data[
-        'sceneId'] + '/' + os.path.basename(files[0][0])
+    minio_path = '批量泛化场景/' + single_scenario['uu_id'] + '/' + scenario_data['sceneId'].split('_')[0] + '/' + \
+                 scenario_data['sceneId'] + '/' + os.path.basename(files[0][0])
     # upload_xosc(client, setting_data['bucket name'], minio_path, files[0][0])
     upload_xosc(client, setting_data['bucket name'], minio_path, files[0][0])
     xosc_path = minio_path
@@ -306,7 +305,7 @@ def parsingConfigurationFile():
                     'params': None}
         return response
     try:
-        with Pool(processes=5) as executor:
+        with Pool(processes=int(setting_data['process number'])) as executor:
             for single_scenario in scenario_list:
                 single_scenario, range_flag = get_cal_model(single_scenario)
                 # 如果需要泛化的值不在不等式的范围内，此条数据作废

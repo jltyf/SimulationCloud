@@ -10,6 +10,7 @@ class ScenarioData(object):
         self.scenario_dict = dict()
         # 需要泛化的静态元素(枚举类型),如果需要在此添加
         self.scenario_dict['generalization_list'] = ['scenario_weather', 'scenario_time', 'scenario_radius_curvature']
+        self.scenario_dict['uu_id'] = scenario_data['uuId']
         self.scenario_dict['scene_id'] = scenario_data['sceneId']
         self.scenario_dict['scenario_name'] = scenario_data['scenarioName']
         self.scenario_dict['ego_start_x'] = scenario_data['egoStartX']
