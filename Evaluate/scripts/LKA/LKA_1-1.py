@@ -4,7 +4,7 @@
 
 def get_report(scenario, script_id):
     dis_deviation = (scenario.scenario_data['lane_center_offset'].abs()).max()
-    acceleration_max = scenario.scenario_data['lateral_acceleration'].max()
+    acceleration_max = (scenario.scenario_data['lateral_acceleration'].abs()).max()
 
     # 目前输入数据中没有车道线宽度，暂时设为定值
     road_width = 3.75
