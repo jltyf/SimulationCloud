@@ -6,13 +6,11 @@ import ast
 import math
 import os
 import json
-import threading
-import time
+import datetime
 import warnings
 from multiprocessing import Pool
 
 import pandas as pd
-from minio import Minio
 
 from Generalization.serialization.scenario_serialization import ScenarioData
 from Generalization.trail import Trail
@@ -31,6 +29,10 @@ cfg.read("../setting.ini")
 setting_data = dict(cfg.items("dev"))
 model_data = dict(cfg.items("model path"))
 absPath = setting_data['data path']
+task_start_time = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+sc_path = os.path.join(setting_data['scenario path'], datetime.datetime.now().strftime("%Y%m%d%H%M%S"))
+if not os.path.exists(sc_path):
+    os.mkdir(sc_path)
 
 
 def generalization(scenario_series, single_scenario, car_trail_data, ped_trail_data, trails_json_dict,
@@ -249,7 +251,8 @@ def generalization(scenario_series, single_scenario, car_trail_data, ped_trail_d
     # get_plt(ego_trail, object_position_list)  # 查看生成得自车轨迹 测试用
     # 生成每个场景的描述文件 json
     getLabel(output_path, scenario_series['场景编号'], scenario_series['场景名称'])
-
+    # 拷贝到vtd路径下
+    os.system('cp ' + files[0][0] + f' {sc_path}')
     result_dict = {
         'osgbAddress': osgb_path,
         'xodrAddress': xodr_path,
