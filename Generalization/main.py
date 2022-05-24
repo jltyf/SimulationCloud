@@ -29,11 +29,8 @@ cfg.read("../setting.ini")
 setting_data = dict(cfg.items("dev"))
 model_data = dict(cfg.items("model path"))
 absPath = setting_data['data path']
-task_start_time = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-sc_path = os.path.join(setting_data['scenario path'], datetime.datetime.now().strftime("%Y%m%d%H%M%S"))
-if not os.path.exists(sc_path):
-    os.mkdir(sc_path)
-
+time_path = os.path.join(setting_data['scenario path'], datetime.datetime.now().strftime("%Y%m%d%H%M%S"))
+sc_path = None
 
 def generalization(scenario_series, single_scenario, car_trail_data, ped_trail_data, trails_json_dict,
                    scenario_index):
@@ -146,7 +143,7 @@ def generalization(scenario_series, single_scenario, car_trail_data, ped_trail_d
         osgb_path = root_path + '/' + model_data['city straight osgb']
     elif single_scenario['scenario_road_type'] == RoadType.city_crossroads.value:
         offset_x = 5.5
-        offset_y = -65
+        offset_y = -63.5
         xodr_path = root_path + '/' + model_data['city crossroads xodr']
         osgb_path = root_path + '/' + model_data['city crossroads osgb']
     elif single_scenario['scenario_road_type'] == RoadType.city_curve_left.value or \
@@ -225,7 +222,8 @@ def generalization(scenario_series, single_scenario, car_trail_data, ped_trail_d
     elif '摩托' in scenario_series['场景简述']:
         aug_type = ObjectType.motorcycle.value
     elif '自行车' in scenario_series['场景简述']:
-        aug_type = ObjectType.bicycle.value
+        # aug_type = ObjectType.bicycle.value
+        aug_type = ObjectType.motorcycle.value  # 未调试好自行车模型先用摩托从代替
     else:
         aug_type = ObjectType.vehicle.value
     if not trail_motion_time_count == 0:
@@ -274,34 +272,38 @@ def parsingConfigurationFile(ADAS_module):
     ped_trail_data = pd.read_csv(ped_trail)
 
     # 按功能列表分别读取不同的功能配置表
-    parm_data = pd.read_excel(os.path.join(absPath + '/trails/', "配置参数表样例0415.xlsx"),
+    parm_data = pd.read_excel(os.path.join(absPath + '/trails/', "配置参数表样例0524.xlsx"),
                               sheet_name=ADAS_module, keep_default_na=False, engine='openpyxl')
-    ADAS_list = [ADAS for ADAS in ADAS_module]
-    scenario_df = [parm_data[scenario_list] for scenario_list in ADAS_list][0]
-    for index, scenario_series in scenario_df.iterrows():
-        print(scenario_series['场景编号'], 'Start')
-        scenario = ScenarioData(scenario_series)
-        scenario_list = scenario.get_scenario_model()
-        scenario_index = 0
-        process_list = list()
-        result_list = list()
-        with Pool(processes=5) as executor:
-            for single_scenario in scenario_list:
-                single_scenario, range_flag = get_cal_model(single_scenario)
-                # 如果需要泛化的值不在不等式的范围内，此条数据作废
-                if not range_flag:
-                    continue
-                process = executor.apply_async(generalization,
-                                               (scenario_series, single_scenario, car_trail_data, ped_trail_data,
-                                                trails_json_dict, scenario_index))
-                scenario_index += 1
-                process_list.append(process)
-            for result in process_list:
-                if result.get():
-                    result_list.append(result.get())
-        print(fileCnt)
+    for scenario_df in [parm_data[scenario_list] for scenario_list in ADAS_module]:
+        scenario_name = scenario_df.iloc[0]['场景编号'].split('_')[0]
+        global sc_path
+        sc_path = os.path.join(time_path, scenario_name)
+        if not os.path.exists(sc_path):
+            os.makedirs(sc_path)
+        for index, scenario_series in scenario_df.iterrows():
+            print(scenario_series['场景编号'], 'Start')
+            scenario = ScenarioData(scenario_series)
+            scenario_list = scenario.get_scenario_model()
+            scenario_index = 0
+            process_list = list()
+            result_list = list()
+            with Pool(processes=5) as executor:
+                for single_scenario in scenario_list:
+                    single_scenario, range_flag = get_cal_model(single_scenario)
+                    # 如果需要泛化的值不在不等式的范围内，此条数据作废
+                    if not range_flag:
+                        continue
+                    process = executor.apply_async(generalization,
+                                                   (scenario_series, single_scenario, car_trail_data, ped_trail_data,
+                                                    trails_json_dict, scenario_index))
+                    scenario_index += 1
+                    process_list.append(process)
+                for result in process_list:
+                    if result.get():
+                        result_list.append(result.get())
+            print(fileCnt)
 
 
 if __name__ == "__main__":
-    # parsingConfigurationFile("D:/泛化", ['ACC-bass'])
-    parsingConfigurationFile(['test'])
+    parsingConfigurationFile(['AEB', 'ALC', 'LKA', 'ACC'])
+    # parsingConfigurationFile(['test'])

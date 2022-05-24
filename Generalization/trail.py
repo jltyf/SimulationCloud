@@ -24,14 +24,13 @@ class Trail(object):
         self.lane_width = 3.5  # 车道线宽宽度
         if scenario['obs_start_x']:
             try:
-                lateral_acc = int(ast.literal_eval(scenario['obs_lateral_acceleration'][object_index])[trail_section])
-            except:
                 lateral_acc = int(scenario['obs_lateral_acceleration'][object_index])
-            try:
-                longitudinal_acc = int(
-                    ast.literal_eval(scenario['obs_longitudinal_acceleration'][object_index])[trail_section])
             except:
+                lateral_acc = int(scenario['obs_lateral_acceleration'][object_index][trail_section])
+            try:
                 longitudinal_acc = int(scenario['obs_longitudinal_acceleration'][object_index])
+            except:
+                longitudinal_acc = int(scenario['obs_longitudinal_acceleration'][object_index][trail_section])
             self.acc_limit = (lateral_acc, longitudinal_acc)
         else:
             self.acc_limit = (-1, -1)
@@ -73,12 +72,10 @@ class Trail(object):
 
                 # 变速
                 elif speed_status == SpeedType.Decelerate.value or speed_status == SpeedType.Accelerate.value:
-                    required_speed = int(self.scenario['obs_start_velocity'][0])
                     return get_variable_speed_trail(car_trails=self.car_trail, trails_json_dict=self.json_trail,
                                                     start_speed=self.start_speed, period=period,
                                                     speed_status_num=speed_status, acc_limit=self.acc_limit,
-                                                    rotate_tuple=self.rotate_tuple, ego_delta_col=self.ego_delta_col,
-                                                    required_speed=required_speed)
+                                                    rotate_tuple=self.rotate_tuple, ego_delta_col=self.ego_delta_col)
 
                 # 起步 or 刹停
                 elif speed_status == SpeedType.Start.value or speed_status == SpeedType.Stop.value:

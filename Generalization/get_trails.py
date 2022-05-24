@@ -87,7 +87,7 @@ def get_uniform_speed_trail(car_trails, trails_json_dict, start_speed, period, r
 
 
 def get_variable_speed_trail(car_trails, trails_json_dict, start_speed, period, speed_status_num, acc_limit,
-                             rotate_tuple, ego_delta_col, required_speed):
+                             rotate_tuple, ego_delta_col):
     """
 
     :param car_trails: 原始的轨迹数据

@@ -151,7 +151,7 @@ def generalization(scenario_data, single_scenario, car_trail_data, ped_trail_dat
         osgb_path = root_path + '/' + model_data['city straight osgb']
     elif single_scenario['scenario_road_type'] == RoadType.city_crossroads.value:
         offset_x = 5.5
-        offset_y = -65
+        offset_y = -63.5
         xodr_path = root_path + '/' + model_data['city crossroads xodr']
         osgb_path = root_path + '/' + model_data['city crossroads osgb']
     elif single_scenario['scenario_road_type'] == RoadType.city_curve_left.value or \
@@ -230,7 +230,8 @@ def generalization(scenario_data, single_scenario, car_trail_data, ped_trail_dat
     elif '摩托' in scenario_data['scenarioResume']:
         aug_type = ObjectType.motorcycle.value
     elif '自行车' in scenario_data['scenarioResume']:
-        aug_type = ObjectType.bicycle.value
+        # aug_type = ObjectType.bicycle.value
+        aug_type = ObjectType.motorcycle.value  # 未调试好自行车模型先用摩托从代替
     else:
         aug_type = ObjectType.vehicle.value
     if not trail_motion_time_count == 0:

@@ -262,44 +262,71 @@ def get_cal_model(scenario_dict):
     :return: 已经完全泛化的场景配置列表，每个元素为泛化的一个场景配置
     """
     range_flag = True
+    cal_list = list()
     for key, values in scenario_dict['generalization_type'].items():
-        if values == DataType.calculative.value or values == DataType.generalizable_limit.value:
-            cal_dict = dict()
-            ep_x = change_factor_type(scenario_dict['ego_start_x'])
-            ep_y = change_factor_type(scenario_dict['ego_start_y'])
-            ev = change_factor_type(scenario_dict['ego_start_velocity'])
-            ev_t = scenario_dict['ego_velocity_time']
-            et_t = scenario_dict['ego_trajectory_time']
-            if scenario_dict['obs_start_x']:
-                op_x = change_factor_type(scenario_dict['obs_start_x'])
-                op_x = change_factor_type(scenario_dict['obs_start_x'])
-                op_y = change_factor_type(scenario_dict['obs_start_y'])
-                # ov = change_factor_type(
-                #     scenario_dict['obs_start_velocity']) if key != 'obs_start_velocity' else ''
-                ov = change_factor_type(scenario_dict['obs_start_velocity'])
-                ov_t = eval(scenario_dict['obs_velocity_time'][0])
-                ot_t = eval(scenario_dict['obs_trail_time'][0])
-                ov_t = ov_t if isinstance(ov_t, list) else [ov_t]
-                ot_t = ot_t if isinstance(ot_t, list) else [ot_t]
-            if values == DataType.calculative.value:
-                formula = str(scenario_dict[key])
-                if "'" in formula:
-                    formula = formula.split("'")[1]
-                if not isinstance(scenario_dict[key], str) and len(scenario_dict[key]) > 1:
-                    other_obj = scenario_dict[key][1:]
-                    formula = [eval(formula)] + other_obj
-                else:
-                    formula = [eval(formula)]
-                scenario_dict[key] = formula
-            elif values == DataType.generalizable_limit.value:
-                formula = scenario_dict[key + '_limit']
-                if eval(formula):
-                    range_flag = True
-                else:
-                    range_flag = False
-                    return scenario_dict, range_flag
-        if 'ego' in key and isinstance(scenario_dict[key], list):
-            scenario_dict[key] = scenario_dict[key][0]
+        if values == DataType.calculative.value:
+            cal_list.append(key)
+        elif values > 10:
+            for obj_index in range(len(str(values))):
+                if int(str(values)[obj_index]) == DataType.calculative.value:
+                    cal_list.append(key)
+    for key, values in scenario_dict['generalization_type'].items():
+        obj_param = list()
+        if values > 10:
+            for obj_index in range(len(str(values))):
+                obj_param.append(int(str(values)[obj_index]))
+        else:
+            obj_param = [values]
+        for obj_index in range(len(obj_param)):
+            values = obj_param[obj_index]
+            if values == DataType.calculative.value or values == DataType.generalizable_limit.value:
+                ep_x = change_factor_type(scenario_dict['ego_start_x'])
+                ep_y = change_factor_type(scenario_dict['ego_start_y'])
+                ev = change_factor_type(scenario_dict['ego_start_velocity'])
+                ev_t = scenario_dict['ego_velocity_time']
+                et_t = scenario_dict['ego_trajectory_time']
+                if scenario_dict['obs_start_x']:
+                    # op_x = change_factor_type(scenario_dict['obs_start_x'])
+                    # op_y = change_factor_type(scenario_dict['obs_start_y'])
+                    # # ov = change_factor_type(
+                    # #     scenario_dict['obs_start_velocity']) if key != 'obs_start_velocity' else ''
+                    # ov = change_factor_type(scenario_dict['obs_start_velocity'])
+                    # ov_t = eval(scenario_dict['obs_velocity_time'][0])
+                    # ot_t = eval(scenario_dict['obs_trail_time'][0])
+                    # ov_t = ov_t if isinstance(ov_t, list) else [ov_t]
+                    # ot_t = ot_t if isinstance(ot_t, list) else [ot_t]
+                    op_x = list(map(float, scenario_dict['obs_start_x'])) if 'obs_start_x' not in cal_list else ''
+                    op_y = list(map(float, scenario_dict['obs_start_y'])) if 'obs_start_y' not in cal_list else ''
+                    # ov = change_factor_type(
+                    #     scenario_dict['obs_start_velocity']) if key != 'obs_start_velocity' else ''
+                    ov = list(
+                        map(float, scenario_dict['obs_start_velocity'])) if 'obs_start_velocity' not in cal_list else ''
+                    ov_t = scenario_dict['obs_velocity_time']
+                    ot_t = scenario_dict['obs_trail_time']
+                    ov_t = ov_t if isinstance(ov_t, list) else [ov_t]
+                    ot_t = ot_t if isinstance(ot_t, list) else [ot_t]
+                if values == DataType.calculative.value:
+                    formula = str(scenario_dict[key])
+                    if "'" in formula:
+                        formula = formula.split("'")[2 * obj_index + 1]
+                    # if not isinstance(scenario_dict[key], str) and len(scenario_dict[key]) > 1:
+                    #     other_obj = scenario_dict[key][1:]
+                    #     formula = [eval(formula)] + other_obj
+                    else:
+                        formula = [eval(formula)]
+                    if 'obs' in key:
+                        scenario_dict[key][obj_index] = eval(formula)
+                    else:
+                        scenario_dict[key] = formula
+                elif values == DataType.generalizable_limit.value:
+                    formula = scenario_dict[key + f'{obj_index}_limit']
+                    if eval(formula):
+                        range_flag = True
+                    else:
+                        range_flag = False
+                        return scenario_dict, range_flag
+            if 'ego' in key and isinstance(scenario_dict[key], list):
+                scenario_dict[key] = change_factor_type(scenario_dict[key][0])
 
     return scenario_dict, range_flag
 

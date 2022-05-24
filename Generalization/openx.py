@@ -92,7 +92,8 @@ class Scenario(ScenarioGenerator):
         white_veh = xosc.Vehicle('Audi_A3_2009_red', xosc.VehicleCategory.car, bb, fa, ba, 69.444, 200, 10)
         male_ped = xosc.Pedestrian('Christian', 'male_adult', 70, xosc.PedestrianCategory.pedestrian, pbb)
         if self.aug_type == ObjectType.motorcycle.value:
-            white_veh = xosc.Vehicle('Kawasaki_ZX-9R_black', xosc.VehicleCategory.motorbike, bb, fa, ba, 69.444, 200, 10)
+            white_veh = xosc.Vehicle('Kawasaki_ZX-9R_black', xosc.VehicleCategory.motorbike, bb, fa, ba, 69.444, 200,
+                                     10)
 
         prop = xosc.Properties()
         cnt = xosc.Controller('DefaultDriver', prop)
@@ -256,6 +257,7 @@ class Scenario(ScenarioGenerator):
         # '/home/lxj/Documents/git_project/SimulationCloud/SimulationCloud/Generalization/models/ped_CDATA.xosc')
         root = tree.getroot()
         ele = root[5][2][1][0][1][1][0][0][0]
+        # ele.text.replace('speed="3"', f'speed="{}"')
         newnode = ET.Element("CustomCommandAction")
         newnode.attrib = {'type': 'scp'}
         newnode.text = '<![CDATA[' + ele.text + ']]>'
