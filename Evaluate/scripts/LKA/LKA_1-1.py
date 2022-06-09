@@ -5,21 +5,30 @@
 def get_report(scenario, script_id):
     dis_deviation = (scenario.scenario_data['lane_center_offset'].abs()).max()
     acceleration_max = (scenario.scenario_data['lateral_acceleration'].abs()).max()
+    init_velocity = scenario.get_velocity(scenario.scenario_data.index.tolist()[0])
+    v_max = scenario.get_max_velocity()
+    v_min = scenario.get_min_velocity()
 
     # 目前输入数据中没有车道线宽度，暂时设为定值
     road_width = 3.75
-    distance = dis_deviation - road_width * 0.5
+    distance = dis_deviation - road_width * 0.5 + 1
 
-    if dis_deviation <= 0.2 and acceleration_max <= 2.3:
+    if dis_deviation <= 0.2 and acceleration_max <= 2.3 and (
+            init_velocity - init_velocity * 0.2 <= v_min <= init_velocity + init_velocity * 0.2) and (
+            init_velocity - init_velocity * 0.2 <= v_max <= init_velocity + init_velocity * 0.2):
         score = 100
         evaluate_item = '直道居中行驶时自车中心线与车道中心线偏移距离不大于0.2m，且最大横向加速度不大于2.3m/s²,得100分'
-    elif 0.2 < dis_deviation <= 0.4 and acceleration_max <= 2.3:
+    elif 0.2 < dis_deviation <= 0.4 and acceleration_max <= 2.3 and (
+            init_velocity - init_velocity * 0.2 <= v_min <= init_velocity + init_velocity * 0.2) and (
+            init_velocity - init_velocity * 0.2 <= v_max <= init_velocity + init_velocity * 0.2):
         score = 70
         evaluate_item = '直道居中行驶时自车中心线与车道中心线偏移距离大于0.2m且不大于0.4m，最大横向加速度不大于2.3m/s²,得70分'
-    elif dis_deviation > 0.4 and acceleration_max <= 2.3 and distance < 0:
+    elif dis_deviation > 0.4 and acceleration_max <= 2.3 and distance < 0 and (
+            init_velocity - init_velocity * 0.2 <= v_min <= init_velocity + init_velocity * 0.2) and (
+            init_velocity - init_velocity * 0.2 <= v_max <= init_velocity + init_velocity * 0.2):
         score = 50
         evaluate_item = '直道居中行驶时自车中心线与车道中心线偏移距离大于0.4m，最大横向加速度不大于2.3m/s²,且自车未驶离本车道，得分50'
-    elif distance > 0 or acceleration_max > 2.3:
+    elif distance > 0 or acceleration_max > 2.3 or v_min < init_velocity - init_velocity * 0.2 or v_max > init_velocity + init_velocity * 0.2:
         score = 0
         evaluate_item = '直道居中行驶时车辆驶出本车道，或最大横向加速度不大于2.3m/s²,且自车未驶离本车道，得分0'
 

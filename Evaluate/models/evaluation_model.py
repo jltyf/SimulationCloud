@@ -8,6 +8,9 @@ class ScenarioData(object):
         :param scenarios_data: 数据为从vtd输出的csv数据文件读取的csv
         :param scenario_type: 场景的类型 1自然驾驶 2交通法规 3事故场景 4泛化场景
         """
+
+        index = scenarios_data.loc[scenarios_data['time'] == 0.2].index.values[0]
+        scenarios_data = scenarios_data.loc[index:]
         self.scenario_data = scenarios_data.set_index(keys=['time'])
         self.scenario_type = scenario_type
         # 车道宽度暂定3.75

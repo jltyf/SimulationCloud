@@ -320,11 +320,18 @@ def parsingConfigurationFile():
             for result in process_list:
                 if result.get():
                     result_list.append(result.get())
-        print(fileCnt)
-        response = {'success': True,
-                    'code': 200,
-                    'message': '请求成功!',
-                    'params': result_list}
+
+        if len(result_list) < 1:
+            response = {'success': False,
+                        'code': 103,
+                        'message': '未泛化出场景,请检查输入参数合理性!',
+                        'params': None}
+        else:
+            print(fileCnt)
+            response = {'success': True,
+                        'code': 200,
+                        'message': '请求成功!',
+                        'params': result_list}
         return response
     except Exception as e:
         error_txt = e.args[0]
