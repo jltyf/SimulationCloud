@@ -14,16 +14,16 @@ def get_report(scenario, script_id):
     distance = dis_deviation - road_width * 0.5 + 1
 
     if acceleration_max <= 2.3 and distance < 0 and (
-            init_velocity - init_velocity * 0.2 <= v_min <= init_velocity + init_velocity * 0.2) and (
-            init_velocity - init_velocity * 0.2 <= v_max <= init_velocity + init_velocity * 0.2):
+            init_velocity - init_velocity * 0.5 <= v_min <= init_velocity + init_velocity * 0.5) and (
+            init_velocity - init_velocity * 0.5 <= v_max <= init_velocity + init_velocity * 0.5):
         score = 100
         evaluate_item = '弯道居中行驶时自车最大横向加速度不大于2.3m/s²，且自车未驶离本车道，得100分'
     elif acceleration_max > 2.3 and distance < 0 and (
-            init_velocity - init_velocity * 0.2 <= v_min <= init_velocity + init_velocity * 0.2) and (
-            init_velocity - init_velocity * 0.2 <= v_max <= init_velocity + init_velocity * 0.2):
+            init_velocity - init_velocity * 0.5 <= v_min <= init_velocity + init_velocity * 0.5) and (
+            init_velocity - init_velocity * 0.5 <= v_max <= init_velocity + init_velocity * 0.5):
         score = 60
         evaluate_item = '弯道居中行驶时自车最大横向加速度大于2.3m/s²，且自车未驶离本车道，得60分'
-    elif distance > 0 or v_min < init_velocity - init_velocity * 0.2 or v_max > init_velocity + init_velocity * 0.2:
+    elif distance > 0 or v_min < init_velocity - init_velocity * 0.5 or v_max > init_velocity + init_velocity * 0.5:
         score = 0
         evaluate_item = '弯道居中行驶时自车驶离本车道，得分0'
 
