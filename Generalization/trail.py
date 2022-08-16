@@ -26,11 +26,17 @@ class Trail(object):
             try:
                 lateral_acc = int(scenario['obs_lateral_acceleration'][object_index])
             except:
-                lateral_acc = int(scenario['obs_lateral_acceleration'][object_index][trail_section])
+                if isinstance(scenario['obs_lateral_acceleration'][object_index], list):
+                    lateral_acc = int(scenario['obs_lateral_acceleration'][object_index][trail_section])
+                else:
+                    lateral_acc = int(eval(scenario['obs_lateral_acceleration'][object_index])[trail_section])
             try:
                 longitudinal_acc = int(scenario['obs_longitudinal_acceleration'][object_index])
             except:
-                longitudinal_acc = int(scenario['obs_longitudinal_acceleration'][object_index][trail_section])
+                if isinstance(scenario['obs_longitudinal_acceleration'][object_index], list):
+                    longitudinal_acc = int(scenario['obs_longitudinal_acceleration'][object_index][trail_section])
+                else:
+                    longitudinal_acc = int(eval(scenario['obs_longitudinal_acceleration'][object_index])[trail_section])
             self.acc_limit = (lateral_acc, longitudinal_acc)
         else:
             self.acc_limit = (-1, -1)

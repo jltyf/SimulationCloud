@@ -45,6 +45,7 @@ class ScenarioData(object):
             self.scenario_dict['obs_trail_time'] = str(scenario_data['obsTrailTime']).split(';')
             self.scenario_dict['obs_heading_angle_rel'] = str(scenario_data['obsHeadingAngleRel']).split(';')
             self.scenario_dict['obs_velocity_time'] = str(scenario_data['obsVelocityTime']).split(';')
+            self.scenario_dict['obs_type'] = str(scenario_data['目标物类型']).split(';')
         else:
             # 在没有目标物的情况下,此列为空值
             self.scenario_dict['obs_start_x'] = list()
@@ -66,6 +67,8 @@ class ScenarioData(object):
                     values_list = list()
                     key_name = f'{key}' + f'-{obj_index}'
                     values = obj_param[obj_index]
+                    if values == DataType.static.value:
+                        continue
                     if key not in self.scenario_dict['generalization_list'] and values != DataType.calculative.value:
                         # if values == DataType.generalizable.value or values == DataType.generalizable_limit.value:
                         # # 备用请勿删除

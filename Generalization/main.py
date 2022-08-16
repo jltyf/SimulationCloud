@@ -32,6 +32,7 @@ absPath = setting_data['data path']
 time_path = os.path.join(setting_data['scenario path'], datetime.datetime.now().strftime("%Y%m%d%H%M%S"))
 sc_path = None
 
+
 def generalization(scenario_series, single_scenario, car_trail_data, ped_trail_data, trails_json_dict,
                    scenario_index):
     ego_trails_list = list()
@@ -183,7 +184,7 @@ def generalization(scenario_series, single_scenario, car_trail_data, ped_trail_d
                 xodr_path = root_path + '/' + model_data['city curve right 500 xodr']
                 osgb_path = root_path + '/' + model_data['city curve right 500 osgb']
         # 分段弯道
-        if len(motion) > 0:
+        if len(motion) > 1:
             for trail in ego_trails_list[0:index]:
                 offset_x -= (trail.iloc[-1]['ego_e'] - trail.iloc[0]['ego_e'])
                 offset_y -= (trail.iloc[-1]['ego_n'] - trail.iloc[0]['ego_n'])
@@ -195,45 +196,36 @@ def generalization(scenario_series, single_scenario, car_trail_data, ped_trail_d
     if object_position_list:
         for obsL in range(len(object_position_list)):
             motion = single_scenario['obs_trajectory'][object_index]
-            obj_distance = single_scenario['obs_start_x'][object_index]
-            if '6' in motion:
-                index = motion.index('6')
-                offset_y -= obj_distance
-            elif '7' in motion:
-                index = motion.index('7')
-                offset_y -= obj_distance
+            obj_distance_y = float(single_scenario['obs_start_x'][object_index])
+            obj_distance_x = float(single_scenario['obs_start_y'][object_index])
+            if '6' in motion or '7' in motion:
+                offset_y -= obj_distance_y
+                offset_x -= obj_distance_x
+            if '0' == motion and (
+                    single_scenario['scenario_road_type'] == RoadType.city_curve_left.value or single_scenario[
+                'scenario_road_type'] == RoadType.city_curve_right.value):
+                offset_y = obj_distance_y - (radius - 150) * 1.5
+                if single_scenario['scenario_road_type'] == RoadType.city_curve_right.value and radius == 500:
+                    offset_y -= 50
+            #     offset_x = obj_distance_x
             obs_points, obs_time = getXoscPosition(object_position_list[obsL], 'Time', 'ego_e', 'ego_n',
                                                    'headinga', offset_x,
                                                    offset_y, offset_h)
             if '6' in motion or '7' in motion:
                 # 根据车速和目标车初始位置计算出目标车移动这段距离需要的时间
                 trail_motion_time_count = int(round(
-                    (abs(obj_distance) * 3.6 / float(single_scenario['obs_start_velocity'][object_index])),
+                    (abs(obj_distance_y) * 3.6 / float(single_scenario['obs_start_velocity'][object_index])),
                     1) * 10)
                 del obs_points[0:trail_motion_time_count]
                 del obs_time[0:trail_motion_time_count]
                 obs_time[:] = [round(x - trail_motion_time_count / 10, 2) for x in obs_time]
             object_points.append((obs_points, obs_time))
             # object_points.append(getXoscPosition(object_position_list[obsL], 'Time', 'ego_n', 'ego_e', 'headinga', offset_x, offset_y, offset_h)) # 初始轨迹朝向与道路方向垂直
-    egoSpeed = 5  # 随意设的，不发挥作用
-
-    if 'PCW' in scenario_series['场景编号'] or '行人' in scenario_series['场景简述']:
-        aug_type = ObjectType.pedestrian.value
-    elif '摩托' in scenario_series['场景简述']:
-        aug_type = ObjectType.motorcycle.value
-    elif '自行车' in scenario_series['场景简述']:
-        # aug_type = ObjectType.bicycle.value
-        aug_type = ObjectType.motorcycle.value  # 未调试好自行车模型先用摩托从代替
-    else:
-        aug_type = ObjectType.vehicle.value
     if not trail_motion_time_count == 0:
         ego_points = ego_points[:len(ego_points) - trail_motion_time_count]
         egotime = egotime[:len(egotime) - trail_motion_time_count]
     sceperiod = math.ceil(egotime[-1] - egotime[0])
-    weather = single_scenario['scenario_weather'][0]
-    scenario_time = single_scenario['scenario_time'][0]
-    s = Scenario(ego_points, object_points, 0, egotime, egoSpeed, 0, 0, aug_type, sceperiod, weather,
-                 scenario_time)
+    s = Scenario(ego_points, object_points, egotime, sceperiod, single_scenario)
     s.print_permutations()
     output_path = os.path.join(absPath + '/trails/', 'simulation_new',
                                scenario_series['场景编号'] + '_' + str(scenario_index))
@@ -272,7 +264,7 @@ def parsingConfigurationFile(ADAS_module):
     ped_trail_data = pd.read_csv(ped_trail)
 
     # 按功能列表分别读取不同的功能配置表
-    parm_data = pd.read_excel(os.path.join(absPath + '/trails/', "配置参数表样例0524.xlsx"),
+    parm_data = pd.read_excel(os.path.join(absPath + '/trails/', "配置参数表样例0815.xlsx"),
                               sheet_name=ADAS_module, keep_default_na=False, engine='openpyxl')
     for scenario_df in [parm_data[scenario_list] for scenario_list in ADAS_module]:
         scenario_name = scenario_df.iloc[0]['场景编号'].split('_')[0]
@@ -305,5 +297,6 @@ def parsingConfigurationFile(ADAS_module):
 
 
 if __name__ == "__main__":
-    parsingConfigurationFile(['AEB', 'ALC', 'LKA', 'ACC'])
+    # parsingConfigurationFile(['AEB', 'ALC', 'LKA', 'ACC', 'BSD', 'FCW', 'LDW', 'TJA'])
+    parsingConfigurationFile(['LKA', 'ACC', 'BSD'])
     # parsingConfigurationFile(['test'])

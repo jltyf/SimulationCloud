@@ -17,21 +17,131 @@ from Generalization.utils import create_static_object
 from enumerations import Weather, ObjectType
 
 
+def get_entity_properties(object_type_list):
+    object_model = list()
+    for index, object_type in enumerate(object_type_list):
+        object_type = int(object_type)
+        if object_type == ObjectType.vehicle.value:
+            name = 'Audi_A3_2009_red'
+            if index == 0:
+                name = 'Audi_A3_2009_black'
+            vehicle_type = xosc.VehicleCategory.car
+            bounding_box = xosc.BoundingBox(width=1.776, length=4.3, height=1.423, x_center=1.317, y_center=0,
+                                            z_center=0.8)
+            front_axle = xosc.Axle(maxsteer=27.5, wheeldia=0.641, track_width=1.456, xpos=1.317, zpos=0.8)
+            rear_axle = xosc.Axle(maxsteer=0, wheeldia=0.641, track_width=1.456, xpos=1.317, zpos=0.8)
+            max_speed = 210
+            max_acceleration = 7
+            max_deceleration = 9.5
+            car = xosc.Vehicle(name=name, vehicle_type=vehicle_type, boundingbox=bounding_box,
+                               frontaxle=front_axle, rearaxle=rear_axle, max_speed=max_speed,
+                               max_acceleration=max_acceleration, max_deceleration=max_deceleration)
+            object_model.append(car)
+        elif object_type == ObjectType.bus.value:
+            name = 'MB_Citaro_2007_yellow'
+            if index == 0:
+                name = 'MB_Citaro_2007_red'
+            vehicle_type = xosc.VehicleCategory.bus
+            bounding_box = xosc.BoundingBox(width=2.56, length=11.957, height=3.14, x_center=2.5525, y_center=0,
+                                            z_center=1.6)
+            front_axle = xosc.Axle(maxsteer=27.5, wheeldia=1, track_width=2.07, xpos=3.5525, zpos=1.6)
+            rear_axle = xosc.Axle(maxsteer=0, wheeldia=1, track_width=2.07, xpos=2.5525, zpos=1.6)
+            max_speed = 109.8
+            max_acceleration = 3
+            max_deceleration = 9.5
+            bus = xosc.Vehicle(name=name, vehicle_type=vehicle_type, boundingbox=bounding_box,
+                               frontaxle=front_axle, rearaxle=rear_axle, max_speed=max_speed,
+                               max_acceleration=max_acceleration, max_deceleration=max_deceleration)
+            object_model.append(bus)
+        elif object_type == ObjectType.truck.value:
+            name = 'MANTGS_11_Green'
+            if index == 0:
+                name = 'MANTGS_11_LightBlue'
+            vehicle_type = xosc.VehicleCategory.truck
+            bounding_box = xosc.BoundingBox(width=2.8, length=8.744, height=3.78, x_center=2.028, y_center=0,
+                                            z_center=1.8)
+            front_axle = xosc.Axle(maxsteer=27.5, wheeldia=1.1, track_width=2.32, xpos=2.025, zpos=1.8)
+            rear_axle = xosc.Axle(maxsteer=0, wheeldia=1.1, track_width=2.321, xpos=2.028, zpos=1.8)
+            max_speed = 95.04
+            max_acceleration = 3
+            max_deceleration = 9.5
+            truck = xosc.Vehicle(name=name, vehicle_type=vehicle_type, boundingbox=bounding_box,
+                                 frontaxle=front_axle, rearaxle=rear_axle, max_speed=max_speed,
+                                 max_acceleration=max_acceleration, max_deceleration=max_deceleration)
+            object_model.append(truck)
+        elif object_type == ObjectType.special_vehicle.value:
+            name = 'VW_PassatVariant_2011_Police_green'
+            if index == 0:
+                name = 'VW_PassatVariant_2011_Police_blue'
+            vehicle_type = xosc.VehicleCategory.car
+            bounding_box = xosc.BoundingBox(width=1.798, length=4.749, height=1.468, x_center=1.2645, y_center=0,
+                                            z_center=0.9)
+            front_axle = xosc.Axle(maxsteer=27.5, wheeldia=1.1, track_width=1.473, xpos=1.2645, zpos=0.9)
+            rear_axle = xosc.Axle(maxsteer=0, wheeldia=1.1, track_width=1.473, xpos=1.2645, zpos=0.9)
+            max_speed = 212.4
+            max_acceleration = 7
+            max_deceleration = 9.5
+            police_car = xosc.Vehicle(name=name, vehicle_type=vehicle_type, boundingbox=bounding_box,
+                                      frontaxle=front_axle, rearaxle=rear_axle, max_speed=max_speed,
+                                      max_acceleration=max_acceleration, max_deceleration=max_deceleration)
+            object_model.append(police_car)
+        elif object_type == ObjectType.motorcycle.value:
+            name = 'Kawasaki_ZX-9R_white'
+            if index == 0:
+                name = 'Kawasaki_ZX-9R_green'
+            vehicle_type = xosc.VehicleCategory.motorbike
+            bounding_box = xosc.BoundingBox(width=0.85, length=2.076, height=1.928, x_center=0.618, y_center=0,
+                                            z_center=0.9)
+            front_axle = xosc.Axle(maxsteer=28.65, wheeldia=1.1, track_width=1.473, xpos=0.618, zpos=0.6)
+            rear_axle = xosc.Axle(maxsteer=0, wheeldia=1.1, track_width=1.473, xpos=0.618, zpos=0.6)
+            max_speed = 45
+            max_acceleration = 7
+            max_deceleration = 10
+            moto = xosc.Vehicle(name=name, vehicle_type=vehicle_type, boundingbox=bounding_box,
+                                frontaxle=front_axle, rearaxle=rear_axle, max_speed=max_speed,
+                                max_acceleration=max_acceleration, max_deceleration=max_deceleration)
+            object_model.append(moto)
+        elif object_type == ObjectType.bicycle.value:
+            # 暂时没有自行车模型 用摩托车代替
+            name = 'Kawasaki_ZX-9R_white'
+            if index == 0:
+                name = 'Kawasaki_ZX-9R_green'
+            vehicle_type = xosc.VehicleCategory.motorbike
+            bounding_box = xosc.BoundingBox(width=0.85, length=2.076, height=1.928, x_center=0.618, y_center=0,
+                                            z_center=0.9)
+            front_axle = xosc.Axle(maxsteer=28.65, wheeldia=1.1, track_width=1.473, xpos=0.618, zpos=0.6)
+            rear_axle = xosc.Axle(maxsteer=0, wheeldia=1.1, track_width=1.473, xpos=0.618, zpos=0.6)
+            max_speed = 45
+            max_acceleration = 7
+            max_deceleration = 10
+            bicycle = xosc.Vehicle(name=name, vehicle_type=vehicle_type, boundingbox=bounding_box,
+                                   frontaxle=front_axle, rearaxle=rear_axle, max_speed=max_speed,
+                                   max_acceleration=max_acceleration, max_deceleration=max_deceleration)
+            object_model.append(bicycle)
+        elif object_type == ObjectType.pedestrian.value:
+            bounding_box = xosc.BoundingBox(width=0.7, length=0.6, height=1.8, x_center=0, y_center=0, z_center=0)
+            male_ped = xosc.Pedestrian(name='Christian', model='male_adult', mass=70,
+                                       category=xosc.PedestrianCategory.pedestrian, boundingbox=bounding_box)
+            object_model.append(male_ped)
+
+    return object_model
+
+
 class Scenario(ScenarioGenerator):
-    def __init__(self, gps, obs, ObjectID, gpsTime, egoSpeed, Speed, intersectime, aug_type, period, weather, time):
+    def __init__(self, gps, obs, gpsTime, period, single_scenario):
         ScenarioGenerator.__init__(self)
         self.gps = gps
         self.obs = obs
         self.gpsTime = gpsTime
-        self.ObjectID = ObjectID
-        self.egoSpeed = egoSpeed
-        self.Speed = Speed
-        self.intersectime = intersectime
-        self.aug_type = aug_type
+        self.ObjectID = 0
+        self.egoSpeed = 5
+        self.Speed = 0
         self.period = period
-        time_list = time.split(':')
+        self.single_scenario = single_scenario
+        time_list = single_scenario['scenario_time'][0].split(':')
         self.time = (True, 2019, 12, 19, int(time_list[0]), int(time_list[1]), int(time_list[2]))
-        self.weather = weather
+        self.weather = single_scenario['scenario_weather'][0]
+        self.entity_models = None
 
     def road(self):
         positionEgo = self.gps
@@ -83,42 +193,22 @@ class Scenario(ScenarioGenerator):
         catalog.add_catalog('VehicleCatalog', 'Distros/Current/Config/Players/Vehicles')
         catalog.add_catalog('PedestrianCatalog', 'Distros/Current/Config/Players/Pedestrians')
         catalog.add_catalog('ControllerCatalog', 'Distros/Current/Config/Players/driverCfg.xml')
-
-        pbb = xosc.BoundingBox(0.5, 0.5, 1.8, 2.0, 0, 0.9)
-        bb = xosc.BoundingBox(2.1, 4.5, 1.8, 1.5, 0, 0.9)
-        fa = xosc.Axle(0.5, 0.6, 1.8, 3.1, 0.3)
-        ba = xosc.Axle(0, 0.6, 1.8, 0, 0.3)
-        red_veh = xosc.Vehicle('Audi_A3_2009_black', xosc.VehicleCategory.car, bb, fa, ba, 69.444, 200, 10)
-        white_veh = xosc.Vehicle('Audi_A3_2009_red', xosc.VehicleCategory.car, bb, fa, ba, 69.444, 200, 10)
-        male_ped = xosc.Pedestrian('Christian', 'male_adult', 70, xosc.PedestrianCategory.pedestrian, pbb)
-        if self.aug_type == ObjectType.motorcycle.value:
-            white_veh = xosc.Vehicle('Kawasaki_ZX-9R_black', xosc.VehicleCategory.motorbike, bb, fa, ba, 69.444, 200,
-                                     10)
-
+        if 'obs_type' in self.single_scenario.keys():
+            self.entity_models = get_entity_properties([self.single_scenario['scenario_vehicle_model'],
+                                                        *self.single_scenario['obs_type']])
+        else:
+            self.entity_models = get_entity_properties([self.single_scenario['scenario_vehicle_model']])
         prop = xosc.Properties()
         cnt = xosc.Controller('DefaultDriver', prop)
         cnt2 = xosc.Controller('No Driver', prop)
 
         egoname = 'Ego'
         entities = xosc.Entities()
-        entities.add_scenario_object(egoname, red_veh, cnt)
+        entities.add_scenario_object(egoname, self.entity_models[0], cnt)
         objname = 'Player'
 
-        if self.aug_type != 1:
-
-            # object car model
-            for i in range(len(self.obs)):
-                row = self.obs[i]
-                entities.add_scenario_object(objname + str(i), white_veh, cnt2)
-
-        elif self.aug_type == 1:
-
-            # pedestrian model
-            entities.add_scenario_object(objname + str(0), male_ped)
-            if len(self.obs) >= 2:
-                for i in range(1, len(self.obs)):
-                    row = self.obs[i]
-                    entities.add_scenario_object(objname + str(i), white_veh, cnt2)
+        for index, entity in enumerate(self.entity_models[1:]):
+            entities.add_scenario_object(objname + str(index), entity, cnt2)
 
         positionEgo = self.gps
         positionObj = self.obs
@@ -181,9 +271,6 @@ class Scenario(ScenarioGenerator):
 
         # object car trail
         if positionObj:
-            pedflag = False
-            if self.aug_type == 1:
-                pedflag = True
             for i in range(len(positionObj)):
                 row = positionObj[i]
                 name = objname + str(i)
@@ -200,8 +287,7 @@ class Scenario(ScenarioGenerator):
                 trigger2 = xosc.EntityTrigger("obj-start-trigger", 0, xosc.ConditionEdge.rising,
                                               xosc.SpeedCondition(0, xosc.Rule.greaterThan), 'Ego')
                 event2.add_trigger(trigger2)
-
-                if pedflag:
+                if int(self.single_scenario['obs_type'][i]) == ObjectType.pedestrian.value:
                     pedaction = xosc.FollowTrajectoryAction(trajectoryM, xosc.FollowMode.position,
                                                             xosc.ReferenceContext.absolute, 1, 0)
                     event2.add_action('newspeed', pedaction)
@@ -218,7 +304,7 @@ class Scenario(ScenarioGenerator):
                 event3 = xosc.Event('Event_ped', xosc.Priority.overwrite)
                 event3.add_trigger(trigger)
 
-                if pedflag:
+                if int(self.single_scenario['obs_type'][i]) == ObjectType.pedestrian.value:
                     action3 = xosc.CustomCommandAction(0, 0, 0, 0, 1, 0, 0)
                     action3.add_element(self.createUDAction())
                     event3.add_action('newspeed', action3)
@@ -242,7 +328,6 @@ class Scenario(ScenarioGenerator):
                 story2.add_act(act2)
 
                 sb.add_story(story2)
-                pedflag = False
         # prettyprint(sb.get_element())
 
         paramet = xosc.ParameterDeclarations()
