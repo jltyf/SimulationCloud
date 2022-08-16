@@ -44,15 +44,7 @@ class ScenarioData(object):
             self.scenario_dict['obs_trail_time'] = str(scenario_series['目标轨迹形态分段持续时间(s)']).split(';')
             self.scenario_dict['obs_heading_angle_rel'] = str(scenario_series['目标物相对自车航向角']).split(';')
             self.scenario_dict['obs_velocity_time'] = str(scenario_series['目标速度分段持续时间(s)']).split(';')
-            if self.scenario_dict['scenario_name'] in 'PCW':
-                self.scenario_dict['ped_initial_position_x'] = str(scenario_series['目标初始x坐标']).split(';')
-                self.scenario_dict['ped_initial_position_y'] = str(scenario_series['目标初始y坐标']).split(';')
-                self.scenario_dict['ped_speed_status'] = str(scenario_series['目标行驶速度状态']).split(';')
-                self.scenario_dict['ped_trajectory'] = str(scenario_series['目标轨迹形态']).split(';')
-                self.scenario_dict['ped_speed_duration_time'] = str(scenario_series['目标速度分段持续时间(s)']).split(';')
-                self.scenario_dict['pedT_trail_section_duration_time'] = str(scenario_series['目标轨迹形态分段持续时间(s)']).split(
-                    ';')
-                self.scenario_dict['ped_heading_angle_rel'] = str(scenario_series['目标物相对自车航向角']).split(',')
+            self.scenario_dict['obs_type'] = str(scenario_series['目标物类型']).split(';')
         else:
             # 在没有目标物的情况下,此列为空值
             self.scenario_dict['obs_start_x'] = list()
@@ -74,6 +66,8 @@ class ScenarioData(object):
                     values_list = list()
                     key_name = f'{key}' + f'-{obj_index}'
                     values = obj_param[obj_index]
+                    if values == DataType.static.value:
+                        continue
                     if key not in self.scenario_dict['generalization_list'] and values != DataType.calculative.value:
                         # if values == DataType.generalizable.value or values == DataType.generalizable_limit.value:
                         # # 备用请勿删除
