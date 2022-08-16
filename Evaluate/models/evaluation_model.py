@@ -3,9 +3,10 @@ from enumerations import ScenarioType
 
 
 class ScenarioData(object):
-    def __init__(self, scenarios_data, scenario_type):
+    def __init__(self, scenarios_data, obj_scenarios_data, scenario_type):
         """
-        :param scenarios_data: 数据为从vtd输出的csv数据文件读取的csv
+        :param scenarios_data: 数据为从vtd输出的自车csv数据文件读取的csv
+        :param obj_scenarios_data: 数据为从vtd输出的目标车csv数据文件读取的csv
         :param scenario_type: 场景的类型 1自然驾驶 2交通法规 3事故场景 4泛化场景
         """
 
@@ -15,6 +16,7 @@ class ScenarioData(object):
         self.scenario_type = scenario_type
         # 车道宽度暂定3.75
         self.lane_width = 3.75
+        self.obj_scenario_data = obj_scenarios_data.set_index(keys=['time'])
 
     def get_scenario_id(self):
         if not self.scenario_type == ScenarioType.generalization.value:
@@ -171,3 +173,16 @@ class ScenarioData(object):
             return period
         except:
             return 0
+
+    def get_obj_acc(self, time_stamp):
+        """
+
+        :return:
+        """
+        ego_lat_acc = self.scenario_data.loc[time_stamp]['lateral_acceleration']
+        ego_lon_acc = self.scenario_data.loc[time_stamp]['longitudinal_acceleration']
+        obj_rel_lat_acc = self.obj_scenario_data.loc[time_stamp]['object_rel_acc_y']
+        obj_rel_lon_acc = self.obj_scenario_data.loc[time_stamp]['object_rel_acc_x']
+        obj_lat_acc = ego_lat_acc + obj_rel_lat_acc
+        obj_lon_acc = ego_lon_acc + obj_rel_lon_acc
+        return math.sqrt(obj_lat_acc ** 2 + obj_lon_acc ** 2)

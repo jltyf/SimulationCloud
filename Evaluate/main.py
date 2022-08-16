@@ -8,10 +8,10 @@ from Evaluate.models.evaluation_model import ScenarioData
 from enumerations import ScenarioType
 from log.log_set import Loggers
 
-scenarios_category_list = ['AEB', 'ALC', 'ACC', 'LKA']
+scenarios_category_list = ['AEB', 'ALC', 'ACC', 'LKA', 'FSRA','GSACC','GSAEB','GSAES','GSLKA']
 
 
-def scenario_score(scenario_data_path, scenario_type, script_name=None):
+def scenario_score(scenario_ego_data, scenario_obj_data, scenario_type, script_name=None):
     """
     :param scenario_data_path:vtd输出数据的csv文件
     :param scenario_type: 场景的类型(自然驾驶，交通法规，事故场景，泛化场景)
@@ -27,11 +27,14 @@ def scenario_score(scenario_data_path, scenario_type, script_name=None):
                                  2).....'
             }
     """
-    csv_data = pd.read_csv(scenario_data_path)
-    csv_df = pd.DataFrame(csv_data)
+    ego_csv_data = pd.read_csv(scenario_ego_data)
+    ego_csv_df = pd.DataFrame(ego_csv_data)
+
+    obj_csv_data = pd.read_csv(scenario_obj_data)
+    obj_csv_df = pd.DataFrame(obj_csv_data)
 
     # 创建ScenarioData类需要传入标准格式数据的dataframe
-    scenario = ScenarioData(csv_df, scenario_type)
+    scenario = ScenarioData(ego_csv_df, obj_csv_df, scenario_type)
     scenario_id = (script_name if script_name else scenario.get_scenario_id())
     for scenario_category in scenarios_category_list:
         if scenario_category in scenario_id:
@@ -53,5 +56,5 @@ def scenario_score(scenario_data_path, scenario_type, script_name=None):
 
 
 if __name__ == '__main__':
-    result = scenario_score('D:/test_data_ACC1-4_Ego.csv', ScenarioType.natural.value, 'AEB_1-1')
+    result = scenario_score('D:/评分脚本test_data/ReportSample_testdata/ACC/Ego.csv', 'D:/评分脚本test_data/4_1/combined_ogt.csv', ScenarioType.natural.value, 'GSLKA_1')
     print(result)
