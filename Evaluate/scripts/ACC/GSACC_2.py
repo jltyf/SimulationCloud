@@ -1,6 +1,9 @@
 # @Author  : 张璐
 # @Time    : 2022/08/16
 # @Function: GSACC_2
+import numpy as np
+import pandas as pd
+
 
 def get_v_interpolation(v_diff):
     p1 = [5, 100]
@@ -12,11 +15,23 @@ def get_v_interpolation(v_diff):
 
 
 def get_report(scenario, script_id):
+    # 判断目标车ID
+    obj_data = scenario.obj_scenario_data[
+        (scenario.obj_scenario_data['object_rel_pos_y'] < 1) & (scenario.obj_scenario_data['object_rel_pos_y'] > -1) & (
+                scenario.obj_scenario_data['object_rel_pos_x'] > 0)]
+    min = obj_data['object_rel_pos_x'].min()
+    min_ID = obj_data.loc[obj_data['object_rel_pos_x'] == min, 'object_ID']
+    if len(min_ID) == 1:
+        ID = int(min_ID)
+    else:
+        ID = np.array(min_ID)[0]
+    obj_data = obj_data[(obj_data['object_ID'] == ID)]
+
+    set_velocity = scenario.get_velocity(obj_data.index.tolist()[0], ID)
+
     scenario.scenario_data = scenario.scenario_data.tail(50)
     v_max = scenario.get_max_velocity()
     v_min = scenario.get_min_velocity()
-
-    set_velocity = 80
 
     v_max_diff = abs(v_max - set_velocity)
     v_min_diff = abs(v_min - set_velocity)
@@ -24,7 +39,6 @@ def get_report(scenario, script_id):
 
     distance = scenario.scenario_data['object_closest_dist'] / scenario.get_velocity(scenario.scenario_data.index[0])
     distance_max = distance.max()
-
 
     if (1 <= distance_max <= 2):
         if v_diff <= 5:
