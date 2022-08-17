@@ -4,7 +4,7 @@ import sys
 import pandas as pd
 import os
 
-sys.path.append('home/ubuntu/test')
+sys.path.append('/home/ubuntu/test')
 from Evaluate.models.evaluation_model import ScenarioData
 from enumerations import ScenarioType
 from log.log_set import Loggers
@@ -41,7 +41,7 @@ def scenario_score(scenario_ego_data, scenario_obj_data, scenario_type, script_n
         if scenario_category in scenario_id:
             scripts_path = os.path.join(os.path.join(os.getcwd(), 'scripts'), scenario_category)
             if not os.path.exists(scripts_path):
-                scripts_path = os.path.join(os.path.join('home/ubuntu/test/Evaluate', 'scripts'), scenario_category)
+                scripts_path = os.path.join(os.path.join('/home/ubuntu/test/Evaluate', 'scripts'), scenario_category)
             for script_id in os.listdir(scripts_path):
                 if script_id.split('.p')[0] == scenario_id:
                     function_name = 'get_report'
@@ -59,6 +59,7 @@ def scenario_score(scenario_ego_data, scenario_obj_data, scenario_type, script_n
 
 
 if __name__ == '__main__':
+    # result = scenario_score('D:/评分脚本test_data/ReportSample_testdata/ACC/Ego.csv', 'D:/评分脚本test_data/4_1/combined_ogt.csv', ScenarioType.natural.value, 'GSLKA_1')
     input_data = sys.argv[1:]
     result = scenario_score(*input_data)
     print(result)
