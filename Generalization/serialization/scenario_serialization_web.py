@@ -45,7 +45,7 @@ class ScenarioData(object):
             self.scenario_dict['obs_trail_time'] = str(scenario_data['obsTrailTime']).split(';')
             self.scenario_dict['obs_heading_angle_rel'] = str(scenario_data['obsHeadingAngleRel']).split(';')
             self.scenario_dict['obs_velocity_time'] = str(scenario_data['obsVelocityTime']).split(';')
-            self.scenario_dict['obs_type'] = str(scenario_data['目标物类型']).split(';')
+            self.scenario_dict['obs_type'] = str(scenario_data['obsType']).split(';')
         else:
             # 在没有目标物的情况下,此列为空值
             self.scenario_dict['obs_start_x'] = list()
