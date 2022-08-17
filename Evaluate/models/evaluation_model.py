@@ -1,4 +1,7 @@
 import math
+
+import pandas as pd
+
 from enumerations import ScenarioType
 
 
@@ -16,7 +19,13 @@ class ScenarioData(object):
         self.scenario_type = scenario_type
         # 车道宽度暂定3.75
         self.lane_width = 3.75
-        self.obj_scenario_data = obj_scenarios_data.set_index(keys=['time'])
+        time = obj_scenarios_data['time'][0]
+        if time <= 0.2:
+            index = obj_scenarios_data.loc[obj_scenarios_data['time'] >= 0.2].index.values[0]
+            obj_scenarios_data = obj_scenarios_data.loc[index:]
+            self.obj_scenario_data = obj_scenarios_data.set_index(keys=['time'])
+        else:
+            self.obj_scenario_data = obj_scenarios_data.set_index(keys=['time'])
 
     def get_scenario_id(self):
         if not self.scenario_type == ScenarioType.generalization.value:
@@ -37,10 +46,11 @@ class ScenarioData(object):
             lateral_v = self.scenario_data.loc[time_stamp]['lateral_velocity']
             longitudinal_v = self.scenario_data.loc[time_stamp]['longitudinal_velocity']
         else:
-            lateral_v = self.scenario_data.loc[time_stamp]['lateral_velocity'] + (
-                self.scenario_data[self.scenario_data['object_ID'] == obj_id].loc[time_stamp]['object_rel_vel_y'])
-            longitudinal_v = self.scenario_data.loc[time_stamp]['longitudinal_velocity'] + (
-                self.scenario_data[self.scenario_data['object_ID'] == obj_id].loc[time_stamp]['object_rel_vel_x'])
+            obj_data = self.obj_scenario_data[(self.obj_scenario_data['object_ID'] == obj_id)]
+            lateral_v = self.scenario_data.loc[time_stamp]['lateral_velocity'] + obj_data.loc[time_stamp][
+                'object_rel_vel_y']
+            longitudinal_v = self.scenario_data.loc[time_stamp]['longitudinal_velocity'] + obj_data.loc[time_stamp][
+                'object_rel_vel_x']
         return math.sqrt(lateral_v ** 2 + longitudinal_v ** 2)
 
     def get_max_velocity(self, obj_id=0):
@@ -56,10 +66,11 @@ class ScenarioData(object):
             max_velocity = self.scenario_data['velocity'].max()
         # 目标车
         else:
-            self.scenario_data['object_velocity'] = ((self.scenario_data['lateral_velocity'] + self.scenario_data[
-                'object_rel_vel_y']) ** 2 + (self.scenario_data['longitudinal_velocity'] + self.scenario_data[
+            obj_data = self.obj_scenario_data[(self.obj_scenario_data['object_ID'] == obj_id)]
+            self.scenario_data['object_velocity'] = ((self.scenario_data['lateral_velocity'] + obj_data[
+                'object_rel_vel_y']) ** 2 + (self.scenario_data['longitudinal_velocity'] + obj_data[
                 'object_rel_vel_x']) ** 2) ** 0.5
-            max_velocity = self.scenario_data[self.scenario_data['object_ID'] == obj_id]['object_velocity'].max()
+            max_velocity = self.scenario_data['object_velocity'].max()
         return max_velocity
 
     def get_min_velocity(self, obj_id=0):
@@ -75,10 +86,11 @@ class ScenarioData(object):
             min_velocity = self.scenario_data['velocity'].min()
         # 目标车
         else:
-            self.scenario_data['object_velocity'] = ((self.scenario_data['lateral_velocity'] + self.scenario_data[
-                'object_rel_vel_y']) ** 2 + (self.scenario_data['longitudinal_velocity'] + self.scenario_data[
+            obj_data = self.obj_scenario_data[(self.obj_scenario_data['object_ID'] == obj_id)]
+            self.scenario_data['object_velocity'] = ((self.scenario_data['lateral_velocity'] + obj_data[
+                'object_rel_vel_y']) ** 2 + (self.scenario_data['longitudinal_velocity'] + obj_data[
                 'object_rel_vel_x']) ** 2) ** 0.5
-            min_velocity = self.scenario_data[self.scenario_data['object_ID'] == obj_id]['object_velocity'].min()
+            min_velocity = self.scenario_data['object_velocity'].min()
         return min_velocity
 
     def get_velocity_variation(self, start_time, end_time):
@@ -176,7 +188,7 @@ class ScenarioData(object):
 
     def get_obj_acc(self, time_stamp):
         """
-
+        获取目标车在某时刻的加速度
         :return:
         """
         ego_lat_acc = self.scenario_data.loc[time_stamp]['lateral_acceleration']

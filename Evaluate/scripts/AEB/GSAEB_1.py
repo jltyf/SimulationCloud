@@ -1,6 +1,7 @@
 # @Author  : 张璐
 # @Time    : 2022/08/15
 # @Function: GSAEB_1
+import numpy as np
 import pandas as pd
 
 from enumerations import CollisionStatus
@@ -8,12 +9,18 @@ from enumerations import CollisionStatus
 
 def get_report(scenario, script_id):
     # 判断目标车ID
-    scenario.obj_data = scenario.obj_scenario_data[(scenario.obj_scenario_data['object_rel_pos_y'] < 1)|(scenario.obj_scenario_data['object_rel_pos_y'] > -1)]
-    min = scenario.obj_data['object_rel_pos_x'].min()
-    ID = int(scenario.obj_data.loc[abs(scenario.obj_data['object_rel_pos_x']) == min, 'object_ID'])
+    obj_data = scenario.obj_scenario_data[
+        (scenario.obj_scenario_data['object_rel_pos_y'] < 1) & (scenario.obj_scenario_data['object_rel_pos_y'] > -1) & (
+                scenario.obj_scenario_data['object_rel_pos_x'] > 0)]
+    min = obj_data['object_rel_pos_x'].min()
+    min_ID = obj_data.loc[obj_data['object_rel_pos_x'] == min, 'object_ID']
+    if len(min_ID) == 1:
+        ID = int(min_ID)
+    else:
+        ID = np.array(min_ID)[0]
+    obj_data = obj_data[(obj_data['object_ID'] == ID)]
 
-    scenario.obj_data = scenario.obj_data[(scenario.obj_data['object_ID'] == ID)]
-    distance = scenario.obj_data['object_rel_pos_x']
+    distance = obj_data['object_rel_pos_x']
     ditance_final = pd.DataFrame(distance).iloc[-1].values
 
     collision_status_list = scenario.scenario_data['collision_status'].values.tolist()
