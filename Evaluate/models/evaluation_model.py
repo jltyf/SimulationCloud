@@ -41,10 +41,11 @@ class ScenarioData(object):
         :param obj_id: 默认为0时获取自车的速度
         :return: velocity time_stamp时刻的速度
         """
-        # 自车的速度
+        # 自车
         if obj_id == 0:
             lateral_v = self.scenario_data.loc[time_stamp]['lateral_velocity']
             longitudinal_v = self.scenario_data.loc[time_stamp]['longitudinal_velocity']
+        # 目标车
         else:
             obj_data = self.obj_scenario_data[(self.obj_scenario_data['object_ID'] == obj_id)]
             lateral_v = self.scenario_data.loc[time_stamp]['lateral_velocity'] + obj_data.loc[time_stamp][
@@ -188,15 +189,11 @@ class ScenarioData(object):
 
     def get_obj_acc(self, time_stamp):
         """
-        获取目标车在某时刻的加速度
-        :return:
+        目标车横向加速度=自车横向加速度+目标车相对横向加速度
+        :return:目标车在某时刻的加速度
         """
-        ego_lat_acc = self.scenario_data.loc[time_stamp]['lateral_acceleration']
-        ego_lon_acc = self.scenario_data.loc[time_stamp]['longitudinal_acceleration']
-        obj_rel_lat_acc = self.obj_scenario_data.loc[time_stamp]['object_rel_acc_y']
-        obj_rel_lon_acc = self.obj_scenario_data.loc[time_stamp]['object_rel_acc_x']
-        obj_lat_acc = ego_lat_acc + obj_rel_lat_acc
-        obj_lon_acc = ego_lon_acc + obj_rel_lon_acc
+        obj_lat_acc = self.scenario_data.loc[time_stamp]['lateral_acceleration'] + self.obj_scenario_data.loc[time_stamp]['object_rel_acc_y']
+        obj_lon_acc = self.scenario_data.loc[time_stamp]['longitudinal_acceleration'] + self.obj_scenario_data.loc[time_stamp]['object_rel_acc_x']
         return math.sqrt(obj_lat_acc ** 2 + obj_lon_acc ** 2)
 
     def __error_message(self, method, ego_flag):
