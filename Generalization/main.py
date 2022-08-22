@@ -225,7 +225,7 @@ def generalization(scenario_series, single_scenario, car_trail_data, ped_trail_d
         ego_points = ego_points[:len(ego_points) - trail_motion_time_count]
         egotime = egotime[:len(egotime) - trail_motion_time_count]
     sceperiod = math.ceil(egotime[-1] - egotime[0])
-    s = Scenario(ego_points, object_points, egotime, sceperiod, single_scenario)
+    s = Scenario(ego_points, object_points, egotime, sceperiod, single_scenario, absPath)
     s.print_permutations()
     output_path = os.path.join(absPath + '/trails/', 'simulation_new',
                                scenario_series['场景编号'] + '_' + str(scenario_index))

@@ -38,7 +38,7 @@ class Scenario(ScenarioGenerator):
         self.weather = single_scenario['scenario_weather'][0]
         self.entity_models = None
 
-    def road_ego(self):
+    def road(self):
         positionEgo = self.gps
         planview = xodr.PlanView()
 
@@ -102,7 +102,7 @@ class Scenario(ScenarioGenerator):
 
         return None
 
-    def road(self):
+    def road_new(self):
         polyfit_fig_path = os.path.join(self.abspath, 'simulation', 'polyfit.jpg')
 
         # run road detector
@@ -123,7 +123,7 @@ class Scenario(ScenarioGenerator):
             with open('error.log', 'a+') as f:
                 json.dump(error, f, indent=4)
                 f.write('\n')
-            return self.road_ego()
+            return self.road()
 
         origin_x = uv_coord_info[0]
         origin_y = uv_coord_info[1]

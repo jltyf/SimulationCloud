@@ -16,8 +16,8 @@ import pandas as pd
 from scenariogeneration import xosc
 import os
 import json
-from enumerations import DataType, TrailMotionType, RoadType
-from scenariogeneration.xodr import RoadSide, Object, ObjectType, Dynamic, Orientation
+from enumerations import DataType, TrailMotionType, RoadType, ObjectType
+from scenariogeneration.xodr import RoadSide, Object, Dynamic, Orientation
 import xml.etree.ElementTree as ET
 
 

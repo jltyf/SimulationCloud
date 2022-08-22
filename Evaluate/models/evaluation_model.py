@@ -198,3 +198,42 @@ class ScenarioData(object):
         obj_lat_acc = ego_lat_acc + obj_rel_lat_acc
         obj_lon_acc = ego_lon_acc + obj_rel_lon_acc
         return math.sqrt(obj_lat_acc ** 2 + obj_lon_acc ** 2)
+
+    def __error_message(self, method, ego_flag):
+        """
+        通过调用的方法名判断是否在获取评分所需的值时发生错误
+        :param method:发生错误的方法名
+        :param ego_flag:判断是否是自车的标志位
+        :return:错误信息
+        """
+        if method == self.get_velocity:
+            if ego_flag:
+                return '错误:获取自车的速度失败,选择的评分脚本无法对此场景进行评价'
+            else:
+                return '错误:获取目标车的速度失败,选择的评分脚本无法对此场景进行评价'
+        elif method == self.get_max_velocity:
+            if ego_flag:
+                return '错误:获取自车的最大速度失败,选择的评分脚本无法对此场景进行评价'
+            else:
+                return '错误:获取目标车的最大速度失败,选择的评分脚本无法对此场景进行评价'
+        elif method == self.get_min_velocity:
+            if ego_flag:
+                return '错误:获取自车的最小速度失败,选择的评分脚本无法对此场景进行评价'
+            else:
+                return '错误:获取目标车的最小速度失败,选择的评分脚本无法对此场景进行评价'
+        elif method == self.get_velocity_variation:
+            return '错误:获取自车的车速变化量失败,选择的评分脚本无法对此场景进行评价'
+        elif method == self.get_lon_acc_roc:
+            return '错误:获取自车的纵向加速度变化率失败,选择的评分脚本无法对此场景进行评价'
+        elif method == self.get_lat_acc_roc:
+            return '错误:获取自车的横向加速度变化率失败,选择的评分脚本无法对此场景进行评价'
+        elif method == self.get_lon_acc_roc_max:
+            return '错误:获取自车的最大纵向加速度变化率失败,选择的评分脚本无法对此场景进行评价'
+        elif method == self.get_lat_acc_roc_max:
+            return '错误:获取自车的最大横向加速度变化率失败,选择的评分脚本无法对此场景进行评价'
+        elif method == self.get_change_lane_time:
+            return '错误:获取目标车的加速度失败,选择的评分脚本无法对此场景进行评价'
+        elif method == self.get_obj_acc:
+            return '错误:获取目标车的加速度失败,选择的评分脚本无法对此场景进行评价'
+        else:
+            return '错误:评分功能发生,选择的评分脚本无法对此场景进行评价'
