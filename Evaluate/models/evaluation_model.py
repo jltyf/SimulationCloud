@@ -41,18 +41,26 @@ class ScenarioData(object):
         :param obj_id: 默认为0时获取自车的速度
         :return: velocity time_stamp时刻的速度
         """
-        # 自车
-        if obj_id == 0:
-            lateral_v = self.scenario_data.loc[time_stamp]['lateral_velocity']
-            longitudinal_v = self.scenario_data.loc[time_stamp]['longitudinal_velocity']
-        # 目标车
-        else:
-            obj_data = self.obj_scenario_data[(self.obj_scenario_data['object_ID'] == obj_id)]
-            lateral_v = self.scenario_data.loc[time_stamp]['lateral_velocity'] + obj_data.loc[time_stamp][
-                'object_rel_vel_y']
-            longitudinal_v = self.scenario_data.loc[time_stamp]['longitudinal_velocity'] + obj_data.loc[time_stamp][
-                'object_rel_vel_x']
-        return math.sqrt(lateral_v ** 2 + longitudinal_v ** 2)
+        try:
+            # 自车
+            if obj_id == 0:
+                lateral_v = self.scenario_data.loc[time_stamp]['lateral_velocity']
+                longitudinal_v = self.scenario_data.loc[time_stamp]['longitudinal_velocity']
+            # 目标车
+            else:
+                obj_data = self.obj_scenario_data[(self.obj_scenario_data['object_ID'] == obj_id)]
+                lateral_v = self.scenario_data.loc[time_stamp]['lateral_velocity'] + obj_data.loc[time_stamp][
+                    'object_rel_vel_y']
+                longitudinal_v = self.scenario_data.loc[time_stamp]['longitudinal_velocity'] + obj_data.loc[time_stamp][
+                    'object_rel_vel_x']
+            return math.sqrt(lateral_v ** 2 + longitudinal_v ** 2)
+        except:
+            if obj_id == 0:
+                ego_flag = True
+            else:
+                ego_flag = False
+            error_msg = self.__error_message(self.get_velocity, ego_flag)
+            return error_msg
 
     def get_max_velocity(self, obj_id=0):
         """
@@ -60,19 +68,27 @@ class ScenarioData(object):
         :param obj_id: 为0时为自车
         :return:max_velocity 最大速度
         """
-        self.scenario_data['velocity'] = (self.scenario_data['lateral_velocity'] ** 2 + self.scenario_data[
-            'longitudinal_velocity'] ** 2) ** 0.5
-        # 自车
-        if obj_id == 0:
-            max_velocity = self.scenario_data['velocity'].max()
-        # 目标车
-        else:
-            obj_data = self.obj_scenario_data[(self.obj_scenario_data['object_ID'] == obj_id)]
-            self.scenario_data['object_velocity'] = ((self.scenario_data['lateral_velocity'] + obj_data[
-                'object_rel_vel_y']) ** 2 + (self.scenario_data['longitudinal_velocity'] + obj_data[
-                'object_rel_vel_x']) ** 2) ** 0.5
-            max_velocity = self.scenario_data['object_velocity'].max()
-        return max_velocity
+        try:
+            self.scenario_data['velocity'] = (self.scenario_data['lateral_velocity'] ** 2 + self.scenario_data[
+                'longitudinal_velocity'] ** 2) ** 0.5
+            # 自车
+            if obj_id == 0:
+                max_velocity = self.scenario_data['velocity'].max()
+            # 目标车
+            else:
+                obj_data = self.obj_scenario_data[(self.obj_scenario_data['object_ID'] == obj_id)]
+                self.scenario_data['object_velocity'] = ((self.scenario_data['lateral_velocity'] + obj_data[
+                    'object_rel_vel_y']) ** 2 + (self.scenario_data['longitudinal_velocity'] + obj_data[
+                    'object_rel_vel_x']) ** 2) ** 0.5
+                max_velocity = self.scenario_data['object_velocity'].max()
+            return max_velocity
+        except:
+            if obj_id == 0:
+                ego_flag = True
+            else:
+                ego_flag = False
+            error_msg = self.__error_message(self.get_max_velocity, ego_flag)
+            return error_msg
 
     def get_min_velocity(self, obj_id=0):
         """
@@ -80,19 +96,27 @@ class ScenarioData(object):
         :param obj_id: 为0时为自车
         :return:min_velocity 最小速度
         """
-        self.scenario_data['velocity'] = (self.scenario_data['lateral_velocity'] ** 2 + self.scenario_data[
-            'longitudinal_velocity'] ** 2) ** 0.5
-        # 自车
-        if obj_id == 0:
-            min_velocity = self.scenario_data['velocity'].min()
-        # 目标车
-        else:
-            obj_data = self.obj_scenario_data[(self.obj_scenario_data['object_ID'] == obj_id)]
-            self.scenario_data['object_velocity'] = ((self.scenario_data['lateral_velocity'] + obj_data[
-                'object_rel_vel_y']) ** 2 + (self.scenario_data['longitudinal_velocity'] + obj_data[
-                'object_rel_vel_x']) ** 2) ** 0.5
-            min_velocity = self.scenario_data['object_velocity'].min()
-        return min_velocity
+        try:
+            self.scenario_data['velocity'] = (self.scenario_data['lateral_velocity'] ** 2 + self.scenario_data[
+                'longitudinal_velocity'] ** 2) ** 0.5
+            # 自车
+            if obj_id == 0:
+                min_velocity = self.scenario_data['velocity'].min()
+            # 目标车
+            else:
+                obj_data = self.obj_scenario_data[(self.obj_scenario_data['object_ID'] == obj_id)]
+                self.scenario_data['object_velocity'] = ((self.scenario_data['lateral_velocity'] + obj_data[
+                    'object_rel_vel_y']) ** 2 + (self.scenario_data['longitudinal_velocity'] + obj_data[
+                    'object_rel_vel_x']) ** 2) ** 0.5
+                min_velocity = self.scenario_data['object_velocity'].min()
+            return min_velocity
+        except:
+            if obj_id == 0:
+                ego_flag = True
+            else:
+                ego_flag = False
+            error_msg = self.__error_message(self.get_min_velocity, ego_flag)
+            return error_msg
 
     def get_velocity_variation(self, start_time, end_time):
         """
@@ -101,13 +125,16 @@ class ScenarioData(object):
         :param end_time: 结束时间戳
         :return: velocity_variation 速度变化量，返回的为速度差的绝对值
         """
-        self.scenario_data['velocity'] = (self.scenario_data['lateral_velocity'] ** 2 + self.scenario_data[
-            'longitudinal_velocity'] ** 2) ** 0.5
+        try:
+            self.scenario_data['velocity'] = (self.scenario_data['lateral_velocity'] ** 2 + self.scenario_data[
+                'longitudinal_velocity'] ** 2) ** 0.5
 
-        velocity_variation = abs(
-            self.scenario_data.loc[start_time]['velocity'] - self.scenario_data.loc[end_time]['velocity'])
+            velocity_variation = abs(
+                self.scenario_data.loc[start_time]['velocity'] - self.scenario_data.loc[end_time]['velocity'])
 
-        return velocity_variation
+            return velocity_variation
+        except:
+            return self.__error_message(self.get_velocity_variation)
 
     def get_lon_acc_roc(self, time_stamp):
         """
@@ -115,13 +142,16 @@ class ScenarioData(object):
         :param time_stamp: 需要获取结果的时间戳
         :return:lon_acc_roc 纵向加速度变化率
         """
-        time_list = self.scenario_data.index.values.tolist()
-        now_lon_acc = self.scenario_data.loc[time_stamp]['longitudinal_acceleration']
-        index = time_list.index(time_stamp)
-        pre_time_stamp = time_list[index - 1]
-        pre_lon_acc = self.scenario_data.loc[pre_time_stamp]['longitudinal_acceleration']
-        lon_acc_roc = (now_lon_acc - pre_lon_acc) / pre_lon_acc
-        return lon_acc_roc
+        try:
+            time_list = self.scenario_data.index.values.tolist()
+            now_lon_acc = self.scenario_data.loc[time_stamp]['longitudinal_acceleration']
+            index = time_list.index(time_stamp)
+            pre_time_stamp = time_list[index - 1]
+            pre_lon_acc = self.scenario_data.loc[pre_time_stamp]['longitudinal_acceleration']
+            lon_acc_roc = (now_lon_acc - pre_lon_acc) / pre_lon_acc
+            return lon_acc_roc
+        except:
+            return self.__error_message(self.get_lon_acc_roc)
 
     def get_lat_acc_roc(self, time_stamp):
         """
@@ -129,13 +159,16 @@ class ScenarioData(object):
         :param time_stamp: 需要获取结果的时间戳
         :return:lat_acc_roc 横向加速度变化率
         """
-        time_list = self.scenario_data.index.values.tolist()
-        now_lon_acc = self.scenario_data.loc[time_stamp]['lateral_acceleration']
-        index = time_list.index(time_stamp)
-        pre_time_stamp = time_list[index - 1]
-        pre_lat_acc = self.scenario_data.loc[pre_time_stamp]['lateral_acceleration']
-        lat_acc_roc = (now_lon_acc - pre_lat_acc) / pre_lat_acc
-        return lat_acc_roc
+        try:
+            time_list = self.scenario_data.index.values.tolist()
+            now_lon_acc = self.scenario_data.loc[time_stamp]['lateral_acceleration']
+            index = time_list.index(time_stamp)
+            pre_time_stamp = time_list[index - 1]
+            pre_lat_acc = self.scenario_data.loc[pre_time_stamp]['lateral_acceleration']
+            lat_acc_roc = (now_lon_acc - pre_lat_acc) / pre_lat_acc
+            return lat_acc_roc
+        except:
+            return self.__error_message(self.get_lat_acc_roc)
 
     def get_lon_acc_roc_max(self, start_time=None, end_time=None):
         """
@@ -146,12 +179,15 @@ class ScenarioData(object):
         :param end_time: 计算加速度变化率的结束时间
         :return: 这段时间内最大纵向加速度变化率
         """
-        index_list = self.scenario_data.index.tolist()
-        start_time = index_list[0] if not start_time else start_time
-        end_time = index_list[-1] if not end_time else end_time
-        self.scenario_data = self.scenario_data.loc[start_time:end_time]
-        lon_acc_roc_max = self.scenario_data['longitudinal_accelerate_roc'].max()
-        return lon_acc_roc_max
+        try:
+            index_list = self.scenario_data.index.tolist()
+            start_time = index_list[0] if not start_time else start_time
+            end_time = index_list[-1] if not end_time else end_time
+            self.scenario_data = self.scenario_data.loc[start_time:end_time]
+            lon_acc_roc_max = self.scenario_data['longitudinal_accelerate_roc'].max()
+            return lon_acc_roc_max
+        except:
+            return self.__error_message(self.get_lon_acc_roc_max)
 
     def get_lat_acc_roc_max(self, start_time=None, end_time=None):
         """
@@ -162,41 +198,52 @@ class ScenarioData(object):
         :param end_time: 计算加速度变化率的结束时间
         :return: 这段时间内最大横向加速度变化率
         """
-        index_list = self.scenario_data.index.tolist()
-        start_time = index_list[0] if not start_time else start_time
-        end_time = index_list[-1] if not end_time else end_time
-        self.scenario_data = self.scenario_data.loc[start_time:end_time]
-        lat_acc_roc_max = self.scenario_data['lateral_accelerate_roc'].max()
-        return lat_acc_roc_max
+        try:
+            index_list = self.scenario_data.index.tolist()
+            start_time = index_list[0] if not start_time else start_time
+            end_time = index_list[-1] if not end_time else end_time
+            self.scenario_data = self.scenario_data.loc[start_time:end_time]
+            lat_acc_roc_max = self.scenario_data['lateral_accelerate_roc'].max()
+            return lat_acc_roc_max
+        except:
+            return self.__error_message(self.get_lat_acc_roc_max)
+
 
     def get_change_lane_time(self):
         """
         通过车道中心偏移距离大于1m时的时间开始判断变道
         :return: 变道轨迹的持续时间
         """
-        lane_offset = 1
-        # 筛选出航向角小于3度且距离车道中心小于一半的数据
-        change_lane_trail = self.scenario_data.query(
-            '(lane_center_offset<-@lane_offset) or (lane_center_offset>@lane_offset)')
-        timestamp_list = change_lane_trail.index.values.tolist()
         try:
-            start_time = timestamp_list[0]
-            end_time = timestamp_list[-1]
-            period = (end_time - start_time) / 1000
-            return period
+            # 筛选出航向角小于3度且距离车道中心小于一半的数据
+            change_lane_trail = self.scenario_data.query(
+                '(lane_center_offset<-@lane_offset) or (lane_center_offset>@lane_offset)')
+            timestamp_list = change_lane_trail.index.values.tolist()
+            try:
+                start_time = timestamp_list[0]
+                end_time = timestamp_list[-1]
+                period = (end_time - start_time) / 1000
+                return period
+            except:
+                return 0
         except:
-            return 0
+            return self.__error_message(self.get_change_lane_time)
 
     def get_obj_acc(self, time_stamp):
         """
         目标车横向加速度=自车横向加速度+目标车相对横向加速度
         :return:目标车在某时刻的加速度
         """
-        obj_lat_acc = self.scenario_data.loc[time_stamp]['lateral_acceleration'] + self.obj_scenario_data.loc[time_stamp]['object_rel_acc_y']
-        obj_lon_acc = self.scenario_data.loc[time_stamp]['longitudinal_acceleration'] + self.obj_scenario_data.loc[time_stamp]['object_rel_acc_x']
-        return math.sqrt(obj_lat_acc ** 2 + obj_lon_acc ** 2)
+        try:
+            obj_lat_acc = self.scenario_data.loc[time_stamp]['lateral_acceleration'] + \
+                          self.obj_scenario_data.loc[time_stamp]['object_rel_acc_y']
+            obj_lon_acc = self.scenario_data.loc[time_stamp]['longitudinal_acceleration'] + \
+                          self.obj_scenario_data.loc[time_stamp]['object_rel_acc_x']
+            return math.sqrt(obj_lat_acc ** 2 + obj_lon_acc ** 2)
+        except:
+            return self.__error_message(self.get_obj_acc)
 
-    def __error_message(self, method, ego_flag):
+    def __error_message(self, method, ego_flag=False):
         """
         通过调用的方法名判断是否在获取评分所需的值时发生错误
         :param method:发生错误的方法名

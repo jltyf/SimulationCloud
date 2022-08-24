@@ -3,23 +3,33 @@
 # @Function : ALC1-1
 
 def get_report(scenario, script_id):
-    lat_acc_max = (scenario.scenario_data['lateral_acceleration'].abs()).max()
-    lon_acc_max = (scenario.scenario_data['longitudinal_acceleration'].abs()).max()
-    lat_acc_roc_max = (scenario.scenario_data['lateral_accelarate_roc'].abs()).max()
-    change_lane_time = scenario.get_change_lane_time()
-    change_line_flag = scenario.scenario_data['lane_id'].max() - scenario.scenario_data['lane_id'].min()
-
+    evaluate_flag = True
+    try:
+        lat_acc_max = (scenario.scenario_data['lateral_acceleration'].abs()).max()
+        lon_acc_max = (scenario.scenario_data['longitudinal_acceleration'].abs()).max()
+        lat_acc_roc_max = (scenario.scenario_data['lateral_accelarate_roc'].abs()).max()
+        change_lane_time = scenario.get_change_lane_time()
+        if isinstance(change_lane_time, str) and '错误' in change_lane_time:
+            score = -1
+            evaluate_flag = False
+            evaluate_item = scenario.__error_message(scenario.get_change_lane_time, False).split('错误:')[1]
+        change_line_flag = scenario.scenario_data['lane_id'].max() - scenario.scenario_data['lane_id'].min()
+    except:
+        score = -1
+        evaluate_flag = False
+        evaluate_item = '评分功能发生,选择的评分脚本无法对此场景进行评价'
     # 得分说明
-    if change_lane_time <= 6 and change_line_flag:
-        if lon_acc_max <= 2 and lat_acc_max <= 3 and lat_acc_roc_max <= 5:
-            score = 100
-            evaluate_item = '得分 100，该算法中 ALC 功能正常，且变道过程中具备良好的舒适性'
-        elif lon_acc_max > 2 or lat_acc_max > 3 or lat_acc_roc_max > 5:
-            score = 60
-            evaluate_item = '得分 60，该算法中 ALC 功能正常，但变道过程中舒适较差'
-    else:
-        score = 0
-        evaluate_item = '得分 0，该算法 ALC 功能异常,无干扰车变道失败'
+    if evaluate_flag:
+        if change_lane_time <= 6 and change_line_flag:
+            if lon_acc_max <= 2 and lat_acc_max <= 3 and lat_acc_roc_max <= 5:
+                score = 100
+                evaluate_item = '得分 100，该算法中 ALC 功能正常，且变道过程中具备良好的舒适性'
+            elif lon_acc_max > 2 or lat_acc_max > 3 or lat_acc_roc_max > 5:
+                score = 60
+                evaluate_item = '得分 60，该算法中 ALC 功能正常，但变道过程中舒适较差'
+        else:
+            score = 0
+            evaluate_item = '得分 0，该算法 ALC 功能异常,无干扰车变道失败'
 
     score_description = '1)得分 100，该算法中 ALC 功能正常，且变道过程中具备良好的舒适性;\n' \
                         '2)得分 60，该算法中 ALC 功能正常，但变道过程中舒适较差;\n' \
