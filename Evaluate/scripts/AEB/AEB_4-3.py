@@ -1,6 +1,10 @@
 # @Author  : 张璐
 # @Time    : 2022/02/17
-# @Function: AEB4-3
+# @Function: AEB_4-3
+# @Scenario: 有遮挡时行人向左横穿马路
+# @Usage   : 评分细则4.3.2
+# @Update  : 2022/08/24
+
 
 from enumerations import CollisionStatus
 

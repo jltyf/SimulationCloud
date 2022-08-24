@@ -1,6 +1,9 @@
 # @Author  : 张璐
 # @Time    : 2022/03/01
-# @Function: ACC1-3
+# @Function: ACC_1-3
+# @Scenario: 跟随前车停车与起步
+# @Usage   : 第二届算法比赛任务十场景三
+# @Update  : 2022/08/24
 
 from enumerations import CollisionStatus
 

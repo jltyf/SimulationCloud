@@ -1,6 +1,9 @@
 # @Author  : 张璐
 # @Time    : 2022/03/02
-# @Function: ACC1-4
+# @Function: ACC_1-4
+# @Scenario: 前车减速行驶
+# @Usage   : 第二届算法比赛任务十场景四
+# @Update  : 2022/08/24
 
 from enumerations import CollisionStatus
 

@@ -1,6 +1,9 @@
 # @Author  : 张璐
 # @Time    : 2022/02/17
-# @Function: AEB3-3
+# @Function: AEB_3-3
+# @Scenario: 前方摩托车与自车同向行驶
+# @Usage   : 评分细则4.2.2
+# @Update  : 2022/08/24
 
 from enumerations import CollisionStatus
 

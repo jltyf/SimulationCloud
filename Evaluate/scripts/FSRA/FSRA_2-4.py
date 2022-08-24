@@ -2,6 +2,8 @@
 # @Time    : 2022/08/23
 # @Function: FSRA_2-4
 # @Scenario: 前车切出后前方无车辆
+# @Usage   : 评分细则4.2.4
+# @Update  : 2022/08/24
 
 import numpy as np
 from enumerations import CollisionStatus

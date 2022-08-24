@@ -1,6 +1,9 @@
 # @Author  : 张璐
 # @Time    : 2022/08/16
 # @Function: GSAES_1
+# @Scenario: 前车静止、前车慢行
+# @Usage   : 全国职业院校技能大赛变道避撞测试一、二
+# @Update  : 2022/08/24
 
 from enumerations import CollisionStatus
 

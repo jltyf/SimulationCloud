@@ -2,6 +2,8 @@
 # @Time    : 2022/08/22
 # @Function: FSRA_1-7
 # @Scenario: 弯道跟车行驶
+# @Usage   : 评分细则4.1.8
+# @Update  : 2022/08/24
 
 
 from enumerations import CollisionStatus

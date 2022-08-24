@@ -2,6 +2,9 @@
 # @Time    : 2022/08/18
 # @Function: FSRA_1-4
 # @Scenario: 目标车辆识别与跟车加速
+# @Usage   : 评分细则4.1.4
+# @Update  : 2022/08/24
+
 import numpy as np
 import pandas as pd
 

@@ -1,6 +1,9 @@
 # @Author  : 张璐
 # @Time    : 2022/02/21
-# @Function: LKA1-2
+# @Function: LKA_1-2
+# @Scenario: 弯道居中行驶
+# @Usage   : 第二届算法比赛任务九场景二
+# @Update  : 2022/08/24
 
 def get_report(scenario, script_id):
     dis_deviation = (scenario.scenario_data['lane_center_offset'].abs()).max()

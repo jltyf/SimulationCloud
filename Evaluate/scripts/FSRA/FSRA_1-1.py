@@ -2,6 +2,8 @@
 # @Time    : 2022/08/05
 # @Function: FSRA_1-1
 # @Scenario: 前车慢行
+# @Usage   : 评分细则4.1.1
+# @Update  : 2022/08/24
 
 from enumerations import CollisionStatus
 

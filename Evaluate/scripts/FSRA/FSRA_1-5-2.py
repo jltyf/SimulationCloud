@@ -2,6 +2,8 @@
 # @Time    : 2022/08/19
 # @Function: FSRA_1-5-2
 # @Scenario: 跟车时前车减速行驶
+# @Usage   : 评分细则4.1.6
+# @Update  : 2022/08/24
 
 def get_dec_interpolation(ego_v):
     p1 = [18, -5]

@@ -1,8 +1,11 @@
 # @Author  : 张璐
 # @Time    : 2022/08/16
 # @Function: GSACC_2
+# @Scenario: 前车慢行
+# @Usage   : 全国职业院校技能大赛自适应巡航测试二
+# @Update  : 2022/08/24
+
 import numpy as np
-import pandas as pd
 
 
 def get_v_interpolation(v_diff):

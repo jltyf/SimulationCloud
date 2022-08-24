@@ -1,6 +1,10 @@
 # @Author  : 张璐
 # @Time    : 2022/08/15
 # @Function: GSAEB_1
+# @Scenario: 前车静止、前车减速
+# @Usage   : 全国职业院校技能大赛自动紧急制动测试一、二
+# @Update  : 2022/08/24
+
 import numpy as np
 import pandas as pd
 

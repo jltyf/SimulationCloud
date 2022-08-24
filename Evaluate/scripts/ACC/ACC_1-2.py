@@ -1,7 +1,9 @@
 # @Author  : 张璐
 # @Time    : 2022/02/23
-# @Function: ACC1-2
-
+# @Function: ACC_1-2
+# @Scenario: 跟车
+# @Usage   : 第二届算法比赛任务十场景二
+# @Update  : 2022/08/24
 def get_acc_interpolation(ego_v):
     p1 = [18, 4]
     p2 = [72, 2]

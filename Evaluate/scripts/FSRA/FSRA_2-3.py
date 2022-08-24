@@ -2,6 +2,8 @@
 # @Time    : 2022/08/23
 # @Function: FSRA_2-3
 # @Scenario: 前车切出后前方有车辆
+# @Usage   : 评分细则4.2.3
+# @Update  : 2022/08/24
 
 from enumerations import CollisionStatus
 

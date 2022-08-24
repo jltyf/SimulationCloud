@@ -1,6 +1,9 @@
 # @Author  : 张璐
 # @Time    : 2022/08/16
 # @Function: GSACC_1
+# @Scenario: 前方无车定速巡航
+# @Usage   : 全国职业院校技能大赛自适应巡航测试一
+# @Update  : 2022/08/24
 
 def get_v_interpolation(v_diff):
     p1 = [2, 100]

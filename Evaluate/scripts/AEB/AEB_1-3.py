@@ -1,6 +1,9 @@
 # @Author  : 张璐
 # @Time    : 2022/02/17
-# @Function: AEB1-3
+# @Function: AEB_1-3
+# @Scenario: 前车静止
+# @Usage   : 评分细则4.1.3
+# @Update  : 2022/08/24
 
 from enumerations import CollisionStatus
 

@@ -1,6 +1,9 @@
 # @Author  : 张璐
 # @Time    : 2022/02/17
-# @Function: AEB2-1
+# @Function: AEB_2-1
+# @Scenario: 前方自行车向左横穿马路
+# @Usage   : 评分细则4.2.1
+# @Update  : 2022/08/24
 
 from enumerations import CollisionStatus
 

@@ -2,6 +2,8 @@
 # @Time    : 2022/08/19
 # @Function: FSRA_1-5-1
 # @Scenario: 跟车时前车加速行驶
+# @Usage   : 评分细则4.1.5
+# @Update  : 2022/08/24
 
 
 def get_acc_interpolation(ego_v):

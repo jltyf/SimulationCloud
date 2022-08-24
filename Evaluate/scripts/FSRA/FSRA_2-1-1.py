@@ -2,6 +2,10 @@
 # @Time    : 2022/08/23
 # @Function: FSRA_2-1-1
 # @Scenario: 前车从左车道切入
+# @Usage   : 评分细则4.2.1
+# @Update  : 2022/08/24
+
+
 import numpy as np
 
 from enumerations import CollisionStatus

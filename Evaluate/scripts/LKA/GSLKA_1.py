@@ -1,6 +1,9 @@
 # @Author  : 张璐
 # @Time    : 2022/08/16
 # @Function: GSLKA_1
+# @Scenario: 直道居中行驶、弯道居中行驶
+# @Usage   : 全国职业院校技能大赛车道保持辅助测试一、二
+# @Update  : 2022/08/24
 
 def get_v_interpolation(v_diff):
     p1 = [2, 100]

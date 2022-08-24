@@ -2,6 +2,8 @@
 # @Time    : 2022/08/23
 # @Function: FSRA_2-1-2
 # @Scenario: 前车从右车道切入
+# @Usage   : 评分细则4.2.1
+# @Update  : 2022/08/24
 
 import numpy as np
 

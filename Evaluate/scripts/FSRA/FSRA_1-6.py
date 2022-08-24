@@ -2,6 +2,8 @@
 # @Time    : 2022/08/22
 # @Function: FSRA_1-6
 # @Scenario: 跟随前车起停
+# @Usage   : 评分细则4.1.7
+# @Update  : 2022/08/24
 
 def get_dec_interpolation(ego_v):
     p1 = [18, -5]

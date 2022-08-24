@@ -2,6 +2,8 @@
 # @Time    : 2022/08/23
 # @Function: FSRA_2-2
 # @Scenario: 跟车时变换目标车辆
+# @Usage   : 评分细则4.2.2
+# @Update  : 2022/08/24
 
 import numpy as np
 from enumerations import CollisionStatus

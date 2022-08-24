@@ -1,6 +1,9 @@
 # @Author  : 张璐
 # @Time    : 2022/02/17
-# @Function: AEB4-2
+# @Function: AEB_4-2
+# @Scenario: 无遮挡时行人向右横穿马路
+# @Usage   : 评分细则4.3.1
+# @Update  : 2022/08/24
 
 from enumerations import CollisionStatus
 
