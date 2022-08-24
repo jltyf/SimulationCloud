@@ -1,6 +1,9 @@
 # @Author  : 张璐
 # @Time    : 2022/03/09
-# @Function : ALC1-2
+# @Function : ALC_1-2
+# @Scenario: 有干扰车变道
+# @Usage   : 评分细则4.2.1、评分细则4.2.2
+# @Update  : 2022/08/24
 
 def get_report(scenario, script_id):
     last_stage = scenario.scenario_data.iloc[-5:-1]

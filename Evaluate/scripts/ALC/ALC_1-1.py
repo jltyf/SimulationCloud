@@ -1,6 +1,9 @@
 # @Author  : 张晋崇
 # @Time    : 2022/02/28
-# @Function : ALC1-1
+# @Function : ALC_1-1
+# @Scenario: 无干扰车变道
+# @Usage   : 评分细则4.1.1、评分细则4.1.2
+# @Update  : 2022/08/24
 
 def get_report(scenario, script_id):
     evaluate_flag = True
