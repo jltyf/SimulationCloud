@@ -20,7 +20,7 @@ def get_report(scenario, script_id):
     except:
         score = -1
         evaluate_flag = False
-        evaluate_item = '评分功能发生,选择的评分脚本无法对此场景进行评价'
+        evaluate_item = '评分功能发生错误,选择的评分脚本无法对此场景进行评价'
     # 得分说明
     if evaluate_flag:
         if change_lane_time <= 6 and change_line_flag:
