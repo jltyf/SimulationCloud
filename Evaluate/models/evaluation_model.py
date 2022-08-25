@@ -15,6 +15,9 @@ class ScenarioData(object):
 
         index = scenarios_data.loc[scenarios_data['time'] == 0.2].index.values[0]
         scenarios_data = scenarios_data.loc[index:]
+        v_change = lambda x: x * 3.6
+        scenarios_data.loc[:]['lateral_velocity'] = scenarios_data['lateral_velocity'].apply(v_change)
+        scenarios_data.loc[:]['longitudinal_velocity'] = scenarios_data['longitudinal_velocity'].apply(v_change)
         self.scenario_data = scenarios_data.set_index(keys=['time'])
         self.scenario_type = scenario_type
         # 车道宽度暂定3.75
@@ -23,6 +26,8 @@ class ScenarioData(object):
         if time <= 0.2:
             index = obj_scenarios_data.loc[obj_scenarios_data['time'] >= 0.2].index.values[0]
             obj_scenarios_data = obj_scenarios_data.loc[index:]
+            obj_scenarios_data.loc[:]['object_rel_vel_y'] = obj_scenarios_data['object_rel_vel_y'].apply(v_change)
+            obj_scenarios_data.loc[:]['object_rel_vel_x'] = obj_scenarios_data['object_rel_vel_x'].apply(v_change)
             self.obj_scenario_data = obj_scenarios_data.set_index(keys=['time'])
         else:
             self.obj_scenario_data = obj_scenarios_data.set_index(keys=['time'])
@@ -207,7 +212,6 @@ class ScenarioData(object):
             return lat_acc_roc_max
         except:
             return self.__error_message(self.get_lat_acc_roc_max)
-
 
     def get_change_lane_time(self):
         """
