@@ -22,7 +22,10 @@ class ScenarioData(object):
         self.scenario_type = scenario_type
         # 车道宽度暂定3.75
         self.lane_width = 3.75
-        time = obj_scenarios_data['time'][0]
+        if len(obj_scenarios_data)>0:
+            time = obj_scenarios_data['time'][0]
+        else:
+            time = 1000
         if time <= 0.2:
             index = obj_scenarios_data.loc[obj_scenarios_data['time'] >= 0.2].index.values[0]
             obj_scenarios_data = obj_scenarios_data.loc[index:]
