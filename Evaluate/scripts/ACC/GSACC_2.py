@@ -3,7 +3,7 @@
 # @Function: GSACC_2
 # @Scenario: 前车慢行
 # @Usage   : 全国职业院校技能大赛自适应巡航测试二
-# @Update  : 2022/08/24
+# @Update  : 2022/08/29
 
 import numpy as np
 
@@ -40,22 +40,22 @@ def get_report(scenario, script_id):
     v_min_diff = abs(v_min - set_velocity)
     v_diff = max(v_max_diff, v_min_diff)
 
-    distance = scenario.scenario_data['object_closest_dist'] / scenario.get_velocity(scenario.scenario_data.index[0])
+    distance = (scenario.scenario_data['object_closest_dist'] / scenario.get_velocity(scenario.scenario_data.index[0])) * 3.6
     distance_max = distance.max()
 
-    if (1 <= distance_max <= 2):
+    if (1 <= distance_max <= 3):
         if v_diff <= 5:
             score = 100
-            evaluate_item = f'稳定跟车时，跟车车间时距范围在1-2s，主车与目标车车速差不超过5km/h，得分100'
+            evaluate_item = f'稳定跟车时，跟车车间时距范围在1-3s，主车与目标车车速差不超过5km/h，得分100'
         elif 5 < v_diff <= 10:
             score = get_v_interpolation(v_diff)
-            evaluate_item = f'稳定跟车时，跟车车间时距范围在1-2s，主车与目标车车速差在5-10km/h范围内，得分按照插值处理'
+            evaluate_item = f'稳定跟车时，跟车车间时距范围在1-3s，主车与目标车车速差在5-10km/h范围内，得分按照插值处理'
     else:
         score = 0
         evaluate_item = f'其他情况，得分0'
 
-    score_description = '1) 稳定跟车时，跟车车间时距范围在1-2s，主车与目标车车速差不超过5km/h，得分100;\n' \
-                        '2) 稳定跟车时，跟车车间时距范围在1-2s，主车与目标车车速差在5-10km/h范围内，得分按照插值处理；\n' \
+    score_description = '1) 稳定跟车时，跟车车间时距范围在1-3s，主车与目标车车速差不超过5km/h，得分100;\n' \
+                        '2) 稳定跟车时，跟车车间时距范围在1-3s，主车与目标车车速差在5-10km/h范围内，得分按照插值处理；\n' \
                         '3) 其他情况，得分0。'
     return {
         'unit_scene_ID': script_id,

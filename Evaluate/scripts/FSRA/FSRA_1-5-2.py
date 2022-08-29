@@ -3,7 +3,7 @@
 # @Function: FSRA_1-5-2
 # @Scenario: 跟车时前车减速行驶
 # @Usage   : 评分细则4.1.6
-# @Update  : 2022/08/24
+# @Update  : 2022/08/29
 
 def get_dec_interpolation(ego_v):
     p1 = [18, -5]
@@ -60,7 +60,7 @@ def get_report(scenario, script_id):
     obj_data = scenario.obj_scenario_data.loc[3:]  # 读取3秒后目标车数据
     obj_rel_vel_lon = obj_data['object_rel_vel_x'].iloc[0]  # 目标车相对纵向速度
     scenario.scenario_data = scenario.scenario_data.loc[5:]  # 读取5秒（稳定跟车）后自车数据
-    distance = scenario.scenario_data['object_closest_dist'] / scenario.get_velocity(scenario.scenario_data.index[0])  # 车头时距
+    distance = (scenario.scenario_data['object_closest_dist'] / scenario.get_velocity(scenario.scenario_data.index[0]))*3.6  # 车头时距
 
     standard_1 = '自车行驶速度≤18km/h时，最大加速度值≤4m/s²、最大减速度值≤5m/s2、最大减速度变化率≤5m/s³；自车行驶速度≧72km/h时，' \
                  '最大加速度值≤2m/s²、最大减速度值≤3.5m/s2、最大减速度变化率≤2.5m/s³；自车行驶速度在18km/h至72km/h区间时，' \

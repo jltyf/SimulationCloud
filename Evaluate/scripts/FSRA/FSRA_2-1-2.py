@@ -3,7 +3,7 @@
 # @Function: FSRA_2-1-2
 # @Scenario: 前车从右车道切入
 # @Usage   : 评分细则4.2.1
-# @Update  : 2022/08/24
+# @Update  : 2022/08/29
 
 import numpy as np
 
@@ -78,8 +78,8 @@ def get_report(scenario, script_id):
     obj_start_v = scenario.get_velocity(obj_data.index.tolist()[0], ID)
 
     scenario.scenario_data = scenario.scenario_data.loc[15:]  # 读取15秒（稳定跟车）后自车数据
-    distance = scenario.scenario_data['object_closest_dist'].iloc[0] / scenario.get_velocity(
-        scenario.scenario_data.index[0])  # 车头时距
+    distance = (scenario.scenario_data['object_closest_dist'].iloc[0] / scenario.get_velocity(
+        scenario.scenario_data.index[0]))*3.6  # 车头时距
     collision_status_list = scenario.scenario_data['collision_status'].values.tolist()
 
     end_v = scenario.get_velocity(scenario.scenario_data.index.tolist()[-1])

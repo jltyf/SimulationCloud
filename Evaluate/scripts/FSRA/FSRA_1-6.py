@@ -3,7 +3,7 @@
 # @Function: FSRA_1-6
 # @Scenario: 跟随前车起停
 # @Usage   : 评分细则4.1.7
-# @Update  : 2022/08/24
+# @Update  : 2022/08/29
 
 def get_dec_interpolation(ego_v):
     p1 = [18, -5]
@@ -87,7 +87,7 @@ def get_report(scenario, script_id):
     v_diff = abs(start_v - end_v)
 
     scenario.scenario_data = scenario.scenario_data.loc[15:]  # 读取15秒（稳定跟车）后自车数据
-    distance = scenario.scenario_data['object_closest_dist'].iloc[0] / scenario.get_velocity(scenario.scenario_data.index[0])  # 车头时距
+    distance = (scenario.scenario_data['object_closest_dist'].iloc[0] / scenario.get_velocity(scenario.scenario_data.index[0]))*3.6  # 车头时距
 
     standard_1 = '自车行驶速度≤18km/h时，最大加速度值≤4m/s²、最大减速度值≤5m/s2、最大减速度变化率≤5m/s³；自车行驶速度≧72km/h时，' \
                  '最大加速度值≤2m/s²、最大减速度值≤3.5m/s2、最大减速度变化率≤2.5m/s³；自车行驶速度在18km/h至72km/h区间时，' \
