@@ -5,10 +5,6 @@
 # @Usage   : 评分细则4.2.4
 # @Update  : 2022/08/24
 
-import numpy as np
-from enumerations import CollisionStatus
-
-
 def get_dec_interpolation(ego_v):
     p1 = [18, -5]
     p2 = [72, -3.5]
