@@ -4,6 +4,7 @@
 # @Scenario: 跟车
 # @Usage   : 第二届算法比赛任务十场景二
 # @Update  : 2022/08/29
+
 def get_acc_interpolation(ego_v):
     p1 = [18, 4]
     p2 = [72, 2]

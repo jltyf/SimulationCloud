@@ -5,7 +5,8 @@
 # @Usage   : 评分细则4.3.2
 # @Update  : 2022/08/24
 
-
+import sys
+sys.path.append('/home/ubuntu/test')
 from enumerations import CollisionStatus
 
 
