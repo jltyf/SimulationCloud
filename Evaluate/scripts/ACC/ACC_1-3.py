@@ -5,8 +5,6 @@
 # @Usage   : 第二届算法比赛任务十场景三
 # @Update  : 2022/08/24
 
-import sys
-sys.path.append('/home/ubuntu/test')
 from enumerations import CollisionStatus
 
 

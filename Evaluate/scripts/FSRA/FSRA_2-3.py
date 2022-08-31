@@ -4,8 +4,7 @@
 # @Scenario: 前车切出后前方有车辆
 # @Usage   : 评分细则4.2.3
 # @Update  : 2022/08/24
-import sys
-sys.path.append('/home/ubuntu/test')
+
 from enumerations import CollisionStatus
 
 

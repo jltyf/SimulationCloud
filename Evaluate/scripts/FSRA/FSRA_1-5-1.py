@@ -5,7 +5,6 @@
 # @Usage   : 评分细则4.1.5
 # @Update  : 2022/08/29
 
-
 def get_acc_interpolation(ego_v):
     p1 = [18, 4]
     p2 = [72, 2]

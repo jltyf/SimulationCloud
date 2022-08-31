@@ -7,8 +7,6 @@
 
 
 import numpy as np
-import sys
-sys.path.append('/home/ubuntu/test')
 from enumerations import CollisionStatus
 
 

@@ -4,8 +4,7 @@
 # @Scenario: 前方目标车辆静止
 # @Usage   : 评分细则4.1.3
 # @Update  : 2022/08/24
-import sys
-sys.path.append('/home/ubuntu/test')
+
 from enumerations import CollisionStatus
 
 
