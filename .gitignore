@@ -109,6 +109,8 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+.idea/SimulationCloud.iml
+.idea/misc.xml
 
 # Spyder project settings
 .spyderproject

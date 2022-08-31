@@ -38,7 +38,7 @@ def scenario_score(scenario_ego_data, scenario_obj_data, scenario_type, script_n
     scenario = ScenarioData(ego_csv_df, obj_csv_df, scenario_type)
     scenario_id = (script_name if script_name else scenario.get_scenario_id())
     for scenario_category in scenarios_category_list:
-        if scenario_category in scenario_id:
+        if scenario_category == scenario_id.split('_')[0]:
             scripts_path = os.path.join(os.path.join(os.getcwd(), 'scripts'), scenario_category)
             if not os.path.exists(scripts_path):
                 scripts_path = os.path.join(os.path.join('/home/ubuntu/test/Evaluate', 'scripts'), scenario_category)
@@ -59,7 +59,7 @@ def scenario_score(scenario_ego_data, scenario_obj_data, scenario_type, script_n
 
 
 if __name__ == '__main__':
-    result = scenario_score('D:/nc_acc_0829_3 (1)/nc_acc_0829_3/acc_2(2)/Ego.csv', 'D:/nc_acc_0829_3 (1)/nc_acc_0829_3/acc_2(2)/evaluation.csv', ScenarioType.natural.value, 'GSACC_2')
+    result = scenario_score('/home/tang/Desktop/云仿真/Ego.csv', '/home/tang/Desktop/云仿真/evaluation.csv', ScenarioType.natural.value, 'GSAEB_1')
     # result = scenario_score('D:/评分脚本test_data/ReportSample_testdata/ACC/Ego.csv', 'D:/评分脚本test_data/4_1/combined_ogt.csv', ScenarioType.natural.value, 'GSLKA_1')
     # input_data = sys.argv[1:]
     # result = scenario_score(*input_data)
