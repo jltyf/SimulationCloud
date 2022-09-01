@@ -58,12 +58,13 @@ def get_report(scenario, script_id):
     if CollisionStatus.collision.value in collision_status_list:
         score = 0
         evaluate_item = f'前车切出后前方有静止车辆时，发生碰撞，即自车FSRA功能异常，得分0'
-    elif condition_flag:
-        score = 100
-        evaluate_item = f'前车切出后前方有静止车辆时，未发生碰撞，且减速度满足条件“{standard_1}”，即自车FSRA功能正常，满足安全性，且具备较好的舒适性，得分100'
-    elif not condition_flag:
-        score = 60
-        evaluate_item = f'前车切出后前方有静止车辆时，未发生碰撞，但减速度不满足条件“{standard_1}”，即自车FSRA功能正常，满足安全性，但舒适性较差，得分60'
+    else:
+        if condition_flag:
+            score = 100
+            evaluate_item = f'前车切出后前方有静止车辆时，未发生碰撞，且减速度满足条件“{standard_1}”，即自车FSRA功能正常，满足安全性，且具备较好的舒适性，得分100'
+        elif not condition_flag:
+            score = 60
+            evaluate_item = f'前车切出后前方有静止车辆时，未发生碰撞，但减速度不满足条件“{standard_1}”，即自车FSRA功能正常，满足安全性，但舒适性较差，得分60'
 
     score_description = '1) 车辆在全速域内，应满足：自车行驶速度≤18km/h时，最大加速度值≤4m/s²、最大减速度值≤5m/s2、最大减速度变化率≤5m/s³；' \
                         '自车行驶速度≧72km/h时，最大加速度值≤2m/s²、最大减速度值≤3.5m/s2、最大减速度变化率≤2.5m/s³；' \
