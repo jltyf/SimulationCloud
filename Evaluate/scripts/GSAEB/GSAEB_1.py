@@ -24,7 +24,7 @@ def get_report(scenario, script_id):
     obj_data = obj_data[(obj_data['object_ID'] == ID)]
 
     distance = obj_data['object_rel_pos_x']
-    ditance_final = pd.DataFrame(distance).iloc[-1].values
+    distance_final = pd.DataFrame(distance).iloc[-1].values
 
     collision_status_list = scenario.scenario_data['collision_status'].values.tolist()
     # 碰撞
@@ -32,10 +32,10 @@ def get_report(scenario, script_id):
         score = 0
         evaluate_item = '前方车辆静止时发生碰撞，得0分'
     # 没碰撞
-    elif ditance_final <= 5 and CollisionStatus.collision.value not in collision_status_list:
+    elif distance_final <= 5 and CollisionStatus.collision.value not in collision_status_list:
         score = 50
         evaluate_item = '前方车辆静止时，自车制动后与前车车距小于5米，得50分'
-    elif ditance_final > 5 and CollisionStatus.collision.value not in collision_status_list:
+    elif distance_final > 5 and CollisionStatus.collision.value not in collision_status_list:
         score = 100
         evaluate_item = '前方车辆静止时，自车制动后与前车车距不小于5米，得100分'
 

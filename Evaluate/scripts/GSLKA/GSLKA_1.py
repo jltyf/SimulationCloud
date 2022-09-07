@@ -31,17 +31,17 @@ def get_report(scenario, script_id):
 
     if distance <= 0 and v_diff <= 2:
         score = 100
-        evaluate_item = f'车辆未驶出本车道，且车速维持在2km/h范围内，得分100'
+        evaluate_item = f'车辆未驶出本车道，维持设定车速且车速变动量不超过2km/h，得分100'
     elif distance <= 0 and 2 < v_diff <= 5:
         score = get_v_interpolation(v_diff)
-        evaluate_item = f'车辆未驶出本车道，且车速维持在2-5km/h范围内，得分按照插值进行计算'
+        evaluate_item = f'车辆未驶出本车道，维持设定车速且车速变动量在2-5km/h范围内，得分按照插值进行计算'
     elif distance > 0 or v_diff > 5:
         score = 0
-        evaluate_item = f'车辆未驶出本车道，且车速维持在5km/h范围外，或车辆驶出本车道，得分0'
+        evaluate_item = f'车辆未驶出本车道，维持设定车速且车速变动量在5km/h范围外，或车辆驶出本车道，得分0'
 
-    score_description = '1) 车辆未驶出本车道，且车速维持在2km/h范围内，得分100；\n' \
-                        '2) 车辆未驶出本车道，且车速维持在2-5km/h范围内，得分按照插值进行计算；\n' \
-                        '3) 车辆未驶出本车道，且车速维持在5km/h范围外，或车辆驶出本车道，得分0。'
+    score_description = '1) 车辆未驶出本车道，维持设定车速且车速变动量不超过2km/h，得分100；\n' \
+                        '2) 车辆未驶出本车道，维持设定车速且车速变动量在2-5km/h范围内，得分按照插值进行计算；\n' \
+                        '3) 车辆未驶出本车道，维持设定车速且车速变动量在5km/h范围外，或车辆驶出本车道，得分0。'
 
     return {
         'unit_scene_ID': script_id,
