@@ -1,6 +1,6 @@
 # @Author  : 李玲星
 # @Time    : 2022/09/07
-# @Function: AEB+LKA_1
+# @Function: GSAEBLKA_1
 # @Scenario: 前车静止、前车减速+直道居中行驶、弯道居中行驶
 # @Usage   : 自动紧急制动+车道保持组合测试一：
 # @Update  : 2022/09/07
