@@ -9,12 +9,13 @@ from Evaluate.models.evaluation_model import ScenarioData
 from enumerations import ScenarioType
 from log.log_set import Loggers
 
-scenarios_category_list = ['AEB', 'ALC', 'ACC', 'LKA', 'FSRA', 'GSACC', 'GSAEB', 'GSAES', 'GSLKA']
+scenarios_category_list = ['AEB', 'ALC', 'ACC', 'LKA', 'FSRA', 'GSACC', 'GSAEB', 'GSAES', 'GSLKA','GSAEBLKA']
 
 
 def scenario_score(scenario_ego_data, scenario_obj_data, scenario_type, script_name=None):
     """
-    :param scenario_data_path:vtd输出数据的csv文件
+    :param scenario_ego_data:vtd输出自车数据的csv文件
+    :param scenario_obj_data:vtd输出目标车数据的csv文件
     :param scenario_type: 场景的类型(自然驾驶，交通法规，事故场景，泛化场景)
     :param script_name: 默认脚本，如果没有设置就用csv数据中的场景ID查找
     :return:
@@ -59,7 +60,7 @@ def scenario_score(scenario_ego_data, scenario_obj_data, scenario_type, script_n
 
 
 if __name__ == '__main__':
-    result = scenario_score('/home/tang/Desktop/云仿真/Ego.csv', '/home/tang/Desktop/云仿真/evaluation.csv', ScenarioType.natural.value, 'GSAEB_1')
+    result = scenario_score('/home/server/tmp0831/Ego.csv', '/home/server/tmp0831/evaluation.csv', ScenarioType.natural.value, 'GSAEBLKA_1')
     # result = scenario_score('D:/评分脚本test_data/ReportSample_testdata/ACC/Ego.csv', 'D:/评分脚本test_data/4_1/combined_ogt.csv', ScenarioType.natural.value, 'GSLKA_1')
     # input_data = sys.argv[1:]
     # result = scenario_score(*input_data)
