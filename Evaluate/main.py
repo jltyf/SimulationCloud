@@ -60,7 +60,7 @@ def scenario_score(scenario_ego_data, scenario_obj_data, scenario_type, script_n
 
 
 if __name__ == '__main__':
-    result = scenario_score('/home/server/tmp0831/Ego.csv', '/home/server/tmp0831/evaluation.csv', ScenarioType.natural.value, 'GSAEBLKA_1')
+    result = scenario_score('/home/server/Downloads/test_组合功能评分脚本_DATA/aeblka_5(1)/Ego.csv', '/home/server/Downloads/test_组合功能评分脚本_DATA/aeblka_5(1)/evaluation.csv', ScenarioType.natural.value, 'GSAEBLKA_1')
     # result = scenario_score('D:/评分脚本test_data/ReportSample_testdata/ACC/Ego.csv', 'D:/评分脚本test_data/4_1/combined_ogt.csv', ScenarioType.natural.value, 'GSLKA_1')
     # input_data = sys.argv[1:]
     # result = scenario_score(*input_data)
