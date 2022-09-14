@@ -9,7 +9,7 @@ from Evaluate.models.evaluation_model import ScenarioData
 from enumerations import ScenarioType
 from log.log_set import Loggers
 
-scenarios_category_list = ['AEB', 'ALC', 'ACC', 'LKA', 'FSRA', 'GSACC', 'GSAEB', 'GSAES', 'GSLKA','GSAEBLKA']
+scenarios_category_list = ['AEB', 'ALC', 'ACC', 'LKA', 'FSRA', 'GSACC', 'GSAEB', 'GSAES', 'GSLKA', 'GSAEBLKA']
 
 
 def scenario_score(scenario_ego_data, scenario_obj_data, scenario_type, script_name=None):
