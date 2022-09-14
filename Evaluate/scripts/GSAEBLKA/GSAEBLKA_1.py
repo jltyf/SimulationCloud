@@ -23,6 +23,12 @@ def get_report(scenario, script_id):
     evaluate_flag = True
     try:
         aeb_start_ID = scenario.scenario_data[scenario.scenario_data['longitudinal_acceleration'] < -0.5].index[0]
+    except IndexError:
+        score = -1
+        evaluate_flag = False
+        evaluate_item = 'AEB功能未触发'
+    try:
+        aeb_start_ID = scenario.scenario_data[scenario.scenario_data['longitudinal_acceleration'] < -0.5].index[0]
         lka_start_ID = scenario.scenario_data[scenario.scenario_data['longitudinal_velocity'] > 0].index[0]
         v_max = max(scenario.scenario_data.loc[lka_start_ID:aeb_start_ID, 'longitudinal_velocity'])
         v_min = min(scenario.scenario_data.loc[lka_start_ID:aeb_start_ID, 'longitudinal_velocity'])
