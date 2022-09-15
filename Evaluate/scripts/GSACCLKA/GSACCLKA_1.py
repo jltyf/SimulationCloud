@@ -3,31 +3,14 @@
 # @Function: GSACCLKA_1
 # @Scenario: 前车慢行+直道居中行驶、弯道居中行驶
 # @Usage   : 自适应巡航+车道保持组合测试一、二、三、四
-# @Update  : 2022/09/13
+# @Update  : 2022/09/15
 
 import numpy as np
-
-
-def get_v_interpolation_ACC(v_diff):
-    p1 = [5, 100]
-    p2 = [10, 0]
-    k = (p1[1] - p2[1]) / (p1[0] - p2[0])
-    b = (p1[0] * p2[1] - p1[1] * p2[0]) / (p1[0] - p2[0])
-    get_v_interpolation_ACC = k * v_diff + b
-    return get_v_interpolation_ACC
-
-def get_v_interpolation_LKA(v_diff):
-    p1 = [2, 100]
-    p2 = [5, 0]
-    k = (p1[1] - p2[1]) / (p1[0] - p2[0])
-    b = (p1[0] * p2[1] - p1[1] * p2[0]) / (p1[0] - p2[0])
-    get_v_interpolation_LKA= k * v_diff + b
-    return get_v_interpolation_LKA
 
 def get_report(scenario, script_id):
     evaluate_flag = True
     try:
-        #lka:
+        # lka:
         acc_start_ID = scenario.scenario_data[scenario.scenario_data['longitudinal_acceleration'] < -0.1].index[0]
         lka_start_ID = scenario.scenario_data[scenario.scenario_data['longitudinal_velocity'] > 0].index[0]
         v_max = max(scenario.scenario_data.loc[lka_start_ID:acc_start_ID, 'longitudinal_velocity'])
@@ -41,7 +24,8 @@ def get_report(scenario, script_id):
 
         # 判断目标车ID
         obj_data = scenario.obj_scenario_data[
-            (scenario.obj_scenario_data['object_rel_pos_y'] < 1) & (scenario.obj_scenario_data['object_rel_pos_y'] > -1) & (
+            (scenario.obj_scenario_data['object_rel_pos_y'] < 1) & (
+                        scenario.obj_scenario_data['object_rel_pos_y'] > -1) & (
                     scenario.obj_scenario_data['object_rel_pos_x'] > 0)]
         min_ID = obj_data.loc[obj_data['object_rel_pos_x'] == obj_data['object_rel_pos_x'].min(), 'object_ID']
         ID = np.array(min_ID)[0]
@@ -53,25 +37,26 @@ def get_report(scenario, script_id):
         v_max_diff = abs(v_max - set_velocity)
         v_min_diff = abs(v_min - set_velocity)
         v_diff_acc = max(v_max_diff, v_min_diff)
-        time_distance = (scenario.scenario_data['object_closest_dist'] / scenario.get_velocity(scenario.scenario_data.index[0])) * 3.6
-        time_distance_min= time_distance.min()
+        time_distance = (scenario.scenario_data['object_closest_dist'] / scenario.get_velocity(
+            scenario.scenario_data.index[0])) * 3.6
+        time_distance_min = time_distance.min()
     except:
-        score = 0
+        score = -1
         evaluate_flag = False
-        evaluate_item = '其他情况，得分0'
+        evaluate_item = '评分功能发生错误,选择的评分脚本无法对此场景进行评价'
     if evaluate_flag:
 
         if (1 <= time_distance_min <= 3) and v_diff_acc <= 5 and distance_LKA <= 0 and v_diff_lka <= 2:
             score = 100
             evaluate_item = f'车辆未驶出本车道，维持设定车速且车速变动量不超过2km/h，稳定跟车时，跟车车间时距范围在1-3s，主车与目标车车速差不超过5km/h,得分100'
         elif (1 <= time_distance_min <= 3) and v_diff_acc <= 5 and distance_LKA <= 0 and 2 < v_diff_lka <= 5:
-            score = get_v_interpolation_LKA(v_diff_lka)*0.5+50
+            score = scenario.get_v_interpolation_LKA(v_diff_lka) * 0.5 + 50
             evaluate_item = f'车辆未驶出本车道，维持设定车速且车速变动量在2-5km/h范围内，稳定跟车时，跟车车间时距范围在1-3s，主车与目标车车速差不超过5km/h,得分按照插值处理'
         elif (1 <= time_distance_min <= 3) and 5 < v_diff_acc <= 10 and distance_LKA <= 0 and v_diff_lka <= 2:
-            score = get_v_interpolation_ACC(v_diff_acc)*0.5+50
+            score = scenario.get_v_interpolation_ACC(v_diff_acc) * 0.5 + 50
             evaluate_item = f'车辆未驶出本车道，维持设定车速且车速变动量不超过2km/h,稳定跟车时，跟车车间时距范围在1-3s，主车与目标车车速差在5-10km/h范围内，得分按照插值处理'
         elif (1 <= time_distance_min <= 3) and 5 < v_diff_acc <= 10 and distance_LKA <= 0 and 2 < v_diff_lka <= 5:
-            score = get_v_interpolation_LKA(v_diff_lka) * 0.5+get_v_interpolation_ACC(v_diff_acc)*0.5
+            score = scenario.get_v_interpolation_LKA(v_diff_lka) * 0.5 + scenario.get_v_interpolation_ACC(v_diff_acc) * 0.5
             evaluate_item = f'车辆未驶出本车道，维持设定车速且车速变动量在2-5km/h范围内,稳定跟车时，跟车车间时距范围在1-3s，主车与目标车车速差在5-10km/h范围内，得分按照插值处理'
         else:
             score = 0
@@ -88,4 +73,3 @@ def get_report(scenario, script_id):
         'evaluate_item': evaluate_item,
         'score_description': score_description
     }
-

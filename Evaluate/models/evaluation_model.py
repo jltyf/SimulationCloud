@@ -216,6 +216,29 @@ class ScenarioData(object):
         except:
             return self.__error_message(self.get_lat_acc_roc_max)
 
+    def get_v_interpolation_ACC(self,v_diff):
+        #插值函数，获取ACC状态下当前速度的插值处理后的得分
+        try:
+            p1 = [5, 100]
+            p2 = [10, 0]
+            k = (p1[1] - p2[1]) / (p1[0] - p2[0])
+            b = (p1[0] * p2[1] - p1[1] * p2[0]) / (p1[0] - p2[0])
+            get_v_interpolation_ACC = k * v_diff + b
+            return get_v_interpolation_ACC
+        except:
+            return self.__error_message(self.get_v_interpolation_ACC)
+    def get_v_interpolation_LKA(self,v_diff):
+        #插值函数，获取LKA状态下当前速度的插值处理后的得分
+        try:
+            p1 = [2, 100]
+            p2 = [5, 0]
+            k = (p1[1] - p2[1]) / (p1[0] - p2[0])
+            b = (p1[0] * p2[1] - p1[1] * p2[0]) / (p1[0] - p2[0])
+            get_v_interpolation_LKA = k * v_diff + b
+            return get_v_interpolation_LKA
+        except:
+            return self.__error_message(self.get_v_interpolation_LKA)
+
     def get_change_lane_time(self):
         """
         通过车道中心偏移距离大于1m时的时间开始判断变道
