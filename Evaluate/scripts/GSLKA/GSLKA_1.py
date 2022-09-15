@@ -43,6 +43,7 @@ def get_report(scenario, script_id):
                         '2) 车辆未驶出本车道，维持设定车速且车速变动量在2-5km/h范围内，得分按照插值进行计算；\n' \
                         '3) 车辆未驶出本车道，维持设定车速且车速变动量在5km/h范围外，或车辆驶出本车道，得分0。'
 
+
     return {
         'unit_scene_ID': script_id,
         'unit_scene_score': score,
