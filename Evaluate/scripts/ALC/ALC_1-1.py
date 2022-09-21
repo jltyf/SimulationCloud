@@ -16,7 +16,8 @@ def get_report(scenario, script_id):
             score = -1
             evaluate_flag = False
             evaluate_item = scenario.__error_message(scenario.get_change_lane_time, False).split('错误:')[1]
-        change_line_flag = scenario.scenario_data['lane_id'].max() - scenario.scenario_data['lane_id'].min()
+        else:
+            change_line_flag = scenario.scenario_data['lane_id'].max() - scenario.scenario_data['lane_id'].min()
     except:
         score = -1
         evaluate_flag = False

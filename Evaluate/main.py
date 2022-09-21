@@ -52,18 +52,10 @@ def scenario_score(scenario_ego_data, scenario_obj_data, scenario_type, script_n
                     evaluate = __import__(scenario_id)
                     imp_function = getattr(evaluate, function_name)
                     return imp_function(scenario, scenario_id)
-                    # try:
-                    #     return imp_function(scenario, scenario_id)
-                    #     return imp_function(scenario, scenario_id)
-                    # except Exception as e:
-                    #     error_txt = e.args[0]
-                    #     log = Loggers()
-                    #     log.logger.info(f'错误信息:{error_txt},发生脚本:{scenario_id}')
 
 
 if __name__ == '__main__':
-    result = scenario_score('/home/server/Downloads/test_组合功能评分脚本_DATA/国赛ACCLKA测试_0915_1/acclka_1(3)/Ego.csv', '/home/server/Downloads/test_组合功能评分脚本_DATA/国赛ACCLKA测试_0915_1/acclka_1(3)/evaluation.csv', ScenarioType.natural.value, 'GSACCLKA_1')
-    # result = scenario_score('D:/评分脚本test_data/ReportSample_testdata/ACC/Ego.csv', 'D:/评分脚本test_data/4_1/combined_ogt.csv', ScenarioType.natural.value, 'GSLKA_1')
+    result = scenario_score('/home/tang/Desktop/test/gsaeblka/aeblka_1(5)/Ego.csv', '/home/tang/Desktop/test/gsaeblka/aeblka_1(5)/evaluation.csv', ScenarioType.natural.value, 'GSAEBLKA_1')
     # input_data = sys.argv[1:]
     # result = scenario_score(*input_data)
     print(result)

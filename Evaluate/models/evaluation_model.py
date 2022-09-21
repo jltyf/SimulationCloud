@@ -1,6 +1,7 @@
 import math
 
 import pandas as pd
+import numpy
 
 from enumerations import ScenarioType
 
@@ -22,7 +23,7 @@ class ScenarioData(object):
         self.scenario_type = scenario_type
         # 车道宽度暂定3.75
         self.lane_width = 3.75
-        if len(obj_scenarios_data)>0:
+        if len(obj_scenarios_data) > 0:
             time = obj_scenarios_data['time'][0]
         else:
             time = 1000
@@ -68,6 +69,26 @@ class ScenarioData(object):
             else:
                 ego_flag = False
             error_msg = self.__error_message(self.get_velocity, ego_flag)
+            return error_msg
+
+    def get_average_velocity(self, time_stamp_list, obj_id=0):
+        """
+        根据多个时间戳获取这段时间内的平均速度
+        :param time_stamp_list: 需求速度的时间戳列表
+        :param obj_id:默认为0时获取自车的速度
+        :return:velocity  time_stamp列表时刻的平均速度
+        """
+        try:
+            v_list = list()
+            for time_stamp in time_stamp_list:
+                v_list.append(self.get_velocity(time_stamp, obj_id))
+            return numpy.mean(v_list)
+        except:
+            if obj_id == 0:
+                ego_flag = True
+            else:
+                ego_flag = False
+            error_msg = self.__error_message(self.get_average_velocity, ego_flag)
             return error_msg
 
     def get_max_velocity(self, obj_id=0):
@@ -216,28 +237,22 @@ class ScenarioData(object):
         except:
             return self.__error_message(self.get_lat_acc_roc_max)
 
-    def get_v_interpolation_ACC(self,v_diff):
-        #插值函数，获取ACC状态下当前速度的插值处理后的得分
+    def get_interpolation(self, x, point1, point2):
+        """
+        根据两个极值点确定一元一次方程，在定义域内的获取方程的解
+        定义域为[point1[0],point2[1]]
+        :param x: 自变量
+        :param point1: 极值点1
+        :param point2: 极值点2
+        :return: 因变量
+        """
         try:
-            p1 = [5, 100]
-            p2 = [10, 0]
-            k = (p1[1] - p2[1]) / (p1[0] - p2[0])
-            b = (p1[0] * p2[1] - p1[1] * p2[0]) / (p1[0] - p2[0])
-            get_v_interpolation_ACC = k * v_diff + b
-            return get_v_interpolation_ACC
+            k = (point1[1] - point2[1]) / (point1[0] - point2[0])
+            b = (point1[0] * point2[1] - point1[1] * point2[0]) / (point1[0] - point2[0])
+            y = x * k + b
+            return y
         except:
-            return self.__error_message(self.get_v_interpolation_ACC)
-    def get_v_interpolation_LKA(self,v_diff):
-        #插值函数，获取LKA状态下当前速度的插值处理后的得分
-        try:
-            p1 = [2, 100]
-            p2 = [5, 0]
-            k = (p1[1] - p2[1]) / (p1[0] - p2[0])
-            b = (p1[0] * p2[1] - p1[1] * p2[0]) / (p1[0] - p2[0])
-            get_v_interpolation_LKA = k * v_diff + b
-            return get_v_interpolation_LKA
-        except:
-            return self.__error_message(self.get_v_interpolation_LKA)
+            return self.__error_message(self.get_interpolation)
 
     def get_change_lane_time(self):
         """
@@ -285,6 +300,11 @@ class ScenarioData(object):
                 return '错误:获取自车的速度失败,选择的评分脚本无法对此场景进行评价'
             else:
                 return '错误:获取目标车的速度失败,选择的评分脚本无法对此场景进行评价'
+        elif method == self.get_average_velocity:
+            if ego_flag:
+                return '错误:获取自车的平均速度失败,选择的评分脚本无法对此场景进行评价'
+            else:
+                return '错误:获取目标车的平均速度失败,选择的评分脚本无法对此场景进行评价'
         elif method == self.get_max_velocity:
             if ego_flag:
                 return '错误:获取自车的最大速度失败,选择的评分脚本无法对此场景进行评价'
@@ -309,5 +329,7 @@ class ScenarioData(object):
             return '错误:获取目标车的加速度失败,选择的评分脚本无法对此场景进行评价'
         elif method == self.get_obj_acc:
             return '错误:获取目标车的加速度失败,选择的评分脚本无法对此场景进行评价'
+        elif method == self.get_interpolation:
+            return '错误:获取插值失败,选择的评分脚本无法对此场景进行评价'
         else:
             return '错误:评分功能发生,选择的评分脚本无法对此场景进行评价'
