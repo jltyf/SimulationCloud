@@ -2,96 +2,103 @@
 # @Time    : 2022/09/07
 # @Function: GSAEBLKA_1
 # @Scenario: 前车静止、前车减速+直道居中行驶、弯道居中行驶
-# @Usage   : 自动紧急制动+车道保持组合测试一：
-# @Update  : 2022/09/07
+# @Usage   : 国赛自动紧急制动+车道保持组合测试一、二、三、四、五;太和桥自动紧急制动+车道保持组合测试一、二、三、四
+# @Update  : 汤宇飞 2022/09/19
 
-import numpy as np
-import pandas as pd
 from enumerations import CollisionStatus
 
 
-def get_v_interpolation(v_diff):
-    p1 = [2, 100]
-    p2 = [5, 0]
-    k = (p1[1] - p2[1]) / (p1[0] - p2[0])
-    b = (p1[0] * p2[1] - p1[1] * p2[0]) / (p1[0] - p2[0])
-    v_interpolation = k * v_diff + b
-    return v_interpolation
-
-
 def get_report(scenario, script_id):
-    # AEB:
-    v_max = scenario.get_max_velocity()
-    v_min = scenario.get_min_velocity()
-    set_velocity = 80
-    v_max_diff = abs(v_max - set_velocity)
-    v_min_diff = abs(v_min - set_velocity)
-    v_diff = max(v_max_diff, v_min_diff)
+    try:
+        start_velocity = scenario.get_average_velocity(scenario.scenario_data.iloc[:5].index.values.tolist())
+        if isinstance(start_velocity, str) and '错误' in start_velocity:
+            error_des = scenario.__error_message(scenario.get_average_velocity, False).split('错误:')[1]
+            raise StopIteration
+        AEB_data = scenario.scenario_data[scenario.scenario_data['longitudinal_acceleration'] <= -(start_velocity/360)]
+        if len(AEB_data) > 20:
+            AEB_flag = True  # temporary
+        else:
+            AEB_flag = False
+        LKA_flag = True  # temporary
+        if LKA_flag:
+            first_lane_id = scenario.scenario_data.iloc[0]['lane_id']
+            lane_id_list = list(set(scenario.scenario_data['lane_id'].tolist()))
+            if len(lane_id_list) == 1 and lane_id_list[0] == first_lane_id:
+                start_index = 0
+                edn_index = 30
+                for i in range(1, len(scenario.scenario_data) // 30 + 1):
+                    cut_df = scenario.scenario_data.iloc[start_index:edn_index:]
+                    if abs(cut_df['steering_angle'].mean()) < 20 and cut_df['steering_angle'].var() < 200:
+                        stable_velocity = scenario.get_velocity(cut_df.index.values.tolist()[-1])
+                        if isinstance(start_velocity, str) and '错误' in start_velocity:
+                            error_des = scenario.__error_message(scenario.get_velocity, False).split('错误:')[1]
+                            raise StopIteration
+                        v_diff = abs(stable_velocity - start_velocity)
+                        if v_diff <= 2:
+                            score_lka = 50
+                            evaluate_item_lka = 'LKA功能：车辆未使出本车道且维持设定车速且车速变动量不超过2km/h'
+                        elif 2 < v_diff <= 5:
+                            score_lka = round(scenario.get_interpolation(v_diff, (2, 50), (5, 0)), 0)
+                            evaluate_item_lka = 'LKA功能：车辆未使出本车道且维持设定车速且车速变动量在2-5km/h范围内'
+                        else:
+                            score_lka = 0
+                            evaluate_item_lka = 'LKA功能：车辆未使出本车道但未能维持设定车速'
+                        break
+                    start_index = edn_index
+                    edn_index = start_index + 30
+            else:
+                score_lka = 0
+                evaluate_item_lka = 'LKA功能：车辆驶出本车道'
+        else:
+            score_lka = 50
+            evaluate_item_lka = '场景中未触发LKA功能.'
+        if AEB_flag:
+            collision_status_list = scenario.scenario_data['collision_status'].values.tolist()
+            if CollisionStatus.collision.value not in collision_status_list:
+                frame = scenario.scenario_data.iloc[-1]['frame_ID']
+                same_direction_obj = scenario.obj_scenario_data[(scenario.obj_scenario_data['frame_ID'] == frame) & ((
+                        scenario.obj_scenario_data['object_direction'] <= 5) | (scenario.obj_scenario_data[
+                                                                                    'object_direction'] >= 355))]
+                obj_distance = same_direction_obj.copy()
+                obj_distance['distance'] = (same_direction_obj['object_rel_pos_y']**2 + same_direction_obj[
+                    'object_rel_pos_x']**2)**0.5
+                distance_final = obj_distance['distance'].min()
+                if distance_final >= 5:
+                    score_aeb = 50
+                    evaluate_item_aeb = 'AEB功能：车辆未发生碰撞且前方车辆静止时，自车制动后与前车车距不小于5米;'
+                else:
+                    score_aeb = 25
+                    evaluate_item_aeb = 'AEB功能：车辆未发生碰撞且前方车辆静止时，自车制动后与前车车距小于5米;'
+            else:
+                score_aeb = 0
+                evaluate_item_aeb = 'AEB功能：车辆发生碰撞;'
+        else:
+            score_aeb = 50
+            evaluate_item_lka = '场景中未触发AEB功能.'
+        if not AEB_flag and not LKA_flag:
+            score = -1
+            evaluate_item = '评分功能发生错误,该场景中均未触发AEB和LKA功能'
+        elif score_aeb == 0 or score_lka == 0:
+            score = 0
+            evaluate_item = evaluate_item_aeb + evaluate_item_lka + ',得0分.'
+        else:
+            score = score_lka + score_aeb
+            evaluate_item = evaluate_item_aeb + evaluate_item_lka + f',得{score}分.'
+    except StopIteration:
+        score = -1
+        evaluate_item = error_des
+    except:
+        score = -1
+        evaluate_item = '评分功能发生错误,选择的评分脚本无法对此场景进行评价'
 
-    dis_deviation = (scenario.scenario_data['lane_center_offset'].abs()).max()
-    road_width = 3.75
-    distance = dis_deviation - road_width * 0.5 + 1
-
-    if distance <= 0 and v_diff <= 2:
-        LKA_score = 50
-        evaluate_item_1 = f'车辆未驶出本车道，维持设定车速且车速变动量不超过2km/h，车道保持得分50。'
-    elif distance <= 0 and 2 < v_diff <= 5:
-        LKA_score = get_v_interpolation(v_diff) * 0.5
-        evaluate_item_1 = f'车辆未驶出本车道，维持设定车速且车速变动量在2-5km/h范围内，车道保持得分按照插值进行计算。'
-    elif distance > 0 or v_diff > 5:
-        LKA_score = 0
-        evaluate_item_1 = f'车辆未驶出本车道，维持设定车速且车速变动量在5km/h范围外，或车辆驶出本车道，车道保持得分0。'
-
-    # score_description = '1) 车辆未驶出本车道，维持设定车速且车速变动量不超过2km/h，得分50；\n' \
-    # '2) 车辆未驶出本车道，维持设定车速且车速变动量在2-5km/h范围内，得分按照插值进行计算；\n' \
-    # '3) 车辆未驶出本车道，维持设定车速且车速变动量在5km/h范围外，或车辆驶出本车道，得分0。'
-
-    # LKA:
-    # 判断目标车ID
-    obj_data = scenario.obj_scenario_data[
-        (scenario.obj_scenario_data['object_rel_pos_y'] < 1) & (scenario.obj_scenario_data['object_rel_pos_y'] > -1) & (
-                scenario.obj_scenario_data['object_rel_pos_x'] > 0)]
-    min = obj_data['object_rel_pos_x'].min()
-    min_ID = obj_data.loc[obj_data['object_rel_pos_x'] == min, 'object_ID']
-    if len(min_ID) == 1:
-        ID = int(min_ID)
-    else:
-        ID = np.array(min_ID)[0]
-    obj_data = obj_data[(obj_data['object_ID'] == ID)]
-
-    distance = obj_data['object_rel_pos_x']
-    distance_final = pd.DataFrame(distance).iloc[-1].values
-
-    collision_status_list = scenario.scenario_data['collision_status'].values.tolist()
-    # 碰撞
-    if CollisionStatus.collision.value in collision_status_list:
-        AEB_score = 0
-        evaluate_item_2 = '前方车辆静止时发生碰撞，自动紧急制动得0分。'
-    # 没碰撞
-    elif distance_final <= 5 and CollisionStatus.collision.value not in collision_status_list:
-        AEB_score = 25
-        evaluate_item_2 = '前方车辆静止时，自车制动后与前车车距小于5米，自动紧急制动得25分。'
-    elif distance_final > 5 and CollisionStatus.collision.value not in collision_status_list:
-        AEB_score = 50
-        evaluate_item_2 = '前方车辆静止时，自车制动后与前车车距不小于5米，自动紧急制动得50分。'
-
-    if LKA_score == 0 or AEB_score == 0:
-        score = 0
-        score_description = '车辆未驶出本车道，维持设定车速且车速变动量在5km/h范围外，或车辆驶出本车道，车道保持得分0;\n' \
-                            '或前方车辆静止时发生碰撞，自动紧急制动得0分;自动紧急制动和车道保持有一项得0分，则总分为0。'
-    else:
-        score = LKA_score + AEB_score
-        score_description = '车道保持:1) 车辆未驶出本车道，维持设定车速且车速变动量不超过2km/h，得分50；\n' \
-                            '2) 车辆未驶出本车道，维持设定车速且车速变动量在2-5km/h范围内，得分按照插值进行计算；\n' \
-                            '3) 车辆未驶出本车道，维持设定车速且车速变动量在5km/h范围外，或车辆驶出本车道，得分0。' \
-                            '自动紧急制动:1) 前方车辆静止时，自车制动后与前车车距不小于5米，得50分；\n2) 前方车辆静止时，自车制动后与前车车距小于5米，得25分；\n' \
-                            '3)前方车辆静止时发生碰撞，得0分。' \
-                            '总分为自动紧急制动评分与车道保持评分之和'
-    evaluate_item = evaluate_item_1 + evaluate_item_2
-
-    return {
-        'unit_scene_ID': script_id,
-        'unit_scene_score': score,
-        'evaluate_item': evaluate_item,
-        'score_description': score_description,
-    }
+    finally:
+        score_description = '1） 车辆未驶出本车道，维持设定车速且车速变动量小等于2km/h；前方车辆静止时，自车制动后与前车车距不小于5米，得100分。\n' \
+                            '2) 车辆未驶出本车道，维持设定车速且车速变动量小等于2km/h；前方车辆静止时，自车制动后与前车车距小于5米，得75分；\n' \
+                            '3) 车辆未驶出本车道，维持设定车速且车速变动量在2-5km/h内;前方车辆静止时，自车与前方车辆未发生碰撞，得分按照插值进行计算;\n' \
+                            '4) 其他情况，得0分；'
+        return {
+            'unit_scene_ID': script_id,
+            'unit_scene_score': score,
+            'evaluate_item': evaluate_item,
+            'score_description': score_description,
+        }

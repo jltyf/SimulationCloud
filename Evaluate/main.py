@@ -9,8 +9,10 @@ from Evaluate.models.evaluation_model import ScenarioData
 from enumerations import ScenarioType
 from log.log_set import Loggers
 
-scenarios_category_list = ['AEB', 'ALC', 'ACC', 'LKA', 'FSRA', 'GSACC', 'GSAEB', 'GSAES', 'GSLKA', 'GSAEBLKA']
-
+scenarios_category_path = os.path.join(os.getcwd(), 'scripts')
+if not os.path.exists(scenarios_category_path):
+    scenarios_category_path = os.path.join('/home/ubuntu/test/Evaluate', 'scripts')
+scenarios_category_list = os.listdir(scenarios_category_path)
 
 def scenario_score(scenario_ego_data, scenario_obj_data, scenario_type, script_name=None):
     """
@@ -50,18 +52,10 @@ def scenario_score(scenario_ego_data, scenario_obj_data, scenario_type, script_n
                     evaluate = __import__(scenario_id)
                     imp_function = getattr(evaluate, function_name)
                     return imp_function(scenario, scenario_id)
-                    # try:
-                    #     return imp_function(scenario, scenario_id)
-                    #     return imp_function(scenario, scenario_id)
-                    # except Exception as e:
-                    #     error_txt = e.args[0]
-                    #     log = Loggers()
-                    #     log.logger.info(f'错误信息:{error_txt},发生脚本:{scenario_id}')
 
 
 if __name__ == '__main__':
-    result = scenario_score('/home/server/tmp0831/Ego.csv', '/home/server/tmp0831/evaluation.csv', ScenarioType.natural.value, 'GSAEBLKA_1')
-    # result = scenario_score('D:/评分脚本test_data/ReportSample_testdata/ACC/Ego.csv', 'D:/评分脚本test_data/4_1/combined_ogt.csv', ScenarioType.natural.value, 'GSLKA_1')
+    result = scenario_score('/home/tang/Desktop/test/gsaeblka/aeblka_1(5)/Ego.csv', '/home/tang/Desktop/test/gsaeblka/aeblka_1(5)/evaluation.csv', ScenarioType.natural.value, 'GSAEBLKA_1')
     # input_data = sys.argv[1:]
     # result = scenario_score(*input_data)
     print(result)
