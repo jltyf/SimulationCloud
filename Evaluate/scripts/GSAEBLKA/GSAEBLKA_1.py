@@ -3,7 +3,7 @@
 # @Function: GSAEBLKA_1
 # @Scenario: 前车静止、前车减速+直道居中行驶、弯道居中行驶
 # @Usage   : 国赛自动紧急制动+车道保持组合测试一、二、三、四、五;太和桥自动紧急制动+车道保持组合测试一、二、三、四
-# @Update  : 汤宇飞 2022/09/19
+# @Update  : 汤宇飞 2022/09/22
 
 from enumerations import CollisionStatus
 
@@ -22,8 +22,9 @@ def get_report(scenario, script_id):
         LKA_flag = True  # temporary
         if LKA_flag:
             first_lane_id = scenario.scenario_data.iloc[0]['lane_id']
+            center_offer_max = max(scenario.scenario_data['lane_center_offset'].max(), abs(scenario.scenario_data['lane_center_offset'].min()))
             lane_id_list = list(set(scenario.scenario_data['lane_id'].tolist()))
-            if len(lane_id_list) == 1 and lane_id_list[0] == first_lane_id:
+            if len(lane_id_list) == 1 and lane_id_list[0] == first_lane_id and center_offer_max < 0.8:
                 start_index = 0
                 edn_index = 30
                 for i in range(1, len(scenario.scenario_data) // 30 + 1):
