@@ -1,6 +1,10 @@
-import math
+# @Author           : 汤宇飞
+# @CreateTime       : 2022/09/07
+# @UpdateTime       : 2022/09/19
+# @UpdateUser       : 汤宇飞
+# @updateContent    : 新增求平均速度和求插值方法
 
-import pandas as pd
+import math
 import numpy
 
 from enumerations import ScenarioType

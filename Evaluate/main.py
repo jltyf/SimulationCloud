@@ -14,6 +14,7 @@ if not os.path.exists(scenarios_category_path):
     scenarios_category_path = os.path.join('/home/ubuntu/test/Evaluate', 'scripts')
 scenarios_category_list = os.listdir(scenarios_category_path)
 
+
 def scenario_score(scenario_ego_data, scenario_obj_data, scenario_type, script_name=None):
     """
     :param scenario_ego_data:vtd输出自车数据的csv文件
@@ -55,7 +56,9 @@ def scenario_score(scenario_ego_data, scenario_obj_data, scenario_type, script_n
 
 
 if __name__ == '__main__':
-    result = scenario_score('/home/tang/Desktop/test/gsaeblka/aeblka_1(5)/Ego.csv', '/home/tang/Desktop/test/gsaeblka/aeblka_1(5)/evaluation.csv', ScenarioType.natural.value, 'GSAEBLKA_1')
+    result = scenario_score('/home/tang/Desktop/test/thqaeblka/q3/Ego.csv',
+                            '/home/tang/Desktop/test/thqaeblka/q2/evaluation.csv', ScenarioType.natural.value,
+                            'GSAEBLKA_1')
     # input_data = sys.argv[1:]
     # result = scenario_score(*input_data)
     print(result)
