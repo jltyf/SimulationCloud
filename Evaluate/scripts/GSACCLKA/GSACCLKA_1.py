@@ -87,7 +87,7 @@ def get_report(scenario, script_id):
                             set_velocity = scenario.get_average_velocity(obj_df.index.values.tolist(), obj_id)
                             distance = obj_distance
                     v_diff_acc = abs(acc_stable_velocity - set_velocity)
-                    head_way = distance / acc_stable_velocity
+                    head_way = distance / (acc_stable_velocity/3.6)     # km/h和m/s换算
                     if 1 < head_way < 3:
                         if v_diff_acc <= 2:
                             score_acc = 50
