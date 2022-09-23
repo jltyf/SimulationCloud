@@ -7,7 +7,6 @@ import os
 sys.path.append('/home/ubuntu/test')
 from Evaluate.models.evaluation_model import ScenarioData
 from enumerations import ScenarioType
-from log.log_set import Loggers
 
 scenarios_category_path = os.path.join(os.getcwd(), 'scripts')
 if not os.path.exists(scenarios_category_path):

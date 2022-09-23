@@ -89,7 +89,7 @@ def get_report(scenario, script_id):
                     v_diff_acc = abs(acc_stable_velocity - set_velocity)
                     head_way = distance / (acc_stable_velocity/3.6)     # km/h和m/s换算
                     if 1 < head_way < 3:
-                        if v_diff_acc <= 2:
+                        if v_diff_acc <= 5:
                             score_acc = 50
                             evaluate_item_acc = 'ACC功能：车辆以目标车速稳定跟车且车头时距处于安全范围内(1~3s);'
                         elif 5 < v_diff_acc < 10:
