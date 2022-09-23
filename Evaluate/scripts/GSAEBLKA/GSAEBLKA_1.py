@@ -1,9 +1,10 @@
-# @Author  : 李玲星
-# @Time    : 2022/09/07
-# @Function: GSAEBLKA_1
-# @Scenario: 前车静止、前车减速+直道居中行驶、弯道居中行驶
-# @Usage   : 国赛自动紧急制动+车道保持组合测试一、二、三、四、五;太和桥自动紧急制动+车道保持组合测试一、二、三、四
-# @Update  : 汤宇飞 2022/09/22
+# @Author           : 李玲星
+# @Time             : 2022/09/07
+# @Function         : GSAEBLKA_1
+# @Scenario         : 前车静止、前车减速+直道居中行驶、弯道居中行驶
+# @Usage            : 国赛自动紧急制动+车道保持组合测试一、二、三、四、五;太和桥自动紧急制动+车道保持组合测试一、二、三、四
+# @UpdateTime       : 2022/09/22
+# @UpdateUser       : 汤宇飞
 
 from enumerations import CollisionStatus
 
@@ -12,8 +13,8 @@ def get_report(scenario, script_id):
     try:
         start_velocity = scenario.get_average_velocity(scenario.scenario_data.iloc[:5].index.values.tolist())
         if isinstance(start_velocity, str) and '错误' in start_velocity:
-            error_des = scenario.__error_message(scenario.get_average_velocity, False).split('错误:')[1]
-            raise StopIteration
+            error_msg = scenario.__error_message(scenario.get_average_velocity, False).split('错误:')[1]
+            raise RuntimeError
         AEB_data = scenario.scenario_data[scenario.scenario_data['longitudinal_acceleration'] <= -(start_velocity/360)]
         if len(AEB_data) > 20:
             AEB_flag = True  # temporary
@@ -32,8 +33,8 @@ def get_report(scenario, script_id):
                     if abs(cut_df['steering_angle'].mean()) < 20 and cut_df['steering_angle'].var() < 200:
                         stable_velocity = scenario.get_velocity(cut_df.index.values.tolist()[-1])
                         if isinstance(start_velocity, str) and '错误' in start_velocity:
-                            error_des = scenario.__error_message(scenario.get_velocity, False).split('错误:')[1]
-                            raise StopIteration
+                            error_msg = scenario.__error_message(scenario.get_velocity, False).split('错误:')[1]
+                            raise RuntimeError
                         v_diff = abs(stable_velocity - start_velocity)
                         if v_diff <= 2:
                             score_lka = 50
@@ -75,7 +76,7 @@ def get_report(scenario, script_id):
                 evaluate_item_aeb = 'AEB功能：车辆发生碰撞;'
         else:
             score_aeb = 50
-            evaluate_item_lka = '场景中未触发AEB功能.'
+            evaluate_item_aeb = 'AEB功能：场景中未触发;'
         if not AEB_flag and not LKA_flag:
             score = -1
             evaluate_item = '评分功能发生错误,该场景中均未触发AEB和LKA功能'
@@ -85,12 +86,13 @@ def get_report(scenario, script_id):
         else:
             score = score_lka + score_aeb
             evaluate_item = evaluate_item_aeb + evaluate_item_lka + f',得{score}分.'
-    except StopIteration:
+    except RuntimeError:
         score = -1
-        evaluate_item = error_des
+        evaluate_item = error_msg
     except:
         score = -1
         evaluate_item = '评分功能发生错误,选择的评分脚本无法对此场景进行评价'
+
 
     finally:
         score_description = '1） 车辆未驶出本车道，维持设定车速且车速变动量小等于2km/h；前方车辆静止时，自车制动后与前车车距不小于5米，得100分。\n' \

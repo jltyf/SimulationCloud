@@ -56,9 +56,9 @@ def scenario_score(scenario_ego_data, scenario_obj_data, scenario_type, script_n
 
 
 if __name__ == '__main__':
-    result = scenario_score('/home/tang/Desktop/test/thqaeblka/q3/Ego.csv',
-                            '/home/tang/Desktop/test/thqaeblka/q2/evaluation.csv', ScenarioType.natural.value,
-                            'GSAEBLKA_1')
+    result = scenario_score('/home/tang/Desktop/test/gsacclka/q1/Ego.csv',
+                            '/home/tang/Desktop/test/gsacclka/q1/evaluation.csv', ScenarioType.natural.value,
+                            'GSACCLKA_1')
     # input_data = sys.argv[1:]
     # result = scenario_score(*input_data)
     print(result)
