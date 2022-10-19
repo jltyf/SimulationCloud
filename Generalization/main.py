@@ -264,7 +264,7 @@ def parsingConfigurationFile(ADAS_module):
     ped_trail_data = pd.read_csv(ped_trail)
 
     # 按功能列表分别读取不同的功能配置表
-    parm_data = pd.read_excel(os.path.join(absPath + '/trails/', "配置参数表样例0815.xlsx"),
+    parm_data = pd.read_excel(os.path.join(absPath + '/trails/', "FSRA泛化参数配置表.xlsx"),
                               sheet_name=ADAS_module, keep_default_na=False, engine='openpyxl')
     for scenario_df in [parm_data[scenario_list] for scenario_list in ADAS_module]:
         scenario_name = scenario_df.iloc[0]['场景编号'].split('_')[0]
@@ -298,5 +298,5 @@ def parsingConfigurationFile(ADAS_module):
 
 if __name__ == "__main__":
     # parsingConfigurationFile(['AEB', 'ALC', 'LKA', 'ACC', 'BSD', 'FCW', 'LDW', 'TJA'])
-    parsingConfigurationFile(['LKA', 'ACC', 'BSD'])
-    # parsingConfigurationFile(['test'])
+    # parsingConfigurationFile(['LKA', 'ACC', 'BSD'])
+    parsingConfigurationFile(['test'])

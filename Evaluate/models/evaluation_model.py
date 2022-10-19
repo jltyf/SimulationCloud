@@ -216,8 +216,9 @@ class ScenarioData(object):
             index_list = self.scenario_data.index.tolist()
             start_time = index_list[0] if not start_time else start_time
             end_time = index_list[-1] if not end_time else end_time
-            self.scenario_data = self.scenario_data.loc[start_time:end_time]
-            lon_acc_roc_max = self.scenario_data['longitudinal_accelerate_roc'].max()
+            target_data = self.scenario_data.loc[start_time:end_time]
+            lon_acc_roc_max = max(abs(target_data['longitudinal_accelerate_roc'].max()),
+                                  abs(target_data['longitudinal_accelerate_roc'].min()))
             return lon_acc_roc_max
         except:
             return self.__error_message(self.get_lon_acc_roc_max)
@@ -236,7 +237,8 @@ class ScenarioData(object):
             start_time = index_list[0] if not start_time else start_time
             end_time = index_list[-1] if not end_time else end_time
             self.scenario_data = self.scenario_data.loc[start_time:end_time]
-            lat_acc_roc_max = self.scenario_data['lateral_accelerate_roc'].max()
+            lat_acc_roc_max = max(abs(self.scenario_data['lateral_accelerate_roc'].max()),
+                                  abs(self.scenario_data['lateral_accelerate_roc'].min()))
             return lat_acc_roc_max
         except:
             return self.__error_message(self.get_lat_acc_roc_max)
