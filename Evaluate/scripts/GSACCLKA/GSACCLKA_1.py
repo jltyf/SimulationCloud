@@ -3,7 +3,7 @@
 # @Function         : GSACCLKA_1
 # @Scenario         : 前车慢行+直道居中行驶、弯道居中行驶
 # @Usage            : 自适应巡航+车道保持组合测试一、二、三、四
-# @UpdateTime       : 2022/09/22
+# @UpdateTime       : 2022/10/19
 # @UpdateUser       : 汤宇飞
 
 import numpy as np
@@ -14,7 +14,7 @@ def get_report(scenario, script_id):
     try:
         start_velocity = scenario.get_average_velocity(scenario.scenario_data.iloc[:5].index.values.tolist())
         if isinstance(start_velocity, str) and '错误' in start_velocity:
-            error_msg = scenario.__error_message(scenario.get_average_velocity, False).split('错误:')[1]
+            error_msg = start_velocity.split('错误:')[1]
             raise RuntimeError
         ACC_flag = True  # temporary
         LKA_flag = True  # temporary
@@ -25,13 +25,13 @@ def get_report(scenario, script_id):
             lane_id_list = list(set(scenario.scenario_data['lane_id'].tolist()))
             if len(lane_id_list) == 1 and lane_id_list[0] == first_lane_id and center_offer_max < 0.8:
                 start_index = 0
-                edn_index = 30
+                end_index = 30
                 for i in range(1, len(scenario.scenario_data) // 30 + 1):
-                    cut_df = scenario.scenario_data.iloc[start_index:edn_index:]
+                    cut_df = scenario.scenario_data.iloc[start_index:end_index:]
                     if abs(cut_df['steering_angle'].mean()) < 20 and cut_df['steering_angle'].var() < 200:
                         lka_stable_velocity = scenario.get_velocity(cut_df.index.values.tolist()[-1])
-                        if isinstance(start_velocity, str) and '错误' in start_velocity:
-                            error_msg = scenario.__error_message(scenario.get_velocity, False).split('错误:')[1]
+                        if isinstance(lka_stable_velocity, str) and '错误' in lka_stable_velocity:
+                            error_msg = lka_stable_velocity.split('错误:')[1]
                             raise RuntimeError
                         v_diff_lka = abs(lka_stable_velocity - start_velocity)
                         if v_diff_lka <= 2:
@@ -47,8 +47,10 @@ def get_report(scenario, script_id):
                             score_lka = 0
                             evaluate_item_lka = 'LKA功能：车辆未使出本车道但未能维持设定车速'
                         break
-                    start_index = edn_index
-                    edn_index = start_index + 30
+                    start_index = end_index
+                    end_index = start_index + 30
+                    if end_index >= len(scenario.scenario_data):
+                        end_index = len(scenario.scenario_data)
             else:
                 score_lka = 0
                 evaluate_item_lka = 'LKA功能：车辆驶出本车道'
@@ -95,7 +97,7 @@ def get_report(scenario, script_id):
                         elif 5 < v_diff_acc < 10:
                             score_acc = scenario.get_interpolation(head_way, (5, 50), (10, 0))
                             if isinstance(score_acc, str) and '错误' in score_acc:
-                                error_msg = scenario.__error_message(scenario.get_interpolation, False).split('错误:')[1]
+                                error_msg = score_acc.split('错误:')[1]
                                 raise RuntimeError
                             evaluate_item_acc = 'ACC功能：能够完成跟车动作,但跟车时候车速和前车车速在5~10km/h之间;'
                         else:
