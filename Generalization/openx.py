@@ -267,7 +267,7 @@ class Scenario(ScenarioGenerator):
         # ego car init
         ego_init_h = positionEgo[0].h
         init.add_init_action(egoname, xosc.TeleportAction(
-            xosc.WorldPosition(x=positionEgo[0].x, y=positionEgo[0].y, z=0, h=ego_init_h, p=0, r=0)))
+            xosc.WorldPosition(x=positionEgo[0].x, y=positionEgo[0].y, z=13.4, h=ego_init_h, p=0, r=0)))
         init.add_init_action(egoname, egospeed)
 
         # object car init
@@ -277,9 +277,11 @@ class Scenario(ScenarioGenerator):
                 name = objname + str(i)
                 x = row[0][0].x
                 y = row[0][0].y
+                # z = 0
+                z = 13.4
                 obj_init_h = row[0][0].h
                 init.add_init_action(name,
-                                     xosc.TeleportAction(xosc.WorldPosition(x=x, y=y, z=0, h=obj_init_h, p=0, r=0)))
+                                     xosc.TeleportAction(xosc.WorldPosition(x=x, y=y, z=z, h=obj_init_h, p=0, r=0)))
                 init.add_init_action(name, objspeed)
 
         # ego car trail

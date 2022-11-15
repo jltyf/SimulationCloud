@@ -73,7 +73,7 @@ def extractTrail(trails, start_time, end_time):
     return single_trail
 
 
-def rotate(x_list, y_list, ox, oy, rad, flag=0):
+def rotate(x_list, y_list, ox, oy, rad):
     """
     position_list (list): a list of tuples; (x, y, z, h, p, r)
     deg: clock-wise radius
@@ -186,17 +186,21 @@ def trailModify(ego_trail, t, e, h):
     return ego_trail
 
 
-def getXoscPosition(egodata, t, e, n, h, offset_x, offset_y, offset_h):
+def getXoscPosition(egodata, t, e, n, h, offset_x, offset_y, offset_h, offset_z=0):
     '将dataframe的轨迹转换为场景文件的轨迹数据'
-
     position = []
     time = []
     egodata = egodata[[t, e, n, h]]
     egodata = egodata.reset_index(drop=True)
     egodata[t] = egodata.index / 10
+    egodata[n], egodata[e] = rotate(egodata[n], egodata[e], 0, 0, math.radians(offset_h-90))
+    # tmp_data = egodata
+    # egodata[n] = tmp_data[e] * math.cos(math.radians(offset_h-(90-offset_h)/6)) + tmp_data[n] * math.sin(math.radians(offset_h-(90-offset_h)/6))
+    # egodata[e] = tmp_data[n] * math.cos(math.radians(offset_h-(90-offset_h)/6)) - tmp_data[e] * math.sin(math.radians(offset_h-(90-offset_h)/6))
     egodata[e] = egodata[e] + offset_x
     egodata[n] = egodata[n] + offset_y
     egodata[h] = egodata[h] + offset_h
+    # egodata[h] += 180
 
     lasth = float(egodata.at[0, h])
     init_flag = True
@@ -204,14 +208,14 @@ def getXoscPosition(egodata, t, e, n, h, offset_x, offset_y, offset_h):
     for row in egodata.iterrows():
         hhh = math.radians(row[1][h])
         if init_flag:
-            position.append(xosc.WorldPosition(x=float(row[1][e]), y=float(row[1][n]), z=0, h=hhh, p=0, r=0))
+            position.append(xosc.WorldPosition(x=float(row[1][e]), y=float(row[1][n]), z=offset_z, h=hhh, p=0, r=0))
             init_flag = False
         else:
             if float(row[1][h]) - lasth > 300:
                 hhh = math.radians(float(row[1][h]) - 360)
             elif float(row[1][h]) - lasth < -300:
                 hhh = math.radians(float(row[1][h]) + 360)
-            position.append(xosc.WorldPosition(x=float(row[1][e]), y=float(row[1][n]), z=0, h=hhh, p=0, r=0))
+            position.append(xosc.WorldPosition(x=float(row[1][e]), y=float(row[1][n]), z=offset_z, h=hhh, p=0, r=0))
             lasth = hhh
         time.append(float(row[1][t]))
     return position, time
@@ -379,6 +383,25 @@ def format_obs_data(data_name, scenario_dict, cal_list):
         except:
             format_data[scenario_dict[data_name].index(boj)] = scenario_dict[data_name][index]
     return format_data
+
+
+def getLabel_local(output_path, func_ind, func_name, max_time=20):
+    '''
+    生成label.json文件
+    '''
+    labeljson = {}
+    # labeljson['functional_module'] = [func_ind]
+    # labeljson['scene_type'] = func_name
+    # labeljson['rode_type'] = "城市普通道路"
+    # labeljson['rode_section'] = "路段"
+    labeljson['场景名称'] = func_ind
+    labeljson['法规类型'] = 'anting'
+    labeljson['标准类型'] = func_name
+    labeljson['xodr'] = 'antingnewtown_1031_2.xodr'
+    labeljson['osgb'] = 'anting_new_town.opt.osgb'
+    labeljson['max_time'] = max_time
+    with open(os.path.join(output_path, os.path.basename(output_path) + '.json'), 'w', encoding='utf-8') as f:
+        json.dump(labeljson, f, indent=4, ensure_ascii=False)
 
 
 def getLabel(output_path, func_ind, func_name):
@@ -696,6 +719,7 @@ def upload_xosc(minio_client, bucket_name, bucket_path, file_path):
 def get_plt(ego_trail, obs_trail_list=None):
     """
     测试用,绘制轨迹的路线
+    :param aspect:
     :param obs_trail_list: 如果有目标车 目标车的轨迹dataframe_list
     :param ego_trail: 轨迹的dataframe
     :return:
@@ -714,15 +738,13 @@ def get_plt(ego_trail, obs_trail_list=None):
     X = np.array(t.ego_e.values.tolist())
     Y = np.array(t.ego_n.values.tolist())
     plt.plot(X, Y)  # 绘制曲线图
-    # 在ipython的交互环境中需要这句话才能显示出来
-    plt.gca().set_aspect('equal', adjustable='box')
     if obs_trail_list:
         for obs_trail in obs_trail_list:
             X = np.array(obs_trail.ego_e.values.tolist())
             Y = np.array(obs_trail.ego_n.values.tolist())
-            plt.plot(X, Y)  # 绘制曲线图
-            # 在ipython的交互环境中需要这句话才能显示出来
-            plt.gca().set_aspect('equal', adjustable='box')
+        plt.plot(X, Y)  # 绘制曲线图
+    plt.axis('auto')
+    plt.xlim(-7, 7)
     plt.show()
 
 

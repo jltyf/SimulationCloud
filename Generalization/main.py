@@ -14,9 +14,9 @@ import pandas as pd
 
 from Generalization.serialization.scenario_serialization import ScenarioData
 from Generalization.trail import Trail
-from Generalization.utils import dump_json, formatThree, change_CDATA, get_plt, upload_xosc
+from Generalization.utils import dump_json, formatThree, change_CDATA, get_plt, upload_xosc, getLabel_local
 from enumerations import TrailType, RoadType, ObjectType
-from utils import get_cal_model, generateFinalTrail, getXoscPosition, trailModify, getLabel, Point
+from utils import get_cal_model, generateFinalTrail, getXoscPosition, trailModify, Point
 from configparser import ConfigParser
 from openx import Scenario
 
@@ -134,6 +134,7 @@ def generalization(scenario_series, single_scenario, car_trail_data, ped_trail_d
     # 转化仿真场景路径点, 生成仿真场景文件
     offset_h = 90  # 因匹配泛化道路模型要做的h偏移量 China_UrbanRoad_014直路:90 China_Crossing_002十字路口:90
     radius = 0
+    offset_z = 0
     root_path = setting_data['generalization models path']
 
     # 根据不同的道路模型设置偏移量
@@ -188,8 +189,22 @@ def generalization(scenario_series, single_scenario, car_trail_data, ped_trail_d
             for trail in ego_trails_list[0:index]:
                 offset_x -= (trail.iloc[-1]['ego_e'] - trail.iloc[0]['ego_e'])
                 offset_y -= (trail.iloc[-1]['ego_n'] - trail.iloc[0]['ego_n'])
+    elif single_scenario['scenario_road_type'] == RoadType.ramp.value:
+        offset_x = 6078
+        offset_y = 650
+        offset_z = 13.7
+        offset_h = 60.93
+        xodr_path = root_path + '/' + model_data['ramp xodr']
+        osgb_path = root_path + '/' + model_data['ramp osgb']
+    elif single_scenario['scenario_road_type'] == RoadType.freeway.value:
+        offset_x = 5460.2
+        offset_y = 930.271
+        offset_z = 13.2
+        offset_h = 85.58
+        xodr_path = root_path + '/' + model_data['ramp xodr']
+        osgb_path = root_path + '/' + model_data['ramp osgb']
     ego_points, egotime = getXoscPosition(ego_trail, 'Time', 'ego_e', 'ego_n', 'headinga', offset_x, offset_y,
-                                          offset_h)  # 初始轨迹朝向与道路方向一致
+                                          offset_h, offset_z)  # 初始轨迹朝向与道路方向一致
     # ego_points, egotime = getXoscPosition(ego_trail, 'Time', 'ego_n', 'ego_e', 'headinga', offset_x, offset_y, offset_h) # 初始轨迹朝向与道路方向垂直
     object_points = []
     trail_motion_time_count = 0
@@ -207,10 +222,8 @@ def generalization(scenario_series, single_scenario, car_trail_data, ped_trail_d
                 offset_y = obj_distance_y - (radius - 150) * 1.5
                 if single_scenario['scenario_road_type'] == RoadType.city_curve_right.value and radius == 500:
                     offset_y -= 50
-            #     offset_x = obj_distance_x
-            obs_points, obs_time = getXoscPosition(object_position_list[obsL], 'Time', 'ego_e', 'ego_n',
-                                                   'headinga', offset_x,
-                                                   offset_y, offset_h)
+            obs_points, obs_time = getXoscPosition(object_position_list[obsL], 'Time', 'ego_e', 'ego_n', 'headinga',
+                                                   offset_x, offset_y, offset_h, offset_z)
             if '6' in motion or '7' in motion:
                 # 根据车速和目标车初始位置计算出目标车移动这段距离需要的时间
                 trail_motion_time_count = int(round(
@@ -236,11 +249,11 @@ def generalization(scenario_series, single_scenario, car_trail_data, ped_trail_d
     scenario_index += 1
     print(files)
     if 'PCW' in scenario_series['场景编号'] or '行人' in scenario_series['场景简述']:
-        change_CDATA(files[0][0])  # 行人场景特例，对xosc文件内的特殊字符做转换
+        change_CDATA(files[0][0])  # 行人场景特例，对xosc文件内的特殊字符做转换`
 
     # get_plt(ego_trail, object_position_list)  # 查看生成得自车轨迹 测试用
     # 生成每个场景的描述文件 json
-    getLabel(output_path, scenario_series['场景编号'], scenario_series['场景名称'])
+    getLabel_local(output_path, scenario_series['场景编号'], scenario_series['场景名称'], single_scenario['ego_duration_time'])
     # 拷贝到vtd路径下
     os.system('cp ' + files[0][0] + f' {sc_path}')
     result_dict = {
@@ -264,7 +277,7 @@ def parsingConfigurationFile(ADAS_module):
     ped_trail_data = pd.read_csv(ped_trail)
 
     # 按功能列表分别读取不同的功能配置表
-    parm_data = pd.read_excel(os.path.join(absPath + '/trails/', "FSRA泛化参数配置表.xlsx"),
+    parm_data = pd.read_excel(os.path.join(absPath + '/trails/', "配置参数表样例_安亭1114.xlsx"),
                               sheet_name=ADAS_module, keep_default_na=False, engine='openpyxl')
     for scenario_df in [parm_data[scenario_list] for scenario_list in ADAS_module]:
         scenario_name = scenario_df.iloc[0]['场景编号'].split('_')[0]
@@ -299,4 +312,4 @@ def parsingConfigurationFile(ADAS_module):
 if __name__ == "__main__":
     # parsingConfigurationFile(['AEB', 'ALC', 'LKA', 'ACC', 'BSD', 'FCW', 'LDW', 'TJA'])
     # parsingConfigurationFile(['LKA', 'ACC', 'BSD'])
-    parsingConfigurationFile(['test'])
+    parsingConfigurationFile(['tmp'])
