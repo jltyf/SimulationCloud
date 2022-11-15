@@ -8,7 +8,7 @@ import math
 import os
 import sys
 
-sys.path.append('/home/SimulationCloud/')
+sys.path.append('/SimulationCloud/')
 
 import json
 import warnings
@@ -141,6 +141,7 @@ def generalization(scenario_data, single_scenario, car_trail_data, ped_trail_dat
             object_position_list.append(object_trail)
     # 转化仿真场景路径点, 生成仿真场景文件
     offset_h = 90  # 因匹配泛化道路模型要做的h偏移量 China_UrbanRoad_014直路:90 China_Crossing_002十字路口:90
+    offset_z = 0
     root_path = setting_data['generalization models path']
 
     # 根据不同的道路模型设置偏移量
@@ -196,7 +197,7 @@ def generalization(scenario_data, single_scenario, car_trail_data, ped_trail_dat
                 offset_x -= (trail.iloc[-1]['ego_e'] - trail.iloc[0]['ego_e'])
                 offset_y -= (trail.iloc[-1]['ego_n'] - trail.iloc[0]['ego_n'])
     ego_points, egotime = getXoscPosition(ego_trail, 'Time', 'ego_e', 'ego_n', 'headinga', offset_x, offset_y,
-                                          offset_h)  # 初始轨迹朝向与道路方向一致
+                                          offset_h, offset_z)  # 初始轨迹朝向与道路方向一致
     # ego_points, egotime = getXoscPosition(ego_trail, 'Time', 'ego_n', 'ego_e', 'headinga', offset_x, offset_y, offset_h) # 初始轨迹朝向与道路方向垂直
     object_points = []
     trail_motion_time_count = 0
@@ -216,8 +217,7 @@ def generalization(scenario_data, single_scenario, car_trail_data, ped_trail_dat
                     offset_y -= 50
             #     offset_x = obj_distance_x
             obs_points, obs_time = getXoscPosition(object_position_list[obsL], 'Time', 'ego_e', 'ego_n',
-                                                   'headinga', offset_x,
-                                                   offset_y, offset_h)
+                                                   'headinga', offset_x, offset_y, offset_h, offset_z)
             if '6' in motion or '7' in motion:
                 # 根据车速和目标车初始位置计算出目标车移动这段距离需要的时间
                 trail_motion_time_count = int(round(
