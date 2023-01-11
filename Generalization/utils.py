@@ -1,12 +1,7 @@
-import ast
 import math
-from configparser import ConfigParser
 from copy import deepcopy
 from functools import reduce
 from pathlib import Path
-from math import sin
-from math import cos
-from math import pi
 
 from matplotlib import pyplot as plt
 from matplotlib.ticker import MultipleLocator
@@ -16,7 +11,7 @@ import pandas as pd
 from scenariogeneration import xosc
 import os
 import json
-from enumerations import DataType, TrailMotionType, RoadType, ObjectType
+from enumerations import DataType, RoadType, ObjectType
 from scenariogeneration.xodr import RoadSide, Object, Dynamic, Orientation
 import xml.etree.ElementTree as ET
 
@@ -193,7 +188,7 @@ def getXoscPosition(egodata, t, e, n, h, offset_x, offset_y, offset_h, offset_z=
     egodata = egodata[[t, e, n, h]]
     egodata = egodata.reset_index(drop=True)
     egodata[t] = egodata.index / 10
-    egodata[n], egodata[e] = rotate(egodata[n], egodata[e], 0, 0, math.radians(offset_h-90))
+    egodata[n], egodata[e] = rotate(egodata[n], egodata[e], 0, 0, math.radians(offset_h - 90))
     # tmp_data = egodata
     # egodata[n] = tmp_data[e] * math.cos(math.radians(offset_h-(90-offset_h)/6)) + tmp_data[n] * math.sin(math.radians(offset_h-(90-offset_h)/6))
     # egodata[e] = tmp_data[n] * math.cos(math.radians(offset_h-(90-offset_h)/6)) - tmp_data[e] * math.sin(math.radians(offset_h-(90-offset_h)/6))
@@ -296,27 +291,6 @@ def get_cal_model(scenario_dict):
                         or scenario_dict['scenario_road_type'] == RoadType.city_curve_right.value:
                     rc = scenario_dict['scenario_radius_curvature'][0]
                 if scenario_dict['obs_start_x']:
-                    # op_x = change_factor_type(scenario_dict['obs_start_x'])
-                    # op_y = change_factor_type(scenario_dict['obs_start_y'])
-                    # # ov = change_factor_type(
-                    # #     scenario_dict['obs_start_velocity']) if key != 'obs_start_velocity' else ''
-                    # ov = change_factor_type(scenario_dict['obs_start_velocity'])
-                    # ov_t = eval(scenario_dict['obs_velocity_time'][0])
-                    # ot_t = eval(scenario_dict['obs_trail_time'][0])
-                    # ov_t = ov_t if isinstance(ov_t, list) else [ov_t]
-                    # ot_t = ot_t if isinstance(ot_t, list) else [ot_t]
-                    # op_x = list(map(float, scenario_dict['obs_start_x'])) if 'obs_start_x' not in cal_list else [
-                    #                                                                                                 ''] * len(
-                    #     obj_param)
-                    # op_y = list(map(float, scenario_dict['obs_start_y'])) if 'obs_start_y' not in cal_list else [
-                    #                                                                                                 ''] * len(
-                    #     obj_param)
-                    # ov = change_factor_type(
-                    #     scenario_dict['obs_start_velocity']) if key != 'obs_start_velocity' else ''
-                    # ov = list(
-                    #     map(float, scenario_dict['obs_start_velocity'])) if 'obs_start_velocity' not in cal_list else [
-                    #                                                                                                       ''] * len(
-                    #     obj_param)
                     op_x = format_obs_data('obs_start_x', scenario_dict, cal_list)
                     op_y = format_obs_data('obs_start_y', scenario_dict, cal_list)
                     ov = format_obs_data('obs_start_velocity', scenario_dict, cal_list)
@@ -338,9 +312,6 @@ def get_cal_model(scenario_dict):
                             formula = formula.split("'")[2 * constant_count + obj_index]
                         else:
                             formula = formula.split("'")[1]
-                    # if not isinstance(scenario_dict[key], str) and len(scenario_dict[key]) > 1:
-                    #     other_obj = scenario_dict[key][1:]
-                    #     formula = [eval(formula)] + other_obj
                     else:
                         formula = [eval(formula)]
                     if 'obs' in key:

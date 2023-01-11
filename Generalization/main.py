@@ -2,7 +2,6 @@
     这个文件对新数据,可以生成直线和路口类型文件，对应的道路模型是China_Crossing_002.opt 和 China_UrbanRoad_014.opt
     China_UrbanRoad_014.opt 道路是北向的
 '''
-import ast
 import math
 import os
 import json
@@ -14,9 +13,9 @@ import pandas as pd
 
 from Generalization.serialization.scenario_serialization import ScenarioData
 from Generalization.trail import Trail
-from Generalization.utils import dump_json, formatThree, change_CDATA, get_plt, upload_xosc, getLabel_local
-from enumerations import TrailType, RoadType, ObjectType
-from utils import get_cal_model, generateFinalTrail, getXoscPosition, trailModify, Point
+from Generalization.utils import dump_json, formatThree, change_CDATA, getLabel_local
+from enumerations import TrailType, RoadType
+from utils import get_cal_model, generateFinalTrail, getXoscPosition, Point
 from configparser import ConfigParser
 from openx import Scenario
 
