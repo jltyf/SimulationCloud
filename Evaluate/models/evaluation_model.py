@@ -95,25 +95,30 @@ class ScenarioData(object):
             error_msg = self.__error_message(self.get_average_velocity, ego_flag)
             return error_msg
 
-    def get_max_velocity(self, obj_id=0):
+    def get_max_velocity(self, obj_id=0, start_time=0, end_time=-1):
         """
         获取自车或目标车的最大速度
         :param obj_id: 为0时为自车
+        :param start_time: 默认为0，从场景起始位置时间开始计算
+        :param end_time: 默认为-1，从场景结束位置时间开始计算
         :return:max_velocity 最大速度
         """
         try:
+            start_time = int(start_time*50)-10
+            if end_time != -1:
+                end_time = int(end_time*50)
             self.scenario_data['velocity'] = (self.scenario_data['lateral_velocity'] ** 2 + self.scenario_data[
                 'longitudinal_velocity'] ** 2) ** 0.5
             # 自车
             if obj_id == 0:
-                max_velocity = self.scenario_data['velocity'].max()
+                max_velocity = self.scenario_data.iloc[start_time:end_time]['velocity'].max()
             # 目标车
             else:
                 obj_data = self.obj_scenario_data[(self.obj_scenario_data['object_ID'] == obj_id)]
                 self.scenario_data['object_velocity'] = ((self.scenario_data['lateral_velocity'] + obj_data[
                     'object_rel_vel_y']) ** 2 + (self.scenario_data['longitudinal_velocity'] + obj_data[
                     'object_rel_vel_x']) ** 2) ** 0.5
-                max_velocity = self.scenario_data['object_velocity'].max()
+                max_velocity = self.scenario_datailoc[start_time:end_time]['object_velocity'].max()
             return max_velocity
         except:
             if obj_id == 0:
@@ -123,25 +128,30 @@ class ScenarioData(object):
             error_msg = self.__error_message(self.get_max_velocity, ego_flag)
             return error_msg
 
-    def get_min_velocity(self, obj_id=0):
+    def get_min_velocity(self, obj_id=0, start_time=0, end_time=-1):
         """
         获取自车或目标车的最小速度
         :param obj_id: 为0时为自车
+        :param start_time: 默认为0，从场景起始位置时间开始计算
+        :param end_time: 默认为-1，从场景结束位置时间开始计算
         :return:min_velocity 最小速度
         """
         try:
+            start_time = int(start_time * 50) - 10
+            if end_time != -1:
+                end_time = int(end_time * 50)
             self.scenario_data['velocity'] = (self.scenario_data['lateral_velocity'] ** 2 + self.scenario_data[
                 'longitudinal_velocity'] ** 2) ** 0.5
             # 自车
             if obj_id == 0:
-                min_velocity = self.scenario_data['velocity'].min()
+                min_velocity = self.scenario_data.iloc[start_time:end_time]['velocity'].min()
             # 目标车
             else:
                 obj_data = self.obj_scenario_data[(self.obj_scenario_data['object_ID'] == obj_id)]
                 self.scenario_data['object_velocity'] = ((self.scenario_data['lateral_velocity'] + obj_data[
                     'object_rel_vel_y']) ** 2 + (self.scenario_data['longitudinal_velocity'] + obj_data[
                     'object_rel_vel_x']) ** 2) ** 0.5
-                min_velocity = self.scenario_data['object_velocity'].min()
+                min_velocity = self.scenario_data.iloc[start_time:end_time]['velocity'].min()
             return min_velocity
         except:
             if obj_id == 0:

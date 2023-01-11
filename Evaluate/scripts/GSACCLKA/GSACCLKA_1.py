@@ -3,7 +3,7 @@
 # @Function         : GSACCLKA_1
 # @Scenario         : 前车慢行+直道居中行驶、弯道居中行驶
 # @Usage            : 自适应巡航+车道保持组合测试一、二、三、四
-# @UpdateTime       : 2022/10/19
+# @UpdateTime       : 2023/01/04
 # @UpdateUser       : 汤宇飞
 
 import numpy as np
@@ -90,12 +90,12 @@ def get_report(scenario, script_id):
                             distance = obj_distance
                     v_diff_acc = abs(acc_stable_velocity - set_velocity)
                     head_way = distance / (acc_stable_velocity/3.6)     # km/h和m/s换算
-                    if 1 < head_way < 3:
+                    if 1 < head_way < 5:
                         if v_diff_acc <= 5:
                             score_acc = 50
-                            evaluate_item_acc = 'ACC功能：车辆以目标车速稳定跟车且车头时距处于安全范围内(1~3s);'
+                            evaluate_item_acc = 'ACC功能：车辆以目标车速稳定跟车且车头时距处于安全范围内(1~5s);'
                         elif 5 < v_diff_acc < 10:
-                            score_acc = scenario.get_interpolation(head_way, (5, 50), (10, 0))
+                            score_acc = scenario.get_interpolation(v_diff_acc, (5, 50), (10, 0))
                             if isinstance(score_acc, str) and '错误' in score_acc:
                                 error_msg = score_acc.split('错误:')[1]
                                 raise RuntimeError
@@ -105,7 +105,7 @@ def get_report(scenario, script_id):
                             evaluate_item_acc = 'ACC功能：能够完成跟车动作,但和前车车速差距过大;'
                     else:
                         score_acc = 0
-                        evaluate_item_acc = 'ACC功能：车头时距不在1～3s的范围内，跟车距离不符合要求;'
+                        evaluate_item_acc = 'ACC功能：车头时距不在1～5s的范围内，跟车距离不符合要求;'
                 else:
                     score_acc = 0
                     evaluate_item_acc = 'ACC功能：车辆未能稳定跟车;'
@@ -119,7 +119,7 @@ def get_report(scenario, script_id):
             score = 0
             evaluate_item = evaluate_item_acc + evaluate_item_lka + ',得0分.'
         else:
-            score = score_lka + score_acc
+            score = round(score_lka + score_acc, 3)
             evaluate_item = evaluate_item_acc + evaluate_item_lka + f',得{score}分.'
     except RuntimeError:
         score = -1
@@ -128,10 +128,10 @@ def get_report(scenario, script_id):
         score = -1
         evaluate_item = '评分功能发生错误,选择的评分脚本无法对此场景进行评价'
     finally:
-        score_description = '1)  车辆未驶出本车道，维持设定车速且车速变动量不超过2km/h，稳定跟车时，跟车车间时距范围在1-3s，主车与目标车车速差不超过5km/h，得分100;\n' \
-                            '2)  车辆未驶出本车道，维持设定车速且车速变动量不超过2km/h，稳定跟车时，跟车车间时距范围在1-3s，主车与目标车车速差在5-10km/h范围内，得分按照插值进行计算；\n' \
-                            '3)  车辆未驶出本车道，维持设定车速且车速变动量在2-5km/h范围内，稳定跟车时，跟车车间时距范围在1-3s，主车与目标车车速差不超过5km/h，得分按照插值进行计算；\n' \
-                            '4)  车辆未驶出本车道，维持设定车速且车速变动量在2-5km/h范围内，稳定跟车时，跟车车间时距范围在1-3s，主车与目标车车速差在5-10km/h范围内，得分按照插值进行计算；\n' \
+        score_description = '1)  车辆未驶出本车道，维持设定车速且车速变动量不超过2km/h，稳定跟车时，跟车车间时距范围在1-5s，主车与目标车车速差不超过5km/h，得分100;\n' \
+                            '2)  车辆未驶出本车道，维持设定车速且车速变动量不超过2km/h，稳定跟车时，跟车车间时距范围在1-5s，主车与目标车车速差在5-10km/h范围内，得分按照插值进行计算；\n' \
+                            '3)  车辆未驶出本车道，维持设定车速且车速变动量在2-5km/h范围内，稳定跟车时，跟车车间时距范围在1-5s，主车与目标车车速差不超过5km/h，得分按照插值进行计算；\n' \
+                            '4)  车辆未驶出本车道，维持设定车速且车速变动量在2-5km/h范围内，稳定跟车时，跟车车间时距范围在1-5s，主车与目标车车速差在5-10km/h范围内，得分按照插值进行计算；\n' \
                             '5)  其他情况，得分0。'
         return {
             'unit_scene_ID': script_id,

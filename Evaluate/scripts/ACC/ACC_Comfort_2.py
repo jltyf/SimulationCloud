@@ -26,9 +26,9 @@ def get_report(scenario, script_id):
         if max_lon_acc > standard_max_acc * 1.5:
             evaluate_item = '最大加速度的舒适性指标中,车辆最大加速度大于舒适行驶的范围,得0分'
             score = 0
-        elif standard_max_acc < max_lon_acc < standard_max_acc * 1.5:
+        elif standard_max_acc < max_lon_acc < standard_max_acc * 3.5:
             score = scenario.get_interpolation(max_lon_acc, (standard_max_acc, 100),
-                                               (standard_max_acc * 1.5, 0))
+                                               (standard_max_acc * 3.5, 0))
             evaluate_item = f'最大加速度的舒适性指标中,车辆最大加速度大于舒适行驶的范围,得{score}分'
 
         else:

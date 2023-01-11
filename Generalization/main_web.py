@@ -2,11 +2,14 @@
     这个文件对新数据,可以生成直线和路口类型文件，对应的道路模型是China_Crossing_002.opt 和 China_UrbanRoad_014.opt
     China_UrbanRoad_014.opt 道路是北向的
 '''
+import traceback
+
 from flask import Flask, request
 from gevent import pywsgi
 import math
 import os
 import sys
+import shutil
 
 sys.path.append('/SimulationCloud/')
 
@@ -30,7 +33,7 @@ pd.set_option('max_colwidth', 100)
 pd.set_option('display.max_rows', None)
 cfg = ConfigParser()
 cfg.read("../setting.ini")
-setting_data = dict(cfg.items("dev"))
+setting_data = dict(cfg.items("pro"))
 model_data = dict(cfg.items("model path"))
 absPath = setting_data['data path']
 client = Minio(
@@ -43,6 +46,8 @@ app = Flask(import_name=__name__)
 
 
 def generalization(scenario_data, single_scenario, car_trail_data, ped_trail_data, trails_json_dict, scenario_index):
+    if not os.path.exists(setting_data['scenario path']):
+        os.mkdir(setting_data['scenario path'])
     ego_trails_list = list()
     # 根据自车场景速度情况选择轨迹
     ego_trail_section = 0
@@ -234,7 +239,7 @@ def generalization(scenario_data, single_scenario, car_trail_data, ped_trail_dat
     sceperiod = math.ceil(egotime[-1] - egotime[0])
     s = Scenario(ego_points, object_points, egotime, sceperiod, single_scenario, absPath)
     s.print_permutations()
-    output_path = os.path.join(absPath + '/trails/', 'simulation_new',
+    output_path = os.path.join(setting_data['scenario path'],
                                scenario_data['sceneId'] + '_' + str(scenario_index))
     if not os.path.exists(output_path):
         os.makedirs(output_path)
@@ -250,21 +255,16 @@ def generalization(scenario_data, single_scenario, car_trail_data, ped_trail_dat
     # 上传到minio
     minio_path = '批量泛化场景/' + single_scenario['uu_id'] + '/' + scenario_data['sceneId'].split('_')[0] + '/' + \
                  scenario_data['sceneId'] + '/' + os.path.basename(files[0][0])
-    # upload_xosc(client, setting_data['bucket name'], minio_path, files[0][0])
-    upload_xosc(client, setting_data['bucket name'], minio_path, files[0][0])
-    xosc_path = minio_path
-
-    result_dict = {
-        'osgbAddress': osgb_path,
-        'xodrAddress': xodr_path,
-        'xoscAddress': xosc_path,
-    }
-
-    return result_dict
-
-
-def get_result(future):
-    return future.result()
+    try:
+        upload_xosc(client, setting_data['bucket name'], minio_path, files[0][0])
+        result_dict = {
+            'osgbAddress': osgb_path,
+            'xodrAddress': xodr_path,
+            'xoscAddress': minio_path,
+        }
+        return result_dict
+    except:
+        return 'minioE'
 
 
 @app.route("/test_1.0", methods=["POST"])
@@ -289,9 +289,9 @@ def parsingConfigurationFile():
         result_list = list()
         process_list = list()
     except Exception as e:
-        error_txt = e.args[0]
+        error_msg = traceback.format_exc()
         log = Loggers()
-        log.logger.info(f'错误类型:泛化入参错误,错误信息:{error_txt},错误模板:{scenario_data["sceneId"]}')
+        log.logger.info(f'错误类型:泛化入参错误,错误信息:{error_msg},错误模板:{scenario_data["sceneId"]}')
         response = {'success': False,
                     'code': 101,
                     'message': '传入的泛化参数错误，泛化失败!',
@@ -311,7 +311,14 @@ def parsingConfigurationFile():
                 process_list.append(process)
             for result in process_list:
                 if result.get():
-                    result_list.append(result.get())
+                    if result.get() == 'minioE':
+                        response = {'success': False,
+                                    'code': 104,
+                                    'message': '泛化结束后minio上传文件失败，请检查配置文件!',
+                                    'params': None}
+                        return response
+                    else:
+                        result_list.append(result.get())
 
         if len(result_list) < 1:
             response = {'success': False,
@@ -319,16 +326,16 @@ def parsingConfigurationFile():
                         'message': '未泛化出场景,请检查输入参数合理性!',
                         'params': None}
         else:
-            print(fileCnt)
             response = {'success': True,
                         'code': 200,
                         'message': '请求成功!',
                         'params': result_list}
+            shutil.rmtree(setting_data['scenario path'])
         return response
     except Exception as e:
-        error_txt = e.args[0]
+        error_msg = traceback.format_exc()
         log = Loggers()
-        log.logger.info(f'错误类型:场景生成失败,错误信息:{error_txt},错误模板:{scenario_data["sceneId"]}')
+        log.logger.info(f'错误类型:场景生成失败,错误信息:{error_msg},错误模板:{scenario_data["sceneId"]}')
         response = {'success': False,
                     'code': 102,
                     'message': '场景生成失败!',

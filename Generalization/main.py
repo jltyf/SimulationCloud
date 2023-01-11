@@ -203,6 +203,13 @@ def generalization(scenario_series, single_scenario, car_trail_data, ped_trail_d
         offset_h = 85.58
         xodr_path = root_path + '/' + model_data['ramp xodr']
         osgb_path = root_path + '/' + model_data['ramp osgb']
+    elif single_scenario['scenario_road_type'] == RoadType.bridge.value:
+        offset_x = 19.8394
+        offset_y = 144.817
+        offset_z = 19.275
+        offset_h = 213.72
+        xodr_path = root_path + '/' + model_data['thq xodr']
+        osgb_path = root_path + '/' + model_data['thq osgb']
     ego_points, egotime = getXoscPosition(ego_trail, 'Time', 'ego_e', 'ego_n', 'headinga', offset_x, offset_y,
                                           offset_h, offset_z)  # 初始轨迹朝向与道路方向一致
     # ego_points, egotime = getXoscPosition(ego_trail, 'Time', 'ego_n', 'ego_e', 'headinga', offset_x, offset_y, offset_h) # 初始轨迹朝向与道路方向垂直
@@ -240,7 +247,7 @@ def generalization(scenario_series, single_scenario, car_trail_data, ped_trail_d
     sceperiod = math.ceil(egotime[-1] - egotime[0])
     s = Scenario(ego_points, object_points, egotime, sceperiod, single_scenario, absPath)
     s.print_permutations()
-    output_path = os.path.join(absPath + '/trails/', 'simulation_new',
+    output_path = os.path.join(setting_data['output path'],
                                scenario_series['场景编号'] + '_' + str(scenario_index))
     if not os.path.exists(output_path):
         os.makedirs(output_path)
@@ -277,7 +284,7 @@ def parsingConfigurationFile(ADAS_module):
     ped_trail_data = pd.read_csv(ped_trail)
 
     # 按功能列表分别读取不同的功能配置表
-    parm_data = pd.read_excel(os.path.join(absPath + '/trails/', "配置参数表样例_安亭1114.xlsx"),
+    parm_data = pd.read_excel(os.path.join(setting_data['config path']),
                               sheet_name=ADAS_module, keep_default_na=False, engine='openpyxl')
     for scenario_df in [parm_data[scenario_list] for scenario_list in ADAS_module]:
         scenario_name = scenario_df.iloc[0]['场景编号'].split('_')[0]
@@ -312,4 +319,4 @@ def parsingConfigurationFile(ADAS_module):
 if __name__ == "__main__":
     # parsingConfigurationFile(['AEB', 'ALC', 'LKA', 'ACC', 'BSD', 'FCW', 'LDW', 'TJA'])
     # parsingConfigurationFile(['LKA', 'ACC', 'BSD'])
-    parsingConfigurationFile(['tmp'])
+    parsingConfigurationFile(['test'])

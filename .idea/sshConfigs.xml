@@ -4,6 +4,9 @@
     <configs>
       <sshConfig authType="PASSWORD" host="10.14.85.241" id="f5f3e524-97ba-4a70-9fff-832956c5cda5" port="22" nameFormat="DESCRIPTIVE" username="root" />
       <sshConfig authType="PASSWORD" host="10.14.85.237" id="c91090f0-90b7-479d-90a8-60d8766ae2b8" port="22" nameFormat="DESCRIPTIVE" username="root" />
+      <sshConfig authType="PASSWORD" host="36.110.106.156" id="c85d0d3f-c3b5-4d88-be99-e7ed43dd47cb" port="22" customName="evaluate_intermediate" nameFormat="CUSTOM" username="root">
+        <option name="customName" value="evaluate_intermediate" />
+      </sshConfig>
     </configs>
   </component>
 </project>

@@ -25,12 +25,12 @@ def get_report(scenario, script_id):
             standard_max_loc_roc = 5
         elif standard_max_loc_roc < 2.5:
             standard_max_loc_roc = 2.5
-        if max_lon_acc_roc > standard_max_loc_roc * 1.5:
+        if max_lon_acc_roc > standard_max_loc_roc * 3.5:
             evaluate_item = '最大加速度变化率的舒适性指标中,车辆最大加速度变化率大于舒适行驶的范围,得0分'
             score = 0
-        elif standard_max_loc_roc < max_lon_acc_roc < standard_max_loc_roc * 1.5:
+        elif standard_max_loc_roc < max_lon_acc_roc < standard_max_loc_roc * 3.5:
             score = scenario.get_interpolation(max_lon_acc_roc, (standard_max_loc_roc, 100),
-                                               (standard_max_loc_roc * 1.5, 0))
+                                               (standard_max_loc_roc * 3.5, 0))
             evaluate_item = f'最大加速度变化率的舒适性指标中,车辆最大加速度变化率稍大,得{score}分'
         else:
             evaluate_item = '最大加速度变化率的舒适性指标中,车辆最大加速度变化率在舒适的范围内,得100分'
