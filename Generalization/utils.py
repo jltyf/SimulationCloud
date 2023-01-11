@@ -767,6 +767,7 @@ def get_entity_properties(object_type_list):
             car = xosc.Vehicle(name=name, vehicle_type=vehicle_type, boundingbox=bounding_box,
                                frontaxle=front_axle, rearaxle=rear_axle, max_speed=max_speed,
                                max_acceleration=max_acceleration, max_deceleration=max_deceleration)
+            car.add_property(name='controller', value='external')
             object_model.append(car)
         elif object_type == ObjectType.bus.value:
             name = 'MB_Citaro_2007_yellow'

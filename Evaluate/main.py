@@ -4,13 +4,13 @@ import sys
 import pandas as pd
 import os
 
-sys.path.append('/home/ubuntu/test')
+sys.path.append('/SimulationCloud')
 from Evaluate.models.evaluation_model import ScenarioData
 from enumerations import ScenarioType
 
 scenarios_category_path = os.path.join(os.getcwd(), 'scripts')
 if not os.path.exists(scenarios_category_path):
-    scenarios_category_path = os.path.join('/home/ubuntu/test/Evaluate', 'scripts')
+    scenarios_category_path = os.path.join('/SimulationCloud/Evaluate/', 'scripts')
 scenarios_category_list = os.listdir(scenarios_category_path)
 
 
@@ -44,7 +44,7 @@ def scenario_score(scenario_ego_data, scenario_obj_data, scenario_type, script_n
         if scenario_category == scenario_id.split('_')[0]:
             scripts_path = os.path.join(os.path.join(os.getcwd(), 'scripts'), scenario_category)
             if not os.path.exists(scripts_path):
-                scripts_path = os.path.join(os.path.join('/home/ubuntu/test/Evaluate', 'scripts'), scenario_category)
+                scripts_path = os.path.join(os.path.join('/SimulationCloud/Evaluate', 'scripts'), scenario_category)
             for script_id in os.listdir(scripts_path):
                 if script_id.split('.p')[0] == scenario_id:
                     function_name = 'get_report'
@@ -55,8 +55,8 @@ def scenario_score(scenario_ego_data, scenario_obj_data, scenario_type, script_n
 
 
 if __name__ == '__main__':
-    result = scenario_score('/home/tang/Desktop/test/gsacclka/q3/Ego.csv',
-                            '/home/tang/Desktop/test/gsacclka/q3/evaluation.csv', ScenarioType.natural.value,
+    result = scenario_score('/home/tang/Desktop/Tang/test/acclka_1- 5a771c24/Ego.csv',
+                            '/home/tang/Desktop/Tang/test/acclka_1- 5a771c24/evaluation.csv', ScenarioType.office.value,
                             'GSACCLKA_1')
     # input_data = sys.argv[1:]
     # result = scenario_score(*input_data)

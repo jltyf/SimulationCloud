@@ -16,11 +16,11 @@ def get_report(scenario, script_id):
         for i in range(1, len(scenario.scenario_data) // 50 + 1):
             cut_df = scenario.scenario_data.iloc[start_index:end_index:]
             velocity_var = cut_df['velocity'].var()
-            if velocity_var < 5:
+            if velocity_var < 8:
                 score = 100
                 evaluate_item = '速度方差的舒适性指标中,速度的方差在舒适的范围内,得100分'
-            elif 5 < velocity_var < 10:
-                tmp_score = scenario.get_interpolation(velocity_var, (10, 0), (5, 100))
+            elif 8 < velocity_var < 15:
+                tmp_score = scenario.get_interpolation(velocity_var, (15, 0), (8, 100))
                 score = min(tmp_score, score)
                 evaluate_item = f'速度方差的舒适性指标中,速度的方差稍大,得{score}分'
             else:

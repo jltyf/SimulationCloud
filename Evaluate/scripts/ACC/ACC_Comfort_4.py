@@ -17,11 +17,11 @@ def get_report(scenario, script_id):
             cut_df = scenario.scenario_data.iloc[start_index:end_index:]
             yawrate_rms = math.sqrt(
                 sum([x ** 2 for x in cut_df['yawrate'].values.tolist()]) / len(scenario.scenario_data))
-            if yawrate_rms < 0.02:
+            if yawrate_rms < 0.015:
                 score = 100
                 evaluate_item = '横摆角速度均方根的舒适性指标中,横摆角速度均方根在舒适的范围内,得100分'
-            elif 0.02 < yawrate_rms < 0.04:
-                tmp_score = scenario.get_interpolation(yawrate_rms, (0.04, 0), (0.02, 100))
+            elif 0.015 < yawrate_rms < 0.08:
+                tmp_score = scenario.get_interpolation(yawrate_rms, (0.08, 0), (0.015, 100))
                 score = min(score, tmp_score)
                 evaluate_item = f'横摆角速度均方根的舒适性指标中,横摆角速度均方根稍大,得{score}分'
             else:
