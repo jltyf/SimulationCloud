@@ -343,14 +343,44 @@ def parsingConfigurationFile():
         return response
 
 
+@app.route("/format", methods=["GET"])
+def format_files():
+    file_time = request.args.get("file")
+    root_path = '/mnt/disk001/data/1+x/'
+    new_dir = os.path.join(root_path, file_time)
+    sc_path = os.path.join(new_dir, 'Scenarios')
+    xodr_path = os.path.join(new_dir, 'XODR')
+    osgb_path = os.path.join(new_dir, 'OSGB')
+    os.mkdir(new_dir)
+    os.mkdir(sc_path)
+    os.mkdir(xodr_path)
+    os.mkdir(osgb_path)
+    xosc_path = os.path.join(root_path, file_time + '.xosc')
+    json_path = os.path.join(root_path, 'description.json')
+    real_video = os.path.join(root_path, 'realVideo.mp4')
+    simulation_path = os.path.join(root_path, 'simulation.mp4')
+    od_path = '/mnt/disk001/od'
+    xodr = os.path.join(od_path, 'taiheqiao_1227_4.xodr')
+    osgb = os.path.join(od_path, 'thq_dayou_1229_1.opt.osgb')
+
+    shutil.copy(xosc_path, sc_path)
+    shutil.copy(json_path, sc_path)
+    shutil.copy(real_video, sc_path)
+    shutil.copy(simulation_path, sc_path)
+    shutil.copy(xodr, xodr_path)
+    shutil.copy(osgb, osgb_path)
+    response = {'success': True,
+                'code': 200,
+                'message': '请求成功!'}
+    os.remove(xosc_path)
+    os.remove(json_path)
+    os.remove(real_video)
+    os.remove(simulation_path)
+    return response
+
+
 if __name__ == "__main__":
     server = pywsgi.WSGIServer(
         ('0.0.0.0', 5000), app
     )
     server.serve_forever()
-
-    # app.run(
-    #     host='0.0.0.0',
-    #     port=5000,
-    #     debug=True
-    # )
