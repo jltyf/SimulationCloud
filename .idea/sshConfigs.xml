@@ -7,6 +7,7 @@
       <sshConfig authType="PASSWORD" host="36.110.106.156" id="c85d0d3f-c3b5-4d88-be99-e7ed43dd47cb" port="22" customName="evaluate_intermediate" nameFormat="CUSTOM" username="root">
         <option name="customName" value="evaluate_intermediate" />
       </sshConfig>
+      <sshConfig authType="PASSWORD" host="10.14.85.249" id="c17c8cf6-1943-46eb-aad9-2b963a3e2e53" port="22" nameFormat="DESCRIPTIVE" username="root" />
     </configs>
   </component>
 </project>
