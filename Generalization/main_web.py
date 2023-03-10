@@ -345,30 +345,36 @@ def parsingConfigurationFile():
 
 @app.route("/format", methods=["GET"])
 def format_files():
-    file_time = request.args.get("file")
+    data = json.loads(request.data)
+    first_time = data['first_time']
+    file_time = data['file']
     root_path = '/mnt/disk001/data/1+x/'
-    new_dir = os.path.join(root_path, file_time)
+    new_dir = os.path.join(root_path, first_time)
     sc_path = os.path.join(new_dir, 'Scenarios')
-    xodr_path = os.path.join(new_dir, 'XODR')
-    osgb_path = os.path.join(new_dir, 'OSGB')
-    os.mkdir(new_dir)
-    os.mkdir(sc_path)
-    os.mkdir(xodr_path)
-    os.mkdir(osgb_path)
+    if not os.path.exists(first_time):
+        os.mkdir(new_dir)
+
+        xodr_path = os.path.join(new_dir, 'XODR')
+        osgb_path = os.path.join(new_dir, 'OSGB')
+        os.mkdir(new_dir)
+        os.mkdir(sc_path)
+        os.mkdir(xodr_path)
+        os.mkdir(osgb_path)
+        od_path = '/mnt/disk001/od'
+        xodr = os.path.join(od_path, 'taiheqiao_1227_4.xodr')
+        osgb = os.path.join(od_path, 'thq_dayou_1229_1.opt.osgb')
+        shutil.copy(xodr, xodr_path)
+        shutil.copy(osgb, osgb_path)
+    second_path = os.path.join(sc_path, file_time)
     xosc_path = os.path.join(root_path, file_time + '.xosc')
     json_path = os.path.join(root_path, 'description.json')
     real_video = os.path.join(root_path, 'realVideo.mp4')
     simulation_path = os.path.join(root_path, 'simulation.mp4')
-    od_path = '/mnt/disk001/od'
-    xodr = os.path.join(od_path, 'taiheqiao_1227_4.xodr')
-    osgb = os.path.join(od_path, 'thq_dayou_1229_1.opt.osgb')
+    shutil.copy(xosc_path, second_path)
+    shutil.copy(json_path, second_path)
+    shutil.copy(real_video, second_path)
+    shutil.copy(simulation_path, second_path)
 
-    shutil.copy(xosc_path, sc_path)
-    shutil.copy(json_path, sc_path)
-    shutil.copy(real_video, sc_path)
-    shutil.copy(simulation_path, sc_path)
-    shutil.copy(xodr, xodr_path)
-    shutil.copy(osgb, osgb_path)
     response = {'success': True,
                 'code': 200,
                 'message': '请求成功!'}

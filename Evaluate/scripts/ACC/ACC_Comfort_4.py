@@ -36,6 +36,7 @@ def get_report(scenario, script_id):
         score = -1
         evaluate_item = '评分功能发生错误,选择的评分脚本无法对此场景进行评价'
     finally:
+        score = round(score, 2)
         score_description = '1)  当车辆横摆角速度均方根小0.025时被认为舒适,得100分;\n' \
                             '2)  当车辆速横摆角速度均方根大于0.04时被认为极不舒适，得0分;\n' \
                             '3)  当车辆横摆角速度均方根在0.02和0.04之间时被认为不舒适，按照0分到100分进行插值。'

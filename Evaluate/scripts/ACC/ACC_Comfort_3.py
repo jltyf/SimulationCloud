@@ -35,6 +35,7 @@ def get_report(scenario, script_id):
         score = -1
         evaluate_item = '评分功能发生错误,选择的评分脚本无法对此场景进行评价'
     finally:
+        score = round(score, 2)
         score_description = '1)  当车辆速度方差小于5时被认为舒适,得100分;\n' \
                             '2)  当车辆速度方差大于10时被认为极不舒适，得0分;\n' \
                             '3)  当车辆速度方差在5和10之间时被认为不舒适，按照0分到100分进行插值。'

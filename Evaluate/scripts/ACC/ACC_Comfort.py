@@ -121,6 +121,7 @@ def get_report(scenario, script_id):
         score = -1
         evaluate_item = '评分功能发生错误,选择的评分脚本无法对此场景进行评价'
     finally:
+        score = round(score, 2)
         score_description = '1)  车辆舒适性从4个纬度进行评分，满分为100分，每个纬度25分;\n' \
                             '2)  在每个维度中，满足舒适性25分，稍显不舒适在0分和25分之间插值，大于不舒适的阈值时得0分;\n' \
                             '3)  总得分为4个纬度相加获得，每个纬度互相独立;\n' \
