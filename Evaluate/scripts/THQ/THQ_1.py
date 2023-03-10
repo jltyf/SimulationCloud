@@ -19,7 +19,7 @@ def get_report(scenario, script_id):
             raise RuntimeError
         start_index = 0
         end_index = 300
-        for i in range(1, len(scenario.scenario_data) // 30 + 1):
+        for i in range(1, len(scenario.scenario_data) // 300 + 1):
             cut_df = scenario.scenario_data.iloc[start_index:end_index:]
             start_velocity = scenario.get_velocity(cut_df.index.values.tolist()[0])
             end_velocity = scenario.get_velocity(cut_df.index.values.tolist()[-1])
@@ -32,9 +32,15 @@ def get_report(scenario, script_id):
             elif abs(start_velocity) <= 0.5 and abs(start_velocity) <= 0.5:
                 score = 0
                 evaluate_item = '车辆长时间停车，得0分'
+                raise RuntimeError
+            start_index = end_index
+            end_index = start_index + 300
+            if end_index >= len(scenario.scenario_data):
+                end_index = len(scenario.scenario_data)
+
         # 驶出道路判断
         if True:
-            score = 0
+            score = 100
             evaluate_item = '车辆顺利到达终点，得100分'
 
     except RuntimeError:
