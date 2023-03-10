@@ -42,6 +42,7 @@ def get_report(scenario, script_id):
         score = -1
         evaluate_item = '评分功能发生错误,选择的评分脚本无法对此场景进行评价'
     finally:
+        score = round(score, 2)
         score_description = '1)  当车速大等于72km/h时加速度变化率舒适值为2.5m/s³，当车速小等于18km/h时加速度变化率舒适值为5m/s³，当车速在72km/h和18km/h时线性插值确定舒适值;\n' \
                             '2)  当车辆最大加速度变化率小于舒适值时被认为舒适,得100分;\n' \
                             '3)  当车辆最大加速度变化率大于舒适值的1.5倍时被认为极不舒适，得0分;\n' \

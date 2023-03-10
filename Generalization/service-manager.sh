@@ -1,10 +1,10 @@
 #!/bin/sh
-# workdir=/home/SimulationCloud/Generalization
-workdir=/SimulationCloud/Generalization
+# workdir=/SimulationCloud/Generalization
+workdir=/home/tang/Desktop/SimulationCloud/Generalization
 
 server_start(){
    cd $workdir
-   python3 main_web.py runserver &
+   nohup python3 main_web.py runserver &
    echo "Server started."
  }
  
