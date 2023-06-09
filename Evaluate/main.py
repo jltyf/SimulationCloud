@@ -37,8 +37,10 @@ def scenario_score(scenario_ego_data, scenario_obj_data, scenario_type, script_n
     obj_csv_data = pd.read_csv(scenario_obj_data)
     obj_csv_df = pd.DataFrame(obj_csv_data)
 
+    base_path = os.path.dirname(scenario_ego_data)
+
     # 创建ScenarioData类需要传入标准格式数据的dataframe
-    scenario = ScenarioData(ego_csv_df, obj_csv_df, scenario_type)
+    scenario = ScenarioData(ego_csv_df, obj_csv_df, scenario_type, base_path)
     scenario_id = (script_name if script_name else scenario.get_scenario_id())
     for scenario_category in scenarios_category_list:
         if scenario_category == scenario_id.split('_')[0]:
@@ -55,8 +57,8 @@ def scenario_score(scenario_ego_data, scenario_obj_data, scenario_type, script_n
 
 
 if __name__ == '__main__':
-    result = scenario_score('/home/tang/Desktop/test/acc_2/Ego.csv',
-                            '/home/tang/Desktop/test/acc_2/evaluation.csv', ScenarioType.office.value,
+    result = scenario_score('/home/tang/test/20230609/ego.csv',
+                            '/home/tang/test/20230609/evaluation.csv', ScenarioType.office.value,
                             'THQ_1')
     # input_data = sys.argv[1:]
     # result = scenario_score(*input_data)

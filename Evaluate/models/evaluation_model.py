@@ -6,16 +6,19 @@
 
 import math
 import numpy
+import os
+import pandas as pd
 
 from enumerations import ScenarioType
 
 
 class ScenarioData(object):
-    def __init__(self, scenarios_data, obj_scenarios_data, scenario_type):
+    def __init__(self, scenarios_data, obj_scenarios_data, scenario_type, base_path):
         """
         :param scenarios_data: 数据为从vtd输出的自车csv数据文件读取的csv
         :param obj_scenarios_data: 数据为从vtd输出的目标车csv数据文件读取的csv
         :param scenario_type: 场景的类型 1自然驾驶 2交通法规 3事故场景 4泛化场景
+        :param base_path: 算法比赛用，数据文件路径存放地址
         """
 
         index = scenarios_data.loc[scenarios_data['time'] == 0.2].index.values[0]
@@ -39,6 +42,28 @@ class ScenarioData(object):
             self.obj_scenario_data = obj_scenarios_data.set_index(keys=['time'])
         else:
             self.obj_scenario_data = obj_scenarios_data.set_index(keys=['time'])
+
+        output_data = {
+            'object_state': None,
+            'object_state_sensor': None,
+            'road_mark': None,
+            'road_pos': None,
+            'traffic_signal': None,
+        }
+
+        object_state_path = os.path.join(base_path, 'output_objectState.csv')
+
+        if os.path.exists(object_state_path):
+            object_state_path = os.path.join(base_path, 'output_objectState_sensor.csv')
+            object_state_sensor_path = os.path.join(base_path, 'output_roadMark.csv')
+            road_pos_path = os.path.join(base_path, 'output_roadPos.csv')
+            traffic_signal_path = os.path.join(base_path, 'output_trafficSignal.csv')
+            output_data['object_state'] = pd.read_csv(object_state_path)
+            output_data['object_state_sensor'] = pd.read_csv(object_state_sensor_path)
+            output_data['road_mark'] = pd.read_csv(road_pos_path)
+            output_data['road_pos'] = pd.read_csv(road_pos_path)
+            output_data['traffic_signal'] = pd.read_csv(traffic_signal_path)
+        self.other_scenarios_data = output_data
 
     def get_scenario_id(self):
         if not self.scenario_type == ScenarioType.generalization.value:
