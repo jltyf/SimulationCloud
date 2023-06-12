@@ -59,7 +59,7 @@ def scenario_score(scenario_ego_data, scenario_obj_data, scenario_type, script_n
 if __name__ == '__main__':
     result = scenario_score('/home/tang/test/20230609/ego.csv',
                             '/home/tang/test/20230609/evaluation.csv', ScenarioType.office.value,
-                            'THQ_1')
+                            'AEB_1-1')
     # input_data = sys.argv[1:]
     # result = scenario_score(*input_data)
     print(result)

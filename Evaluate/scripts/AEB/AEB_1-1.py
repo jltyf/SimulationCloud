@@ -10,6 +10,11 @@ from enumerations import CollisionStatus
 
 def get_report(scenario, script_id):
     collision_status_list = scenario.scenario_data['collision_status'].values.tolist()
+    a = scenario.other_scenarios_data['object_state']
+    b = scenario.other_scenarios_data['object_state_sensor']
+    c = scenario.other_scenarios_data['road_mark']
+    d = scenario.other_scenarios_data['road_pos']
+    e = scenario.other_scenarios_data['traffic_signal']
 
     # 碰撞
     if CollisionStatus.collision.value in collision_status_list:
