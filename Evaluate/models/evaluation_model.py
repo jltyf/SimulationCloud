@@ -58,12 +58,14 @@ class ScenarioData(object):
             object_state_sensor_path = os.path.join(base_path, 'output_objectState_sensor.csv')
             road_pos_path = os.path.join(base_path, 'output_roadPos.csv')
             traffic_signal_path = os.path.join(base_path, 'output_trafficSignal.csv')
+            traffic_light_path = os.path.join(base_path, 'output_trafficLight.csv')
             road_mark_path = os.path.join(base_path, 'output_roadMark.csv')
             output_data['object_state'] = pd.read_csv(object_state_path)
             output_data['object_state_sensor'] = pd.read_csv(object_state_sensor_path)
             output_data['road_mark'] = pd.read_csv(road_mark_path)
             output_data['road_pos'] = pd.read_csv(road_pos_path)
             output_data['traffic_signal'] = pd.read_csv(traffic_signal_path)
+            output_data['traffic_light'] = pd.read_csv(traffic_light_path)
         self.other_scenarios_data = output_data
 
     def get_scenario_id(self):
