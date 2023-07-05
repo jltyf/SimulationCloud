@@ -21,7 +21,7 @@ class ScenarioData(object):
         :param base_path: 算法比赛用，数据文件路径存放地址
         """
 
-        index = scenarios_data.loc[scenarios_data['time'] == 0.2].index.values[0]
+        index = scenarios_data.loc[(scenarios_data['time'] <= 0.22) & (scenarios_data['time'] >= 0.18)].index.values[0]
         scenarios_data = scenarios_data.loc[index:]
         v_change = lambda x: x * 3.6
         scenarios_data.loc[:]['lateral_velocity'] = scenarios_data['lateral_velocity'].apply(v_change)
