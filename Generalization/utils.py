@@ -307,7 +307,6 @@ def get_cal_model(scenario_dict):
                             constant_count -= 1
                     formula = str(scenario_dict[key])
                     if "'" in formula:
-                        a = formula.split("'")
                         if len(scenario_dict[key]) > 1:
                             formula = formula.split("'")[2 * constant_count + obj_index]
                         else:

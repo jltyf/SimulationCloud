@@ -31,12 +31,8 @@ def scenario_score(scenario_ego_data, scenario_obj_data, scenario_type, script_n
                                  2).....'
             }
     """
-    ego_csv_data = pd.read_csv(scenario_ego_data)
-    ego_csv_df = pd.DataFrame(ego_csv_data)
-
-    obj_csv_data = pd.read_csv(scenario_obj_data)
-    obj_csv_df = pd.DataFrame(obj_csv_data)
-
+    ego_csv_df = pd.read_csv(scenario_ego_data)
+    obj_csv_df = pd.read_csv(scenario_obj_data)
     base_path = os.path.dirname(scenario_ego_data)
 
     # 创建ScenarioData类需要传入标准格式数据的dataframe
