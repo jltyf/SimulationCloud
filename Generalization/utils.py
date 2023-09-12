@@ -1,3 +1,4 @@
+import datetime
 import math
 from copy import deepcopy
 from functools import reduce
@@ -20,6 +21,74 @@ class Point:
     def __init__(self, x=0, y=0):
         self.x = x
         self.y = y
+
+
+def change_heading(data_df, mode):
+    diff = data_df['headinga'] - data_df['headinga'].shift(1)
+    data_df['diff'] = diff.abs()
+    data_df['diff'] = data_df['diff'].apply(lambda x: x - 360 if x >= 180 else x)
+    diff_data = data_df[abs(data_df['diff']) >= 25]
+    if len(diff_data) == 0:
+        return data_df
+    if mode == 1:
+        error_data = data_df[(data_df['diff'] > 25) & (data_df['distance'] < 0.7)]
+        if len(error_data) > 1:
+            error_start = data_df[data_df['date_time'] == error_data['date_time'].min()].index[0]
+            error_end = data_df[data_df['date_time'] == error_data['date_time'].max()].index[0]
+            error_df = data_df[error_start:error_end]
+            # if
+            right_heading = data_df.loc[error_start - 1, 'headinga']
+            error_df['headinga'] = right_heading
+            data_df[error_start:error_end] = error_df
+            data_df = change_heading(data_df, mode=1)
+        elif len(error_data) == 1:
+            error_start = data_df[data_df['Time'] == error_data['time'].min()].index[0]
+            left_df = data_df[error_start:]
+            if left_df[1:]['diff'].mean() < 15:
+                left_df['headinga'] = data_df.loc[error_start - 1, 'headinga']
+                data_df[error_start:] = left_df
+                data_df = change_heading(data_df, mode=1)
+    elif mode == 0:
+        error_start = data_df[data_df['Time'] == diff_data['Time'].min()].index[0] - 2
+        error_end = data_df[data_df['Time'] == diff_data['Time'].max()].index[0] + 2
+        error_df = data_df[error_start:error_end]
+        # if data_df['headinga'].var() > 4000:
+        #     return data_df
+        if len(error_df[(error_df['distance']) >= 0.7]) < 3:
+            filter_data = data_df[(data_df['diff']) <= 1]
+            diff = filter_data['headinga'] - filter_data['headinga'].shift(1)
+            filter_data['diff'] = diff.abs()
+            avg_heading = filter_data[(filter_data['diff']) <= 1]['headinga'].mean()
+            error_df['headinga'] = avg_heading
+            data_df[error_start:error_end] = error_df
+        else:
+            _ = error_df[1:-1]
+            _['headinga'] = np.nan
+            error_df[1:-1] = _
+            error_df = error_df.interpolate()
+            data_df[error_start:error_end] = error_df
+    return data_df
+
+
+def filter_error(data_df):
+    data_df['date_time'] = pd.to_datetime(data_df['Time'], unit='ms')
+    data_df['distance'] = ((data_df['ego_e'] - data_df['ego_e'].shift(1)) ** 2 + (
+            data_df['ego_n'] - data_df['ego_n'].shift(1)) ** 2) ** 0.5
+    data_df = data_df.fillna(0)
+    diff = data_df['headinga'] - data_df['headinga'].shift(1)
+    data_df['diff'] = diff.abs()
+    diff_data = data_df[abs(data_df['diff']) >= 25]
+    if len(diff_data) > 1:
+        if (datetime.timedelta(milliseconds=300) < abs(
+                diff_data['date_time'].min() - diff_data['date_time'].max()) < datetime.timedelta(milliseconds=8000)):
+            data_df = change_heading(data_df, mode=0)
+        else:
+            data_df = change_heading(data_df, mode=1)
+
+    if data_df.loc[1, 'date_time'] - data_df.loc[0, 'date_time'] > datetime.timedelta(seconds=4):
+        data_df = data_df[1:]
+
+    return data_df
 
 
 def dump_json(trails_label_json):
@@ -156,9 +225,7 @@ def generateFinalTrail(name, lista, e, n, h, *args, init_e=0, init_n=0, init_h=0
         trail = []
         # 初始轨迹坐标为原点，headingAngle为0
         trail.append(corTransform_init(lista[0], e, n, h, args[0], init_e=init_e, init_n=init_n, init_h=init_h))
-        if len(lista) == 1:
-            print(name, "找到一条完整轨迹不需要拼接")
-        elif len(lista) > 1:
+        if len(lista) > 1:
             for index in range(1, len(lista)):
                 trail.append(concatTrails(trail[-1], lista[index], args[0]))
         # 将所有的轨迹数据合并为一条轨迹
@@ -247,7 +314,7 @@ def resample_by_time(data, minnum, dt, flag=True):
 
 
 def multiple_uniform_trail(trail, multiple, *args):
-    if multiple - 0 < 0.01:
+    if multiple < 0.05:
         return trail
     else:
         for rotate_tuple in args[0]:

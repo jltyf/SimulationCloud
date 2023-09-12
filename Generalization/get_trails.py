@@ -29,7 +29,7 @@ def get_uniform_speed_trail(car_trails, trails_json_dict, start_speed, period, r
                         selected_trail_list.append(single_trail)
                 uniform_json_dict[motion] = selected_trail_list
 
-    previous_speed_difference = 100
+    previous_speed_difference = 200
     # 从挑选的轨迹中找到速度差异最小的轨迹,如果有
     for trail_motion in uniform_json_dict:
         uniform_json_dict[trail_motion] = sorted(uniform_json_dict[trail_motion],
@@ -37,7 +37,7 @@ def get_uniform_speed_trail(car_trails, trails_json_dict, start_speed, period, r
 
         for single_json in uniform_json_dict[trail_motion]:
             speed_difference = abs(single_json['startSpeed'] - start_speed)
-            if speed_difference < previous_speed_difference:
+            if speed_difference < previous_speed_difference and abs(single_json['lateralOffset']) <= 0.8:
                 final_trail = single_json
                 previous_speed_difference = speed_difference
 
@@ -102,15 +102,15 @@ def get_variable_speed_trail(car_trails, trails_json_dict, start_speed, period, 
     """
     lateral_acc_max = 100 if acc_limit[0] == -1 else acc_limit[0]
     longitudinal_acc_max = 100 if acc_limit[1] == -1 else acc_limit[1]
-    lateral_acc_min = 0.3 * lateral_acc_max if lateral_acc_max != 100 else 0
-    longitudinal_acc_min = 0.3 * longitudinal_acc_max if longitudinal_acc_max != 100 else 0
+    lateral_acc_min = 0.2 * lateral_acc_max if lateral_acc_max != 100 else 0
+    longitudinal_acc_min = 0.2 * longitudinal_acc_max if longitudinal_acc_max != 100 else 0
     if speed_status_num == int(SpeedType.Accelerate.value):
         speed_status = 'Accelerate'
     else:
         speed_status = 'Decelerate'
     variable_json_dict = dict()
     trails = copy.deepcopy(car_trails)
-    previous_speed_difference = 100
+    previous_speed_difference = 200
 
     # 找到所有比较直的轨迹
     for trail_motion in trails_json_dict.keys():
@@ -121,9 +121,9 @@ def get_variable_speed_trail(car_trails, trails_json_dict, start_speed, period, 
                     for single_trail in trail_value:
                         if math.fabs(single_trail['stopHeadinga'] - single_trail['startHeadinga']) < 0.5 and (
                                 abs(single_trail['LateralAccelarationMax']) < lateral_acc_max and abs(
-                                single_trail['LongitudinalAccelaration']) < longitudinal_acc_max) and (
+                            single_trail['LongitudinalAccelaration']) < longitudinal_acc_max) and (
                                 abs(single_trail['LateralAccelaration']) > lateral_acc_min and abs(
-                                single_trail['LongitudinalAccelarationMax']) > longitudinal_acc_min):
+                            single_trail['LongitudinalAccelarationMax']) > longitudinal_acc_min):
                             selected_trail_list.append(single_trail)
                         variable_json_dict = {trail_motion: {trail_speed: selected_trail_list}}
 
@@ -209,7 +209,7 @@ def get_start_stop_trail(car_trails, trails_json_dict, start_speed, period, spee
     else:
         speed_status = 'Stop'
     trails = copy.deepcopy(car_trails)
-    previous_speed_difference = 100
+    previous_time_difference = 5000
     previous_trail_length = 0
 
     # 找到所有比较直的轨迹
@@ -230,6 +230,8 @@ def get_start_stop_trail(car_trails, trails_json_dict, start_speed, period, spee
 
             # 根据轨迹时间长度做重采样
             frame = len(trail_new) / (period * 10)
+            if frame >= 2.5 or frame <= 0.4:
+                continue
             rng = pd.date_range("2020-05-10 00:00:00", periods=len(trail_new), freq="T")
             if frame >= 1:
                 trail_new = resample_by_time(trail_new, frame, rng, flag=True)
@@ -257,24 +259,25 @@ def get_start_stop_trail(car_trails, trails_json_dict, start_speed, period, spee
                         ego_delta_col = 'ego_e'
                         if delta_h > 0.2:
                             final_trail = trailModify(final_trail, 'Time', ego_delta_col, 'headinga')
+                        break
 
             else:
-                # 刹停选取最接近初始速度的轨迹
-                speed_difference = abs(trail_new.at[0, 'vel_filtered'] - start_speed)
-                if speed_difference < previous_speed_difference:
+                # 刹停选取时间最接近的轨迹
+                time_difference = abs((trail_new.iloc[-1]['Time'] - trail_new.iloc[0]['Time']) - period * 1000)
+                multiple = start_speed / abs(trail_new.loc[0, 'vel_filtered'])
+                if time_difference < previous_time_difference and multiple <= 4:
                     final_trail = trail_new
-                    previous_speed_difference = speed_difference
 
-                # 根据初始设定速度微调坐标
-                multiple = start_speed / final_trail.loc[0, 'vel_filtered']
-                final_trail = multiple_uniform_trail(final_trail, multiple, rotate_tuple)
+                    # # 根据初始设定速度微调坐标
+                    # final_trail = multiple_uniform_trail(final_trail, multiple, rotate_tuple)
 
-                # 将所有轨迹都旋转为0点，为了对轨迹角度微调
-                final_trail = corTransform_init(final_trail, 'ego_e', 'ego_n', 'headinga', rotate_tuple)
-                if ego_delta_col:
-                    delta_h = abs(final_trail.at[len(final_trail) - 1, 'headinga'] - final_trail.at[0, 'headinga'])
-                    if delta_h > 0.2:
-                        final_trail = trailModify(final_trail, 'Time', ego_delta_col, 'headinga')
+                    # 将所有轨迹都旋转为0点，为了对轨迹角度微调
+                    final_trail = corTransform_init(final_trail, 'ego_e', 'ego_n', 'headinga', rotate_tuple)
+                    if ego_delta_col:
+                        delta_h = abs(final_trail.at[len(final_trail) - 1, 'headinga'] - final_trail.at[0, 'headinga'])
+                        if delta_h > 0.2:
+                            final_trail = trailModify(final_trail, 'Time', ego_delta_col, 'headinga')
+                    break
 
     return final_trail
 

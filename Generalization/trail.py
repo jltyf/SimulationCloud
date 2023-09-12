@@ -1,6 +1,7 @@
 import ast
 import math
 
+from scipy import signal
 from Generalization.get_trails import get_uniform_speed_trail, get_variable_speed_trail, get_turn_round_trail, \
     get_change_lane_trail, get_static_trail, get_start_stop_trail, get_ped_trail, get_curve_point
 from Generalization.utils import get_ped_data

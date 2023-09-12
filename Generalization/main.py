@@ -13,11 +13,12 @@ import pandas as pd
 
 from Generalization.serialization.scenario_serialization import ScenarioData
 from Generalization.trail import Trail
-from Generalization.utils import dump_json, formatThree, change_CDATA, getLabel_local
+from Generalization.utils import dump_json, formatThree, change_CDATA, getLabel_local, filter_error
 from enumerations import TrailType, RoadType
 from utils import get_cal_model, generateFinalTrail, getXoscPosition, Point
 from configparser import ConfigParser
 from openx import Scenario
+from scipy import signal
 
 warnings.filterwarnings("ignore")
 pd.set_option('max_colwidth', 100)
@@ -66,8 +67,17 @@ def generalization(scenario_series, single_scenario, car_trail_data, ped_trail_d
         init_h = float(single_scenario['ego_heading_angle'])
         ego_trail = generateFinalTrail('ego', ego_trails_list, 'ego_e', 'ego_n', 'headinga', rotate_tuple,
                                        init_e=init_e, init_n=init_n, init_h=init_h)
+
+        ego_trail = filter_error(ego_trail)
+
+        sos = signal.butter(8, 0.2, 'lowpass', output='sos')
+        filtered_x = signal.sosfiltfilt(sos, ego_trail['ego_e'])
+        filtered_y = signal.sosfiltfilt(sos, ego_trail['ego_n'])
+        ego_trail['ego_e'] = signal.savgol_filter(filtered_x, 15, 2, mode='nearest')
+        ego_trail['ego_n'] = signal.savgol_filter(filtered_y, 15, 2, mode='nearest')
         # ego_trail = ego_trail.drop_duplicates(subset=['ego_e', 'ego_n', 'headinga'], keep='first') # 静止轨迹会被删掉
         # ego_trail = ego_trail.reset_index(drop=True)
+
 
     else:
         print(scenario_series['场景编号'], "ego没有符合条件的轨迹, 失败")
@@ -125,6 +135,15 @@ def generalization(scenario_series, single_scenario, car_trail_data, ped_trail_d
                     single_scenario['ego_heading_angle'])
                 object_trail = generateFinalTrail('object', object_trail_list, 'ego_e', 'ego_n', 'headinga',
                                                   rotate_tuple, init_e=init_e, init_n=init_n, init_h=init_h)
+
+                object_trail = filter_error(object_trail)
+
+                sos = signal.butter(8, 0.2, 'lowpass', output='sos')
+                filtered_x = signal.sosfiltfilt(sos, object_trail['ego_e'])
+                filtered_y = signal.sosfiltfilt(sos, object_trail['ego_n'])
+                object_trail['ego_e'] = signal.savgol_filter(filtered_x, 15, 2, mode='nearest')
+                object_trail['ego_n'] = signal.savgol_filter(filtered_y, 15, 2, mode='nearest')
+
 
             else:
                 print(scenario_series['场景编号'], "obs没有符合条件的轨迹")
@@ -211,7 +230,6 @@ def generalization(scenario_series, single_scenario, car_trail_data, ped_trail_d
         osgb_path = root_path + '/' + model_data['thq osgb']
     ego_points, egotime = getXoscPosition(ego_trail, 'Time', 'ego_e', 'ego_n', 'headinga', offset_x, offset_y,
                                           offset_h, offset_z)  # 初始轨迹朝向与道路方向一致
-    # ego_points, egotime = getXoscPosition(ego_trail, 'Time', 'ego_n', 'ego_e', 'headinga', offset_x, offset_y, offset_h) # 初始轨迹朝向与道路方向垂直
     object_points = []
     trail_motion_time_count = 0
     if object_position_list:
@@ -243,17 +261,19 @@ def generalization(scenario_series, single_scenario, car_trail_data, ped_trail_d
     if not trail_motion_time_count == 0:
         ego_points = ego_points[:len(ego_points) - trail_motion_time_count]
         egotime = egotime[:len(egotime) - trail_motion_time_count]
-    sceperiod = math.ceil(egotime[-1] - egotime[0])
-    s = Scenario(ego_points, object_points, egotime, sceperiod, single_scenario, absPath)
-    s.print_permutations()
+    for object_p in object_points:
+        if len(egotime) > len(object_p[1]):
+            egotime = egotime[:len(object_p[1])]
+            ego_points = ego_points[:len(egotime)]
+    sceperiod = egotime[-1] - egotime[0]
+    s = Scenario(ego_points, object_points, egotime, sceperiod, single_scenario, absPath, xodr_path, osgb_path)
     output_path = os.path.join(setting_data['output path'],
                                scenario_series['场景编号'] + '_' + str(scenario_index))
     if not os.path.exists(output_path):
         os.makedirs(output_path)
     files = s.generate(output_path)
-    formatThree(output_path, xodr_path, osgb_path)
+    # formatThree(output_path, xodr_path, osgb_path)
     scenario_index += 1
-    print(files)
     if 'PCW' in scenario_series['场景编号'] or '行人' in scenario_series['场景简述']:
         change_CDATA(files[0][0])  # 行人场景特例，对xosc文件内的特殊字符做转换`
 
@@ -296,6 +316,14 @@ def parsingConfigurationFile(ADAS_module):
             scenario = ScenarioData(scenario_series)
             scenario_list = scenario.get_scenario_model()
             scenario_index = 0
+
+            # # debug
+            # for i, single_scenario in enumerate(scenario_list):
+            #     print(1)
+            #     single_scenario, range_flag = get_cal_model(single_scenario)
+            #     generalization(scenario_series, single_scenario, car_trail_data, ped_trail_data, trails_json_dict,
+            #                    scenario_index)
+
             process_list = list()
             result_list = list()
             with Pool(processes=5) as executor:
@@ -312,10 +340,9 @@ def parsingConfigurationFile(ADAS_module):
                 for result in process_list:
                     if result.get():
                         result_list.append(result.get())
-            print(fileCnt)
+            print(scenario_series['场景编号'], 'Finished')
 
 
 if __name__ == "__main__":
-    # parsingConfigurationFile(['AEB', 'ALC', 'LKA', 'ACC', 'BSD', 'FCW', 'LDW', 'TJA'])
-    # parsingConfigurationFile(['LKA', 'ACC', 'BSD'])
     parsingConfigurationFile(['test'])
+    # parsingConfigurationFile(['AEB'])
