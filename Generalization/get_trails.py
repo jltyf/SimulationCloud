@@ -230,7 +230,7 @@ def get_start_stop_trail(car_trails, trails_json_dict, start_speed, period, spee
 
             # 根据轨迹时间长度做重采样
             frame = len(trail_new) / (period * 10)
-            if frame >= 2.5 or frame <= 0.4:
+            if (frame >= 2.5 or frame <= 0.4) or (single_trail['stopHeadinga'] - single_trail['startHeadinga'] > 10):
                 continue
             rng = pd.date_range("2020-05-10 00:00:00", periods=len(trail_new), freq="T")
             if frame >= 1:
@@ -302,16 +302,16 @@ def get_change_lane_trail(car_trails, trails_json_dict, lane_width, start_speed,
     # 判断需要生成的轨迹的变道类型
     change_lane_json_dict = dict()
     if motion_status == TrailMotionType.lane_change_left.value:
-        min_lateral_offset = 2.5
+        min_lateral_offset = 3
         left_flag = True
     elif motion_status == TrailMotionType.lane_change_right.value:
-        min_lateral_offset = 2.5
+        min_lateral_offset = 3
         left_flag = False
     elif motion_status == TrailMotionType.lane_change_left_twice.value:
-        min_lateral_offset = 2.5 + lane_width
+        min_lateral_offset = 3 + lane_width
         left_flag = True
     elif motion_status == TrailMotionType.lane_change_right_twice.value:
-        min_lateral_offset = 2.5 + lane_width
+        min_lateral_offset = 3 + lane_width
         left_flag = False
     trails = copy.deepcopy(car_trails)
 
@@ -328,39 +328,38 @@ def get_change_lane_trail(car_trails, trails_json_dict, lane_width, start_speed,
         change_lane_json_dict[motion] = sorted(change_lane_json_dict[motion], key=operator.itemgetter('startSpeed'),
                                                reverse=True)
         for trail_json in change_lane_json_dict[motion]:
-            if abs(trail_json['startHeadinga'] - trail_json['stopHeadinga']) < 0.5:
+            if abs(trail_json['startHeadinga'] - trail_json['stopHeadinga']) < 3 and (
+                    abs(trail_json['lateralOffset'] > min_lateral_offset)):
                 start_time = trail_json['start']
                 end_time = trail_json['stop']
                 trail = extractTrail(trails, start_time, end_time)
+                optional_trails_list.append(trail)
 
-                # 重新采样获得长度需要的轨迹
-                frame = len(trail) / (period * 10)
-                rng = pd.date_range("2020-05-10 00:00:00", periods=len(trail), freq="T")
-                if frame >= 1:
-                    trail = resample_by_time(trail, frame, rng, flag=True)
-                    trail = trail.drop_duplicates(subset=['ego_e', 'ego_n', 'headinga'], keep='first')  # 重复轨迹会被删掉
-                    trail = trail.reset_index(drop=True)
-                    if len(trail) < (period - 1) * 10:
-                        continue
-                else:
-                    trail = resample_by_time(trail, math.floor(frame * 60), rng, flag=False)
-                    trail = trail.drop_duplicates(subset=['ego_e', 'ego_n', 'headinga'], keep='first')  # 重复轨迹会被删掉
-                    trail = trail.reset_index(drop=True)
-                    if len(trail) < (period - 1) * 10:
-                        continue
-                trail['vel_filtered'] = trail['vel_filtered'] * frame
-                trail = trail.drop_duplicates(subset=['ego_e', 'ego_n', 'headinga'], keep='first')
-                trail = trail.reset_index(drop=True)
-                if len(trail) > (period - 1) * 10 and abs(
-                        trail.at[0, 'headinga'] - trail.at[len(trail) - 1, 'headinga']) < 0.5:
-                    optional_trails_list.append(trail)
+        # 筛选出初始速度最接近的轨迹
+        for trail in optional_trails_list:
+            speed_difference = abs(trail.loc[0, 'vel_filtered'] - start_speed)
+            if speed_difference < previous_speed_difference:
+                trail_res = trail
+                previous_speed_difference = speed_difference
 
-    # 筛选出初始速度最接近的轨迹
-    for trail in optional_trails_list:
-        speed_difference = abs(trail.loc[0, 'vel_filtered'] - start_speed)
-        if speed_difference < previous_speed_difference:
-            trail_res = trail
-            previous_speed_difference = speed_difference
+        # 重新采样获得长度需要的轨迹
+        frame = len(trail_res) / (period * 10)
+        rng = pd.date_range("2020-05-10 00:00:00", periods=len(trail_res), freq="T")
+        if frame >= 1:
+            trail_res = resample_by_time(trail_res, frame, rng, flag=True)
+            trail_res = trail_res.drop_duplicates(subset=['ego_e', 'ego_n', 'headinga'], keep='first')  # 重复轨迹会被删掉
+            trail_res = trail_res.reset_index(drop=True)
+            if len(trail_res) < (period - 1) * 10:
+                continue
+        else:
+            trail_res = resample_by_time(trail_res, math.floor(frame * 60), rng, flag=False)
+            trail_res = trail_res.drop_duplicates(subset=['ego_e', 'ego_n', 'headinga'], keep='first')  # 重复轨迹会被删掉
+            trail_res = trail_res.reset_index(drop=True)
+            if len(trail_res) < (period - 1) * 10:
+                continue
+        trail_res['vel_filtered'] = trail_res['vel_filtered'] * frame
+        trail_res = trail_res.drop_duplicates(subset=['ego_e', 'ego_n', 'headinga'], keep='first')
+        trail_res = trail_res.reset_index(drop=True)
 
     # 根据初始设定速度微调坐标
     multiple = start_speed / trail_res.loc[0, 'vel_filtered']
