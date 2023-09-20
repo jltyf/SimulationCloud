@@ -237,14 +237,13 @@ def generalization(scenario_data, single_scenario, car_trail_data, ped_trail_dat
         ego_points = ego_points[:len(ego_points) - trail_motion_time_count]
         egotime = egotime[:len(egotime) - trail_motion_time_count]
     sceperiod = math.ceil(egotime[-1] - egotime[0])
-    s = Scenario(ego_points, object_points, egotime, sceperiod, single_scenario, absPath)
+    s = Scenario(ego_points, object_points, egotime, sceperiod, single_scenario, absPath, xodr_path, osgb_path)
     s.print_permutations()
     output_path = os.path.join(setting_data['scenario path'],
                                scenario_data['sceneId'] + '_' + str(scenario_index))
     if not os.path.exists(output_path):
         os.makedirs(output_path)
     files = s.generate(output_path)
-    formatThree(output_path, xodr_path, osgb_path)
     print(files)
     if 'PCW' in scenario_data['sceneId'] or '行人' in scenario_data['scenarioResume']:
         change_CDATA(files[0][0])  # 行人场景特例，对xosc文件内的特殊字符做转换
@@ -387,6 +386,6 @@ def format_files():
 
 if __name__ == "__main__":
     server = pywsgi.WSGIServer(
-        ('0.0.0.0', 5000), app
+        ('0.0.0.0', 5001), app
     )
     server.serve_forever()
